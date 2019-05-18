@@ -34,6 +34,10 @@ func (r *queryResolver) Recipes(ctx context.Context) ([]Recipe, error) {
 		{
 			recipes (func: has(title)) {
 				title
+				ingredients {
+					name
+					quantity
+				}
 			}
 		}
 	`
@@ -79,6 +83,11 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*Rec
 		recipe(func: uid($id)) {
 			uid
 			title
+			ingredients {
+				uid
+				name
+				quantity
+			}
 		}
 	}`
 

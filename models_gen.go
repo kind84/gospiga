@@ -2,13 +2,81 @@
 
 package gospiga
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
+type Ingredient struct {
+	UID      string `json:"uid,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Quantity *int   `json:"quantity,omitempty"`
+}
+
+type NewIngredient struct {
+	Name     string `json:"name,omitempty"`
+	Quantity *int   `json:"quantity,omitempty"`
+}
+
 type NewRecipe struct {
-	Title string `json:"title,omitempty"`
+	Title       string          `json:"title,omitempty"`
+	Ingredients []NewIngredient `json:"ingredients,omitempty"`
 }
 
 type Recipe struct {
-	UID       string `json:"uid,omitempty"`
-	Title     string `json:"title,omitempty"`
-	CreatedAt string `json:"createdAt,omitempty"`
-	URL       string `json:"url,omitempty"`
+	UID         string       `json:"uid,omitempty"`
+	Title       string       `json:"title,omitempty"`
+	Ingredients []Ingredient `json:"ingredients,omitempty"`
+	CreatedAt   string       `json:"createdAt,omitempty"`
+	URL         string       `json:"url,omitempty"`
+}
+
+type Unit string
+
+const (
+	UnitGrams       Unit = "GRAMS"
+	UnitKilograms   Unit = "KILOGRAMS"
+	UnitOunces      Unit = "OUNCES"
+	UnitPounds      Unit = "POUNDS"
+	UnitLiters      Unit = "LITERS"
+	UnitMilliliters Unit = "MILLILITERS"
+)
+
+var AllUnit = []Unit{
+	UnitGrams,
+	UnitKilograms,
+	UnitOunces,
+	UnitPounds,
+	UnitLiters,
+	UnitMilliliters,
+}
+
+func (e Unit) IsValid() bool {
+	switch e {
+	case UnitGrams, UnitKilograms, UnitOunces, UnitPounds, UnitLiters, UnitMilliliters:
+		return true
+	}
+	return false
+}
+
+func (e Unit) String() string {
+	return string(e)
+}
+
+func (e *Unit) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Unit(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Unit", str)
+	}
+	return nil
+}
+
+func (e Unit) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

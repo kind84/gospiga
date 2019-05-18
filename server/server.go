@@ -17,8 +17,8 @@ func main() {
 		port = defaultPort
 	}
 
-	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", handler.GraphQL(gospiga.NewExecutableSchema(gospiga.Config{Resolvers: &gospiga.Resolver{}})))
+	http.Handle("/", handler.Playground("GraphQL playground", "/graphql"))
+	http.Handle("/graphql", handler.GraphQL(gospiga.NewExecutableSchema(gospiga.Config{Resolvers: &gospiga.Resolver{}})))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

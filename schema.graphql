@@ -1,12 +1,34 @@
 type Recipe {
     uid: ID!
     title: String!
+    ingredients: [Ingredient!]!
     createdAt: Timestamp!
     url: String!
 }
 
+type Ingredient {
+    uid: ID!
+    name: String!
+    quantity(unit: Unit = GRAMS): Int
+}
+
+enum Unit {
+  GRAMS
+  KILOGRAMS
+  OUNCES
+  POUNDS
+  LITERS
+  MILLILITERS
+}
+
 input NewRecipe {
     title: String!
+    ingredients: [NewIngredient!]!
+}
+
+input NewIngredient {
+    name: String!
+    quantity: Int
 }
 
 type Query {
