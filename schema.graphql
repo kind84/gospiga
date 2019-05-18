@@ -1,0 +1,20 @@
+type Recipe {
+    uid: ID!
+    title: String!
+    createdAt: Timestamp!
+    url: String!
+}
+
+input NewRecipe {
+    title: String!
+}
+
+type Query {
+    recipes: [Recipe!]!
+}
+
+type Mutation {
+    createRecipe(input: NewRecipe!): Recipe!
+}
+
+scalar Timestamp 
