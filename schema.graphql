@@ -2,7 +2,7 @@ type Recipe {
     uid: ID!
     title: String!
     ingredients: [Ingredient!]!
-    createdAt: Timestamp!
+    createdAt: Time!
     url: String!
 }
 
@@ -39,4 +39,4 @@ type Mutation {
     createRecipe(input: NewRecipe!): Recipe!
 }
 
-scalar Timestamp 
+scalar Time

@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/dgraph-io/dgo"
 	"github.com/dgraph-io/dgo/protos/api"
@@ -67,7 +68,21 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*Rec
 		CommitNow: true,
 	}
 
-	rb, err := json.Marshal(nr)
+	var igts []Ingredient
+	for _, i := range nr.Ingredients {
+		igts = append(igts, Ingredient{
+			Name:     i.Name,
+			Quantity: i.Quantity,
+		})
+	}
+
+	rcp := Recipe{
+		Title:       nr.Title,
+		Ingredients: igts,
+		CreatedAt:   time.Now().UTC(),
+	}
+
+	rb, err := json.Marshal(rcp)
 	if err != nil {
 		log.Fatal(err)
 	}

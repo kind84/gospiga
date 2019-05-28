@@ -6,30 +6,31 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 )
 
 type Ingredient struct {
-	UID      string `json:"uid,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Quantity *int   `json:"quantity,omitempty"`
+	UID      string `json:"uid",omitempty`
+	Name     string `json:"name",omitempty`
+	Quantity int    `json:"quantity",omitempty`
 }
 
 type NewIngredient struct {
-	Name     string `json:"name,omitempty"`
-	Quantity *int   `json:"quantity,omitempty"`
+	Name     string `json:"name"`
+	Quantity int    `json:"quantity"`
 }
 
 type NewRecipe struct {
-	Title       string          `json:"title,omitempty"`
-	Ingredients []NewIngredient `json:"ingredients,omitempty"`
+	Title       string          `json:"title"`
+	Ingredients []NewIngredient `json:"ingredients"`
 }
 
 type Recipe struct {
-	UID         string       `json:"uid,omitempty"`
-	Title       string       `json:"title,omitempty"`
-	Ingredients []Ingredient `json:"ingredients,omitempty"`
-	CreatedAt   string       `json:"createdAt,omitempty"`
-	URL         string       `json:"url,omitempty"`
+	UID         string       `json:"uid",omitempty`
+	Title       string       `json:"title",omitempty`
+	Ingredients []Ingredient `json:"ingredients",omitempty`
+	CreatedAt   time.Time    `json:"createdAt",omitempty`
+	URL         string       `json:"url",omitempty`
 }
 
 type Unit string
