@@ -10,9 +10,9 @@ import (
 )
 
 type Ingredient struct {
-	UID      string `json:"uid",omitempty`
-	Name     string `json:"name",omitempty`
-	Quantity int    `json:"quantity",omitempty`
+	UID      string `json:"uid,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Quantity int    `json:"quantity,omitempty"`
 }
 
 type NewIngredient struct {
@@ -26,11 +26,11 @@ type NewRecipe struct {
 }
 
 type Recipe struct {
-	UID         string       `json:"uid",omitempty`
-	Title       string       `json:"title",omitempty`
-	Ingredients []Ingredient `json:"ingredients",omitempty`
-	CreatedAt   time.Time    `json:"createdAt",omitempty`
-	URL         string       `json:"url",omitempty`
+	UID         string       `json:"uid,omitempty"`
+	Title       string       `json:"title,omitempty"`
+	Ingredients []Ingredient `json:"ingredients,omitempty"`
+	CreatedAt   time.Time    `json:"createdAt,omitempty"`
+	URL         string       `json:"url,omitempty"`
 }
 
 type Unit string
