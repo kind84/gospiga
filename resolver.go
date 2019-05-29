@@ -39,6 +39,7 @@ func (r *queryResolver) Recipes(ctx context.Context) ([]Recipe, error) {
 					name
 					quantity
 				}
+				createdAt
 			}
 		}
 	`
