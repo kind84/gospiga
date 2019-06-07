@@ -1,15 +1,22 @@
 type Recipe {
     uid: ID!
     title: String!
-    ingredients: [Ingredient!]!
+    ingredient: [Ingredient!]!
+    step: [Step!]!
     createdAt: Time!
-    url: String!
 }
 
 type Ingredient {
     uid: ID!
     name: String!
     quantity(unit: Unit = GRAMS): Int
+}
+
+type Step {
+    uid: ID!
+    index: Int!
+    excerpt: String!
+    text: String!
 }
 
 enum Unit {
@@ -24,11 +31,18 @@ enum Unit {
 input NewRecipe {
     title: String!
     ingredients: [NewIngredient!]!
+    steps: [NewStep!]!
 }
 
 input NewIngredient {
     name: String!
     quantity: Int
+}
+
+input NewStep {
+    index: Int!
+    excerpt: String!
+    text: String!
 }
 
 type Query {

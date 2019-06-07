@@ -12,3 +12,6 @@ model:
 resolver:
   filename: resolver.go
   type: Resolver
+models:
+  Recipe:
+    model: github.com/kind84/gospiga/models.Recipe
