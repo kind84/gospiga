@@ -21,8 +21,11 @@ type NewIngredient struct {
 
 type NewRecipe struct {
 	Title       string           `json:"title"`
-	Ingredients []*NewIngredient `json:"ingredients"`
-	Steps       []*NewStep       `json:"steps"`
+	Subtitle    string           `json:"subtitle"`
+	Description *string          `json:"description"`
+	Ingredient  []*NewIngredient `json:"ingredient"`
+	Step        []*NewStep       `json:"step"`
+	Conclusion  *string          `json:"conclusion"`
 }
 
 type NewStep struct {
@@ -36,6 +39,29 @@ type Step struct {
 	Index   int    `json:"index"`
 	Excerpt string `json:"excerpt"`
 	Text    string `json:"text"`
+}
+
+type UpIngredient struct {
+	UID      *string `json:"uid"`
+	Name     string  `json:"name"`
+	Quantity *int    `json:"quantity"`
+}
+
+type UpRecipe struct {
+	UID         string          `json:"uid"`
+	Title       string          `json:"title"`
+	Subtitle    string          `json:"subtitle"`
+	Description *string         `json:"description"`
+	Ingredient  []*UpIngredient `json:"ingredient"`
+	Step        []*UpStep       `json:"step"`
+	Conclusion  *string         `json:"conclusion"`
+}
+
+type UpStep struct {
+	UID     *string `json:"uid"`
+	Index   int     `json:"index"`
+	Excerpt string  `json:"excerpt"`
+	Text    string  `json:"text"`
 }
 
 type Unit string

@@ -5,7 +5,8 @@ package gospiga
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/dgraph-io/dgo"
@@ -35,27 +36,38 @@ type mutationResolver struct{ *Resolver }
 
 type recipeResolver struct{ *Resolver }
 
-func (r *queryResolver) Recipes(ctx context.Context) ([]*models.Recipe, error) {
+func (r *queryResolver) Recipes(ctx context.Context, uid *string) ([]*models.Recipe, error) {
 	c, err := newClient()
 	if err != nil {
 		return nil, err
 	}
 
 	txn := c.NewReadOnlyTxn()
+	var fn string
 
-	const q = `{
-		recipes (func: has(title)) {
+	if uid != nil {
+		fn = fmt.Sprintf("uid(%s)", *uid)
+	} else {
+		fn = "has(title"
+	}
+
+	q := fmt.Sprintf(`{
+		recipes (func: %s) {
 			uid
 			title
+			subtitle
+			description
 			ingredient {
 				uid
 			}
 			step {
 				uid
 			}
+			conclusion
 			createdAt
+			updatedAt
 		}
-	}`
+	}`, fn)
 
 	resp, err := txn.Query(ctx, q)
 	if err != nil {
@@ -83,10 +95,20 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*mod
 
 	err = c.Alter(context.Background(), &api.Operation{
 		Schema: `
-			title: string @index(term) .
+			title: string @index(fulltext) .
+			subtitle: string @index(fulltext) .
+			description: string @index(fulltext) .
 			ingredient: uid @reverse .
-			steps: uid @reverse .
+			step: uid @reverse .
+			conclusion: string .
 			createdAt: dateTime @index(day) .
+
+			name: string @index(term) .
+			quantity: int .
+
+			index: int .
+			excerpt: string @index(fulltext) .
+			text: string @index(fulltext) .
 		`,
 	})
 	if err != nil {
@@ -98,9 +120,11 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*mod
 	rcp := struct {
 		NewRecipe
 		CreatedAt time.Time `json:"createdAt,omitempty"`
+		UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	}{
 		NewRecipe: nr,
 		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	rb, err := json.Marshal(rcp)
@@ -111,27 +135,45 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*mod
 	mu.SetJson = rb
 	assigned, err := c.NewTxn().Mutate(ctx, mu)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	variables := map[string]string{"$id": assigned.Uids["blank-0"]}
+	res, err := getRecipe(ctx, assigned.Uids["blank-0"])
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (r *mutationResolver) UpdateRecipe(ctx context.Context, input UpRecipe) (*models.Recipe, error) {
+	c, err := newClient()
+	if err != nil {
+		return nil, err
+	}
+
+	txn := c.NewTxn()
+	variables := map[string]string{"$id": input.UID}
 	q := `query Recipe($id: string){
 		recipe(func: uid($id)) {
 			uid
 			title
+			subtitle
+			description
 			ingredient {
 				uid
 			}
 			step {
 				uid
 			}
+			conclusion
 			createdAt
+			updatedAt
 		}
 	}`
 
-	resp, err := c.NewTxn().QueryWithVars(ctx, q, variables)
+	resp, err := txn.QueryWithVars(ctx, q, variables)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	type Root struct {
@@ -141,10 +183,45 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*mod
 	var rt Root
 	err = json.Unmarshal(resp.Json, &rt)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
+	}
+	if len(rt.Recipe) == 0 {
+		errMsg := fmt.Sprintf("Recipe UID %s not found.", input.UID)
+		return nil, errors.New(errMsg)
 	}
 
-	return &rt.Recipe[0], nil
+	upRc := struct {
+		UpRecipe
+		CreatedAt time.Time `json:"createdAt,omitempty"`
+		UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	}{
+		UpRecipe:  input,
+		CreatedAt: rt.Recipe[0].CreatedAt,
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	rb, err := json.Marshal(upRc)
+	if err != nil {
+		return nil, err
+	}
+
+	mu := &api.Mutation{}
+
+	mu.SetJson = rb
+	_, err = txn.Mutate(ctx, mu)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = txn.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	res, err := getRecipe(ctx, rt.Recipe[0].UID)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (r *recipeResolver) Ingredient(ctx context.Context, obj *models.Recipe) ([]*Ingredient, error) {
@@ -173,6 +250,49 @@ func (r *recipeResolver) Step(ctx context.Context, obj *models.Recipe) ([]*Step,
 		stps = append(stps, ss)
 	}
 	return stps, nil
+}
+
+func getRecipe(ctx context.Context, uid string) (*models.Recipe, error) {
+	c, err := newClient()
+	if err != nil {
+		return nil, err
+	}
+
+	variables := map[string]string{"$id": uid}
+	q := `query Recipe($id: string){
+		recipe(func: uid($id)) {
+			uid
+			title
+			subtitle
+			description
+			ingredient {
+				uid
+			}
+			step {
+				uid
+			}
+			conclusion
+			createdAt
+			updatedAt
+		}
+	}`
+
+	resp, err := c.NewTxn().QueryWithVars(ctx, q, variables)
+	if err != nil {
+		return nil, err
+	}
+
+	type Root struct {
+		Recipe []models.Recipe `json:"recipe"`
+	}
+
+	var rt Root
+	err = json.Unmarshal(resp.Json, &rt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rt.Recipe[0], nil
 }
 
 func getIngredient(ctx context.Context, uid string) (*Ingredient, error) {
