@@ -14,24 +14,14 @@ type Ingredient struct {
 	Quantity *int   `json:"quantity"`
 }
 
-type NewIngredient struct {
-	Name     string `json:"name"`
-	Quantity *int   `json:"quantity"`
-}
-
 type NewRecipe struct {
-	Title       string           `json:"title"`
-	Subtitle    string           `json:"subtitle"`
-	Description *string          `json:"description"`
-	Ingredient  []*NewIngredient `json:"ingredient"`
-	Step        []*NewStep       `json:"step"`
-	Conclusion  *string          `json:"conclusion"`
-}
-
-type NewStep struct {
-	Index   int    `json:"index"`
-	Excerpt string `json:"excerpt"`
-	Text    string `json:"text"`
+	Title       string          `json:"title"`
+	Subtitle    string          `json:"subtitle"`
+	Description *string         `json:"description"`
+	Ingredient  []*UpIngredient `json:"ingredient"`
+	Step        []*UpStep       `json:"step"`
+	Conclusion  *string         `json:"conclusion"`
+	Tag         []*UpTag        `json:"tag"`
 }
 
 type Step struct {
@@ -39,6 +29,11 @@ type Step struct {
 	Index   int    `json:"index"`
 	Excerpt string `json:"excerpt"`
 	Text    string `json:"text"`
+}
+
+type Tag struct {
+	UID  string `json:"uid"`
+	Name string `json:"name"`
 }
 
 type UpIngredient struct {
@@ -55,6 +50,7 @@ type UpRecipe struct {
 	Ingredient  []*UpIngredient `json:"ingredient"`
 	Step        []*UpStep       `json:"step"`
 	Conclusion  *string         `json:"conclusion"`
+	Tag         []*UpTag        `json:"tag"`
 }
 
 type UpStep struct {
@@ -62,6 +58,11 @@ type UpStep struct {
 	Index   int     `json:"index"`
 	Excerpt string  `json:"excerpt"`
 	Text    string  `json:"text"`
+}
+
+type UpTag struct {
+	UID  *string `json:"uid"`
+	Name string  `json:"name"`
 }
 
 type Unit string

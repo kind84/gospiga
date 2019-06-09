@@ -57,7 +57,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Recipes func(childComplexity int, uid *string) int
+		Recipes func(childComplexity int, uid *string, tags []*string) int
 	}
 
 	Recipe struct {
@@ -67,6 +67,7 @@ type ComplexityRoot struct {
 		Ingredient  func(childComplexity int) int
 		Step        func(childComplexity int) int
 		Subtitle    func(childComplexity int) int
+		Tag         func(childComplexity int) int
 		Title       func(childComplexity int) int
 		UID         func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
@@ -78,6 +79,11 @@ type ComplexityRoot struct {
 		Text    func(childComplexity int) int
 		UID     func(childComplexity int) int
 	}
+
+	Tag struct {
+		Name func(childComplexity int) int
+		UID  func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
@@ -85,11 +91,13 @@ type MutationResolver interface {
 	UpdateRecipe(ctx context.Context, input UpRecipe) (*models.Recipe, error)
 }
 type QueryResolver interface {
-	Recipes(ctx context.Context, uid *string) ([]*models.Recipe, error)
+	Recipes(ctx context.Context, uid *string, tags []*string) ([]*models.Recipe, error)
 }
 type RecipeResolver interface {
 	Ingredient(ctx context.Context, obj *models.Recipe) ([]*Ingredient, error)
 	Step(ctx context.Context, obj *models.Recipe) ([]*Step, error)
+
+	Tag(ctx context.Context, obj *models.Recipe) ([]*Tag, error)
 }
 
 type executableSchema struct {
@@ -167,7 +175,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Recipes(childComplexity, args["uid"].(*string)), true
+		return e.complexity.Query.Recipes(childComplexity, args["uid"].(*string), args["tags"].([]*string)), true
 
 	case "Recipe.conclusion":
 		if e.complexity.Recipe.Conclusion == nil {
@@ -210,6 +218,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Recipe.Subtitle(childComplexity), true
+
+	case "Recipe.tag":
+		if e.complexity.Recipe.Tag == nil {
+			break
+		}
+
+		return e.complexity.Recipe.Tag(childComplexity), true
 
 	case "Recipe.title":
 		if e.complexity.Recipe.Title == nil {
@@ -259,6 +274,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Step.UID(childComplexity), true
+
+	case "Tag.name":
+		if e.complexity.Tag.Name == nil {
+			break
+		}
+
+		return e.complexity.Tag.Name(childComplexity), true
+
+	case "Tag.uid":
+		if e.complexity.Tag.UID == nil {
+			break
+		}
+
+		return e.complexity.Tag.UID(childComplexity), true
 
 	}
 	return 0, false
@@ -345,6 +374,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
     ingredient: [Ingredient!]!
     step: [Step!]!
     conclusion: String
+    tag: [Tag!]!
     createdAt: Time!
     updatedAt: Time!
 }
@@ -362,6 +392,11 @@ type Step {
     text: String!
 }
 
+type Tag {
+    uid: ID!
+    name: String!
+}
+
 enum Unit {
   GRAMS
   KILOGRAMS
@@ -375,9 +410,10 @@ input NewRecipe {
     title: String!
     subtitle: String!
     description: String
-    ingredient: [NewIngredient!]!
-    step: [NewStep!]!
+    ingredient: [UpIngredient!]!
+    step: [UpStep!]!
     conclusion: String
+    tag: [UpTag!]!
 }
 
 input UpRecipe {
@@ -388,17 +424,7 @@ input UpRecipe {
     ingredient: [UpIngredient!]!
     step: [UpStep!]!
     conclusion: String
-}
-
-input NewIngredient {
-    name: String!
-    quantity: Int
-}
-
-input NewStep {
-    index: Int!
-    excerpt: String!
-    text: String!
+    tag: [UpTag!]!
 }
 
 input UpIngredient {
@@ -413,8 +439,14 @@ input UpStep {
     excerpt: String!
     text: String!
 }
+
+input UpTag {
+    uid: ID
+    name: String!
+}
+
 type Query {
-    recipes(uid: ID): [Recipe!]!
+    recipes(uid: ID, tags: [String]): [Recipe!]!
 }
 
 type Mutation {
@@ -496,6 +528,14 @@ func (ec *executionContext) field_Query_recipes_args(ctx context.Context, rawArg
 		}
 	}
 	args["uid"] = arg0
+	var arg1 []*string
+	if tmp, ok := rawArgs["tags"]; ok {
+		arg1, err = ec.unmarshalOString2ᚕᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tags"] = arg1
 	return args, nil
 }
 
@@ -704,7 +744,7 @@ func (ec *executionContext) _Query_recipes(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Recipes(rctx, args["uid"].(*string))
+		return ec.resolvers.Query().Recipes(rctx, args["uid"].(*string), args["tags"].([]*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -956,6 +996,33 @@ func (ec *executionContext) _Recipe_conclusion(ctx context.Context, field graphq
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Recipe_tag(ctx context.Context, field graphql.CollectedField, obj *models.Recipe) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Recipe",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Recipe().Tag(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Tag)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTag2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐTag(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Recipe_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.Recipe) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -1105,6 +1172,60 @@ func (ec *executionContext) _Step_text(ctx context.Context, field graphql.Collec
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Text, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Tag_uid(ctx context.Context, field graphql.CollectedField, obj *Tag) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Tag",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Tag_name(ctx context.Context, field graphql.CollectedField, obj *Tag) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Tag",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1949,30 +2070,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputNewIngredient(ctx context.Context, v interface{}) (NewIngredient, error) {
-	var it NewIngredient
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "quantity":
-			var err error
-			it.Quantity, err = ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputNewRecipe(ctx context.Context, v interface{}) (NewRecipe, error) {
 	var it NewRecipe
 	var asMap = v.(map[string]interface{})
@@ -1999,13 +2096,13 @@ func (ec *executionContext) unmarshalInputNewRecipe(ctx context.Context, v inter
 			}
 		case "ingredient":
 			var err error
-			it.Ingredient, err = ec.unmarshalNNewIngredient2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewIngredient(ctx, v)
+			it.Ingredient, err = ec.unmarshalNUpIngredient2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpIngredient(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "step":
 			var err error
-			it.Step, err = ec.unmarshalNNewStep2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewStep(ctx, v)
+			it.Step, err = ec.unmarshalNUpStep2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpStep(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2015,33 +2112,9 @@ func (ec *executionContext) unmarshalInputNewRecipe(ctx context.Context, v inter
 			if err != nil {
 				return it, err
 			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputNewStep(ctx context.Context, v interface{}) (NewStep, error) {
-	var it NewStep
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "index":
+		case "tag":
 			var err error
-			it.Index, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "excerpt":
-			var err error
-			it.Excerpt, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "text":
-			var err error
-			it.Text, err = ec.unmarshalNString2string(ctx, v)
+			it.Tag, err = ec.unmarshalNUpTag2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2129,6 +2202,12 @@ func (ec *executionContext) unmarshalInputUpRecipe(ctx context.Context, v interf
 			if err != nil {
 				return it, err
 			}
+		case "tag":
+			var err error
+			it.Tag, err = ec.unmarshalNUpTag2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -2162,6 +2241,30 @@ func (ec *executionContext) unmarshalInputUpStep(ctx context.Context, v interfac
 		case "text":
 			var err error
 			it.Text, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpTag(ctx context.Context, v interface{}) (UpTag, error) {
+	var it UpTag
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "uid":
+			var err error
+			it.UID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2351,6 +2454,20 @@ func (ec *executionContext) _Recipe(ctx context.Context, sel ast.SelectionSet, o
 			})
 		case "conclusion":
 			out.Values[i] = ec._Recipe_conclusion(ctx, field, obj)
+		case "tag":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Recipe_tag(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "createdAt":
 			out.Values[i] = ec._Recipe_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -2400,6 +2517,38 @@ func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "text":
 			out.Values[i] = ec._Step_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tagImplementors = []string{"Tag"}
+
+func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj *Tag) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, tagImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Tag")
+		case "uid":
+			out.Values[i] = ec._Tag_uid(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Tag_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2752,72 +2901,8 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNNewIngredient2githubᚗcomᚋkind84ᚋgospigaᚐNewIngredient(ctx context.Context, v interface{}) (NewIngredient, error) {
-	return ec.unmarshalInputNewIngredient(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNNewIngredient2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewIngredient(ctx context.Context, v interface{}) ([]*NewIngredient, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*NewIngredient, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNNewIngredient2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewIngredient(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNNewIngredient2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewIngredient(ctx context.Context, v interface{}) (*NewIngredient, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNNewIngredient2githubᚗcomᚋkind84ᚋgospigaᚐNewIngredient(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNNewRecipe2githubᚗcomᚋkind84ᚋgospigaᚐNewRecipe(ctx context.Context, v interface{}) (NewRecipe, error) {
 	return ec.unmarshalInputNewRecipe(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNNewStep2githubᚗcomᚋkind84ᚋgospigaᚐNewStep(ctx context.Context, v interface{}) (NewStep, error) {
-	return ec.unmarshalInputNewStep(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNNewStep2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewStep(ctx context.Context, v interface{}) ([]*NewStep, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*NewStep, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNNewStep2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewStep(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNNewStep2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐNewStep(ctx context.Context, v interface{}) (*NewStep, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNNewStep2githubᚗcomᚋkind84ᚋgospigaᚐNewStep(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNRecipe2githubᚗcomᚋkind84ᚋgospigaᚋmodelsᚐRecipe(ctx context.Context, sel ast.SelectionSet, v models.Recipe) graphql.Marshaler {
@@ -2936,6 +3021,57 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) marshalNTag2githubᚗcomᚋkind84ᚋgospigaᚐTag(ctx context.Context, sel ast.SelectionSet, v Tag) graphql.Marshaler {
+	return ec._Tag(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐTag(ctx context.Context, sel ast.SelectionSet, v []*Tag) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐTag(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐTag(ctx context.Context, sel ast.SelectionSet, v *Tag) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Tag(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
 	return graphql.UnmarshalTime(v)
 }
@@ -3015,6 +3151,38 @@ func (ec *executionContext) unmarshalNUpStep2ᚖgithubᚗcomᚋkind84ᚋgospiga�
 		return nil, nil
 	}
 	res, err := ec.unmarshalNUpStep2githubᚗcomᚋkind84ᚋgospigaᚐUpStep(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNUpTag2githubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx context.Context, v interface{}) (UpTag, error) {
+	return ec.unmarshalInputUpTag(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNUpTag2ᚕᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx context.Context, v interface{}) ([]*UpTag, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*UpTag, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNUpTag2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNUpTag2ᚖgithubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx context.Context, v interface{}) (*UpTag, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNUpTag2githubᚗcomᚋkind84ᚋgospigaᚐUpTag(ctx, v)
 	return &res, err
 }
 
@@ -3319,6 +3487,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

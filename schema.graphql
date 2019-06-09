@@ -6,6 +6,7 @@ type Recipe {
     ingredient: [Ingredient!]!
     step: [Step!]!
     conclusion: String
+    tag: [Tag!]!
     createdAt: Time!
     updatedAt: Time!
 }
@@ -23,6 +24,11 @@ type Step {
     text: String!
 }
 
+type Tag {
+    uid: ID!
+    name: String!
+}
+
 enum Unit {
   GRAMS
   KILOGRAMS
@@ -36,9 +42,10 @@ input NewRecipe {
     title: String!
     subtitle: String!
     description: String
-    ingredient: [NewIngredient!]!
-    step: [NewStep!]!
+    ingredient: [UpIngredient!]!
+    step: [UpStep!]!
     conclusion: String
+    tag: [UpTag!]!
 }
 
 input UpRecipe {
@@ -49,17 +56,7 @@ input UpRecipe {
     ingredient: [UpIngredient!]!
     step: [UpStep!]!
     conclusion: String
-}
-
-input NewIngredient {
-    name: String!
-    quantity: Int
-}
-
-input NewStep {
-    index: Int!
-    excerpt: String!
-    text: String!
+    tag: [UpTag!]!
 }
 
 input UpIngredient {
@@ -74,8 +71,14 @@ input UpStep {
     excerpt: String!
     text: String!
 }
+
+input UpTag {
+    uid: ID
+    name: String!
+}
+
 type Query {
-    recipes(uid: ID): [Recipe!]!
+    recipes(uid: ID, tags: [String]): [Recipe!]!
 }
 
 type Mutation {

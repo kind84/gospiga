@@ -36,23 +36,37 @@ type mutationResolver struct{ *Resolver }
 
 type recipeResolver struct{ *Resolver }
 
-func (r *queryResolver) Recipes(ctx context.Context, uid *string) ([]*models.Recipe, error) {
+func (r *queryResolver) Recipes(ctx context.Context, uid *string, tags []*string) ([]*models.Recipe, error) {
 	c, err := newClient()
 	if err != nil {
 		return nil, err
 	}
 
 	txn := c.NewReadOnlyTxn()
-	var fn string
+	var fn, d, tg string
 
 	if uid != nil {
 		fn = fmt.Sprintf("uid(%s)", *uid)
 	} else {
-		fn = "has(title"
+		fn = "has(title)"
+	}
+	if len(tags) > 0 {
+		d = "@cascade"
+		var ts []interface{}
+		for _, t := range tags {
+			ts = append(ts, *t)
+		}
+		tg = fmt.Sprintf(`tag @filter(anyofterms(name, %s)) {
+			uid
+		}`, ts...)
+	} else {
+		tg = `tag {
+			uid
+		}`
 	}
 
 	q := fmt.Sprintf(`{
-		recipes (func: %s) {
+		recipes (func: %s) %s{
 			uid
 			title
 			subtitle
@@ -64,10 +78,11 @@ func (r *queryResolver) Recipes(ctx context.Context, uid *string) ([]*models.Rec
 				uid
 			}
 			conclusion
+			%s
 			createdAt
 			updatedAt
 		}
-	}`, fn)
+	}`, fn, d, tg)
 
 	resp, err := txn.Query(ctx, q)
 	if err != nil {
@@ -101,6 +116,7 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*mod
 			ingredient: uid @reverse .
 			step: uid @reverse .
 			conclusion: string .
+			tag: uid @reverse .
 			createdAt: dateTime @index(day) .
 
 			name: string @index(term) .
@@ -166,6 +182,9 @@ func (r *mutationResolver) UpdateRecipe(ctx context.Context, input UpRecipe) (*m
 				uid
 			}
 			conclusion
+			tag {
+				uid
+			}
 			createdAt
 			updatedAt
 		}
@@ -252,6 +271,20 @@ func (r *recipeResolver) Step(ctx context.Context, obj *models.Recipe) ([]*Step,
 	return stps, nil
 }
 
+func (r *recipeResolver) Tag(ctx context.Context, obj *models.Recipe) ([]*Tag, error) {
+	var tags []*Tag
+
+	// Dgraph does not allow to pass muliple UIDs as func variable. Looping.
+	for _, t := range obj.Tag {
+		tt, err := getTag(ctx, t.UID)
+		if err != nil {
+			return nil, err
+		}
+		tags = append(tags, tt)
+	}
+	return tags, nil
+}
+
 func getRecipe(ctx context.Context, uid string) (*models.Recipe, error) {
 	c, err := newClient()
 	if err != nil {
@@ -272,6 +305,9 @@ func getRecipe(ctx context.Context, uid string) (*models.Recipe, error) {
 				uid
 			}
 			conclusion
+			tag {
+				uid
+			}
 			createdAt
 			updatedAt
 		}
@@ -360,6 +396,38 @@ func getStep(ctx context.Context, uid string) (*Step, error) {
 	}
 
 	return jres.Steps[0], nil
+}
+
+func getTag(ctx context.Context, uid string) (*Tag, error) {
+	c, err := newClient()
+	if err != nil {
+		return nil, err
+	}
+
+	txn := c.NewReadOnlyTxn()
+
+	vars := map[string]string{"$id": uid}
+	const q = `query Tags($id: string){
+		tags (func: uid($id)) {
+			uid
+			name
+		}
+	}`
+
+	resp, err := txn.QueryWithVars(ctx, q, vars)
+	if err != nil {
+		return nil, err
+	}
+
+	var jres struct {
+		Tags []*Tag `json:"tags"`
+	}
+
+	if err := json.Unmarshal(resp.GetJson(), &jres); err != nil {
+		return nil, err
+	}
+
+	return jres.Tags[0], nil
 }
 
 func newClient() (*dgo.Dgraph, error) {
