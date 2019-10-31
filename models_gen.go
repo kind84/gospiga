@@ -8,12 +8,6 @@ import (
 	"strconv"
 )
 
-type Ingredient struct {
-	UID      string `json:"uid"`
-	Name     string `json:"name"`
-	Quantity *int   `json:"quantity"`
-}
-
 type NewRecipe struct {
 	Title       string          `json:"title"`
 	Subtitle    string          `json:"subtitle"`
@@ -43,7 +37,7 @@ type UpIngredient struct {
 }
 
 type UpRecipe struct {
-	UID         string          `json:"uid"`
+	UID         *string         `json:"uid"`
 	Title       string          `json:"title"`
 	Subtitle    string          `json:"subtitle"`
 	Description *string         `json:"description"`

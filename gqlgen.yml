@@ -15,3 +15,5 @@ resolver:
 models:
   Recipe:
     model: github.com/kind84/gospiga/models.Recipe
+  Ingredient:
+    model: github.com/kind84/gospiga/models.Ingredient

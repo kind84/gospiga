@@ -15,6 +15,7 @@ type Ingredient {
     uid: ID!
     name: String!
     quantity(unit: Unit = GRAMS): Int
+    recipe: [Recipe]!
 }
 
 type Step {
@@ -49,7 +50,7 @@ input NewRecipe {
 }
 
 input UpRecipe {
-    uid: ID!
+    uid: ID
     title: String!
     subtitle: String!
     description: String
@@ -79,6 +80,7 @@ input UpTag {
 
 type Query {
     recipes(uid: ID, tags: [String]): [Recipe!]!
+    ingredients(uid: ID, name: String): [Ingredient!]!
 }
 
 type Mutation {

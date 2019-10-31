@@ -1,4 +1,4 @@
-//go:generate go run github.com/99designs/gqlgen
+//go:generate go run github.com/99designs/gqlgen -v
 
 package gospiga
 
@@ -9,14 +9,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgraph-io/dgo"
-	"github.com/dgraph-io/dgo/protos/api"
+	"github.com/dgraph-io/dgo/v2"
+	"github.com/dgraph-io/dgo/v2/protos/api"
 	"google.golang.org/grpc"
 
 	"github.com/kind84/gospiga/models"
 ) // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 type Resolver struct{}
+type queryResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
+type recipeResolver struct{ *Resolver }
+type ingredientResolver struct{ *Resolver }
 
 func (r *Resolver) Query() QueryResolver {
 	return &queryResolver{r}
@@ -30,11 +34,9 @@ func (r *Resolver) Recipe() RecipeResolver {
 	return &recipeResolver{r}
 }
 
-type queryResolver struct{ *Resolver }
-
-type mutationResolver struct{ *Resolver }
-
-type recipeResolver struct{ *Resolver }
+func (r *Resolver) Ingredient() IngredientResolver {
+	return &ingredientResolver{r}
+}
 
 func (r *queryResolver) Recipes(ctx context.Context, uid *string, tags []*string) ([]*models.Recipe, error) {
 	c, err := newClient()
@@ -93,11 +95,62 @@ func (r *queryResolver) Recipes(ctx context.Context, uid *string, tags []*string
 		Recipes []*models.Recipe `json:"recipes"`
 	}
 
-	if err := json.Unmarshal(resp.GetJson(), &jres); err != nil {
+	jsresp := resp.GetJson()
+	fmt.Println(string(jsresp))
+	// if err := json.Unmarshal(resp.GetJson(), &jres); err != nil {
+	if err := json.Unmarshal(jsresp, &jres); err != nil {
 		return nil, err
 	}
 
 	return jres.Recipes, nil
+}
+
+func (r *queryResolver) Ingredients(ctx context.Context, uid *string, name *string) ([]*models.Ingredient, error) {
+	c, err := newClient()
+	if err != nil {
+		return nil, err
+	}
+
+	txn := c.NewReadOnlyTxn()
+	var fn string
+
+	if uid != nil {
+		fn = fmt.Sprintf("uid(%s)", *uid)
+	} else {
+		fn = "has(quantity)"
+	}
+	if name != nil {
+		fn = fmt.Sprintf("name(%s)", *name)
+	}
+
+	q := fmt.Sprintf(`{
+		ingredients (func: %s) {
+			uid
+			name
+			quantity
+			recipe: ~ingredient {
+				uid
+			}
+		}
+	}`, fn)
+
+	resp, err := txn.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var jres struct {
+		Ingredients []*models.Ingredient `json:"ingredients"`
+	}
+
+	jsresp := resp.GetJson()
+	fmt.Println(string(jsresp))
+	// if err := json.Unmarshal(resp.GetJson(), &jres); err != nil {
+	if err := json.Unmarshal(jsresp, &jres); err != nil {
+		return nil, err
+	}
+
+	return jres.Ingredients, nil
 }
 
 func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*models.Recipe, error) {
@@ -113,10 +166,10 @@ func (r *mutationResolver) CreateRecipe(ctx context.Context, nr NewRecipe) (*mod
 			title: string @index(fulltext) .
 			subtitle: string @index(fulltext) .
 			description: string @index(fulltext) .
-			ingredient: uid @reverse .
-			step: uid @reverse .
+			ingredient: [uid] @reverse .
+			step: [uid] @reverse .
 			conclusion: string .
-			tag: uid @reverse .
+			tag: [uid] @reverse .
 			createdAt: dateTime @index(day) .
 
 			name: string @index(term) .
@@ -168,7 +221,7 @@ func (r *mutationResolver) UpdateRecipe(ctx context.Context, input UpRecipe) (*m
 	}
 
 	txn := c.NewTxn()
-	variables := map[string]string{"$id": input.UID}
+	variables := map[string]string{"$id": *input.UID}
 	q := `query Recipe($id: string){
 		recipe(func: uid($id)) {
 			uid
@@ -205,7 +258,7 @@ func (r *mutationResolver) UpdateRecipe(ctx context.Context, input UpRecipe) (*m
 		return nil, err
 	}
 	if len(rt.Recipe) == 0 {
-		errMsg := fmt.Sprintf("Recipe UID %s not found.", input.UID)
+		errMsg := fmt.Sprintf("Recipe UID %s not found.", *input.UID)
 		return nil, errors.New(errMsg)
 	}
 
@@ -243,8 +296,8 @@ func (r *mutationResolver) UpdateRecipe(ctx context.Context, input UpRecipe) (*m
 	return res, nil
 }
 
-func (r *recipeResolver) Ingredient(ctx context.Context, obj *models.Recipe) ([]*Ingredient, error) {
-	var igs []*Ingredient
+func (r *recipeResolver) Ingredient(ctx context.Context, obj *models.Recipe) ([]*models.Ingredient, error) {
+	var igs []*models.Ingredient
 
 	// Dgraph does not allow to pass muliple UIDs as func variable. Looping.
 	for _, i := range obj.Ingredient {
@@ -283,6 +336,19 @@ func (r *recipeResolver) Tag(ctx context.Context, obj *models.Recipe) ([]*Tag, e
 		tags = append(tags, tt)
 	}
 	return tags, nil
+}
+
+func (r *ingredientResolver) Recipe(ctx context.Context, obj *models.Ingredient) ([]*models.Recipe, error) {
+	var recipes []*models.Recipe
+
+	for _, r := range obj.Recipe {
+		rr, err := getRecipe(ctx, r.UID)
+		if err != nil {
+			return nil, err
+		}
+		recipes = append(recipes, rr)
+	}
+	return recipes, nil
 }
 
 func getRecipe(ctx context.Context, uid string) (*models.Recipe, error) {
@@ -331,7 +397,7 @@ func getRecipe(ctx context.Context, uid string) (*models.Recipe, error) {
 	return &rt.Recipe[0], nil
 }
 
-func getIngredient(ctx context.Context, uid string) (*Ingredient, error) {
+func getIngredient(ctx context.Context, uid string) (*models.Ingredient, error) {
 	c, err := newClient()
 	if err != nil {
 		return nil, err
@@ -345,6 +411,9 @@ func getIngredient(ctx context.Context, uid string) (*Ingredient, error) {
 			uid
 			name
 			quantity
+			recipe: ~ingredient {
+				uid
+			}
 		}
 	}`
 
@@ -354,7 +423,7 @@ func getIngredient(ctx context.Context, uid string) (*Ingredient, error) {
 	}
 
 	var jres struct {
-		Ingredients []*Ingredient `json:"ingredients"`
+		Ingredients []*models.Ingredient `json:"ingredients"`
 	}
 
 	if err := json.Unmarshal(resp.GetJson(), &jres); err != nil {
