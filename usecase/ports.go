@@ -16,4 +16,9 @@ type Service interface {
 
 type Streamer interface {
 	Add(context.Context, string, *streamer.Message) error
+	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{})
+}
+
+type Provider interface {
+	GetRecipe(context.Context, string) (*domain.Recipe, error)
 }

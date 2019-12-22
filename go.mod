@@ -12,13 +12,14 @@ require (
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.7.2 // indirect
+	github.com/jaylane/graphql v0.2.2
 	github.com/kind84/polygo v0.0.0-20191204093731-6e0b58ceb0a0 // indirect
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190527155220-6a4d4a70508b // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd // indirect
-	github.com/spf13/viper v1.6.1 // indirect
+	github.com/spf13/viper v1.6.1
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/vektah/dataloaden v0.3.0 // indirect
 	github.com/vektah/gqlparser v1.2.0

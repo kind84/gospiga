@@ -36,7 +36,7 @@ func (s *redisStreamer) Add(ctx context.Context, stream string, msg *Message) er
 	return err
 }
 
-func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan chan interface{}, exitChan chan struct{}) {
+func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan chan Message, exitChan chan struct{}) {
 	go func() {
 		// create consumer group if not done yet
 		s.rdb.XGroupCreateMkStream(args.Stream, args.Group, "$").Result()
@@ -80,7 +80,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 				continue
 			}
 
-			jobStream := items.Val()[0]
+			stream := items.Val()[0]
 			// msgs := len(jobStream.Messages)
 			// plural := ""
 			// if msgs > 1 {
@@ -88,13 +88,13 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 			// }
 			// log.Debugf("Consumer [%s] recived %d message%s", args.Consumer, msgs, plural)
 
-			for _, rawMsg := range jobStream.Messages {
+			for _, rawMsg := range stream.Messages {
 				// log.Debugf("Consumer [%s] reading message [%s]", args.Consumer, rawMsg.ID)
 
 				lastID = rawMsg.ID
 
 				// parse message
-				strMsg, ok := rawMsg.Values["job"].(string)
+				strMsg, ok := rawMsg.Values["message"].(string)
 				if !ok {
 					// error parsing stream message
 					continue
