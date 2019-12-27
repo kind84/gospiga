@@ -47,16 +47,18 @@ func (a *App) readNewRecipes(ctx context.Context) {
 				fmt.Println("cannot read recipe ID from message.")
 			}
 			fmt.Printf("Got message for a new recipe ID %s\n", recipeID)
+
 			// call datocms to get the full recipe
 			r, err := a.provider.GetRecipe(ctx, recipeID)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			// save message
-			fmt.Println(*r)
+
+			// save recipe
 			a.service.SaveRecipe(ctx, r)
-			// ack streamer
+
+			// ack streamer & add to translations stream
 
 		case <-ctx.Done():
 			// time to exit

@@ -36,7 +36,7 @@ func main() {
 		panic("can't connect to redis")
 	}
 
-	db, err := dgraph.NewDB()
+	db, err := dgraph.NewDB(ctx)
 	if err != nil {
 		panic("can't connect to database")
 	}

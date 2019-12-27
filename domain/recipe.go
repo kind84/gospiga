@@ -1,12 +1,10 @@
 package domain
 
 type Recipe struct {
-	ID        string
-	Title     string
-	Subtitle  string
-	MainImage struct {
-		Url string
-	}
+	ID          string
+	Title       string
+	Subtitle    string
+	MainImage   Image
 	Likes       int
 	Difficulty  RecipeDifficulty
 	Cost        RecipeCost
@@ -45,9 +43,11 @@ type Ingredient struct {
 type Step struct {
 	Title       string
 	Description string
-	Image       struct {
-		Url string
-	}
+	Image       Image
+}
+
+type Image struct {
+	Url string
 }
 
 func NewRecipe(id string, title string) (*Recipe, error) {
