@@ -15,3 +15,7 @@ func NewService(db DB) *Service {
 func (s *Service) SaveRecipe(ctx context.Context, recipe *Recipe) error {
 	return s.db.SaveRecipe(ctx, recipe)
 }
+
+func (s *Service) IDSaved(ctx context.Context, id string) (bool, error) {
+	return s.db.IDSaved(ctx, id)
+}

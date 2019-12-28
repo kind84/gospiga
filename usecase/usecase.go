@@ -48,6 +48,17 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			}
 			fmt.Printf("Got message for a new recipe ID %s\n", recipeID)
 
+			// check if ID is already stored
+			ok, err := a.service.IDSaved(ctx, recipeID)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			if ok {
+				fmt.Printf("recipe ID [%s] already saved\n", recipeID)
+				continue
+			}
+
 			// call datocms to get the full recipe
 			r, err := a.provider.GetRecipe(ctx, recipeID)
 			if err != nil {
@@ -56,12 +67,17 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			}
 
 			// save recipe
-			a.service.SaveRecipe(ctx, r)
+			err = a.service.SaveRecipe(ctx, r)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 
 			// ack streamer & add to translations stream
 
 		case <-ctx.Done():
 			// time to exit
+			close(exitChan)
 		}
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -33,12 +34,12 @@ func main() {
 
 	rdb, err := redis.NewClient("localhost:6379")
 	if err != nil {
-		panic("can't connect to redis")
+		log.Fatalf("can't connect to redis: %s", err)
 	}
 
 	db, err := dgraph.NewDB(ctx)
 	if err != nil {
-		panic("can't connect to database")
+		log.Fatalf("can't connect to database: %s", err)
 	}
 
 	ds := domain.NewService(db)
@@ -50,7 +51,7 @@ func main() {
 	}
 	provider, err := provider.NewDatoProvider(token)
 	if err != nil {
-		panic("can't connect to dato cms")
+		log.Fatalf("can't connect to dato cms: %s", err)
 	}
 
 	app := usecase.NewApp(ctx, ds, db, streamer, provider)

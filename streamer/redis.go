@@ -116,6 +116,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 }
 
 func (s *redisStreamer) shouldExit(ctx context.Context, exitCh chan struct{}) bool {
+	// TODO: is exitChan really necessary?
 	select {
 	case _, ok := <-exitCh:
 		return !ok

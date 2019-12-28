@@ -2,6 +2,7 @@ package dgraph
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/dgraph-io/dgo/v2"
 	"github.com/dgraph-io/dgo/v2/protos/api"
@@ -28,33 +29,33 @@ func NewDB(ctx context.Context) (*DB, error) {
 	op := &api.Operation{}
 	op.Schema = `
 		type Recipe {
-			id        
-			title     
-			subtitle  
-			mainImage 
-			likes     
+			id
+			title
+			subtitle
+			mainImage
+			likes
 			difficulty
-			cost     
-			prepTime  
-			cookTime  
-			servings  
+			cost
+			prepTime
+			cookTime
+			servings
 			extraNotes
 			description
 			ingredients
-			steps      
-			conclusion 
+			steps
+			conclusion
 		}
 
 		type Ingredient {
-			name         
-			quantity     
+			name
+			quantity
 			unitOfMeasure
 		}
-		
+
 		type Step {
-			title      
+			title
 			description
-			image      
+			image
 		}
 
 		type Image {
@@ -73,11 +74,11 @@ func NewDB(ctx context.Context) (*DB, error) {
 		servings: int .
 		extraNotes: string .
 		description: string @lang @index(fulltext) .
-		ingredients: @count @reverse [uid] .
-		steps: @count [uid] .
+		ingredients: [uid] @count @reverse .
+		steps: [uid] @count .
 		conclusion: string .
 		name: string @lang @index(term) .
-		quantity: string . 
+		quantity: string .
 		unitOfMeasure: string .
 		image: uid .
 		url: string .
@@ -92,5 +93,44 @@ func NewDB(ctx context.Context) (*DB, error) {
 }
 
 func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
+	mu := &api.Mutation{
+		CommitNow: true,
+	}
+
+	dRecipe := Recipe{*recipe, []string{}}
+
+	rb, err := json.Marshal(dRecipe)
+	if err != nil {
+		return err
+	}
+
+	mu.SetJson = rb
+	_, err = db.Dgraph.NewTxn().Mutate(ctx, mu)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (db *DB) IDSaved(ctx context.Context, id string) (bool, error) {
+	vars := map[string]string{"$id": id}
+	q := `query IDSaved($id: string){
+		recipes(func: eq(id, $id)) {
+			uid
+		}
+	}`
+
+	resp, err := db.Dgraph.NewTxn().QueryWithVars(ctx, q, vars)
+	if err != nil {
+		return false, err
+	}
+
+	var root struct {
+		Recipes []Recipe `json:"recipes"`
+	}
+	err = json.Unmarshal(resp.Json, &root)
+	if err != nil {
+		return false, err
+	}
+	return len(root.Recipes) > 0, nil
 }

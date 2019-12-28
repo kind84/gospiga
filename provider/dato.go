@@ -65,5 +65,8 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*domain.Reci
 		Recipe domain.Recipe
 	}
 	err := p.client.Run(ctx, req, &r)
-	return &r.Recipe, err
+	if err != nil {
+		return nil, err
+	}
+	return &r.Recipe, nil
 }

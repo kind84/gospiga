@@ -12,6 +12,7 @@ type DB interface {
 
 type Service interface {
 	SaveRecipe(context.Context, *domain.Recipe) error
+	IDSaved(context.Context, string) (bool, error)
 }
 
 type Streamer interface {
