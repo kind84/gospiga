@@ -8,7 +8,7 @@ import (
 	"github.com/dgraph-io/dgo/v2/protos/api"
 	"google.golang.org/grpc"
 
-	"github.com/kind84/gospiga/domain"
+	"github.com/kind84/gospiga/server/domain"
 )
 
 type DB struct {

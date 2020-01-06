@@ -6,7 +6,7 @@ import (
 
 	"github.com/jaylane/graphql"
 
-	"github.com/kind84/gospiga/domain"
+	"github.com/kind84/gospiga/server/domain"
 )
 
 type provider struct {

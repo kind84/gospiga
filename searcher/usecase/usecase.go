@@ -4,22 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	gostreamer "github.com/kind84/gospiga/streamer"
+	gostreamer "github.com/kind84/gospiga/pkg/streamer"
+	"github.com/kind84/gospiga/searcher/domain"
 )
 
 type App struct {
+	ft       FT
 	service  Service
-	db       DB
 	streamer Streamer
-	provider Provider
 }
 
-func NewApp(ctx context.Context, service Service, db DB, streamer Streamer, provider Provider) *App {
+func NewApp(ctx context.Context, ft FT, service Service, streamer Streamer) *App {
 	app := &App{
+		ft:       ft,
 		service:  service,
-		db:       db,
 		streamer: streamer,
-		provider: provider,
 	}
 
 	// start streamer to listen for new recipes.
@@ -48,32 +47,19 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			}
 			fmt.Printf("Got message for a new recipe ID %s\n", recipeID)
 
-			// check if ID is already stored
-			ok, err := a.service.IDSaved(ctx, recipeID)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			if ok {
-				fmt.Printf("recipe ID [%s] already saved\n", recipeID)
-				continue
-			}
+			// check if ID is already indexed
 
-			// call datocms to get the full recipe
-			r, err := a.provider.GetRecipe(ctx, recipeID)
+			// parse recipe from message
+			var r *domain.Recipe
+
+			// index recipe
+			err := a.service.IndexRecipe(ctx, r)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 
-			// save recipe
-			err = a.service.SaveRecipe(ctx, r)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-
-			// ack streamer & add to translations stream
+			// ack & add recipeIndexed
 
 		case <-ctx.Done():
 			// time to exit

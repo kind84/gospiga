@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/kind84/gospiga/streamer"
+	"github.com/kind84/gospiga/pkg/streamer"
 )
 
 const stream = "new-recipes"

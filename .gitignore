@@ -14,4 +14,4 @@
 *.vscode
 *.swp
 *.toml
-*rdb
+*.rdb

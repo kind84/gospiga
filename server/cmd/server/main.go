@@ -9,13 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 
-	"github.com/kind84/gospiga/api"
-	"github.com/kind84/gospiga/db/dgraph"
-	"github.com/kind84/gospiga/domain"
 	"github.com/kind84/gospiga/pkg/redis"
-	"github.com/kind84/gospiga/provider"
-	"github.com/kind84/gospiga/streamer"
-	"github.com/kind84/gospiga/usecase"
+	"github.com/kind84/gospiga/pkg/streamer"
+	"github.com/kind84/gospiga/server/api"
+	"github.com/kind84/gospiga/server/db/dgraph"
+	"github.com/kind84/gospiga/server/domain"
+	"github.com/kind84/gospiga/server/provider"
+	"github.com/kind84/gospiga/server/usecase"
 )
 
 func init() {
@@ -32,7 +32,7 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	rdb, err := redis.NewClient("localhost:6379")
+	rdb, err := redis.NewClient("redis:6379")
 	if err != nil {
 		log.Fatalf("can't connect to redis: %s", err)
 	}

@@ -14,6 +14,6 @@ resolver:
   type: Resolver
 models:
   Recipe:
-    model: github.com/kind84/gospiga/models.Recipe
+    model: github.com/kind84/gospiga/domain.Recipe
   Ingredient:
-    model: github.com/kind84/gospiga/models.Ingredient
+    model: github.com/kind84/gospiga/domain.Ingredient

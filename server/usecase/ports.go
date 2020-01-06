@@ -3,8 +3,8 @@ package usecase
 import (
 	"context"
 
-	"github.com/kind84/gospiga/domain"
-	"github.com/kind84/gospiga/streamer"
+	"github.com/kind84/gospiga/pkg/streamer"
+	"github.com/kind84/gospiga/server/domain"
 )
 
 type DB interface {
