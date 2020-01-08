@@ -32,7 +32,7 @@ func NewApp(ctx context.Context, db DB, ft FT, streamer Streamer) *App {
 func (a *App) readNewRecipes(ctx context.Context) {
 	msgChan := make(chan gostreamer.Message)
 	exitChan := make(chan struct{})
-	stream := "new-recipes"
+	stream := "saved-recipes"
 	group := "finder-usecase"
 
 	args := &gostreamer.StreamArgs{
@@ -56,12 +56,11 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			// check if ID is already indexed
 			if exists, _ := a.db.IDExists(fmt.Sprintf("recipe-%s", recipeRaw.ID)); exists {
 				fmt.Printf("recipe ID [%s] already indexed", recipeRaw.ID)
-				// ack HERE
+
 				err := a.streamer.Ack(stream, group, msg.ID)
 				if err != nil {
 					fmt.Printf("error ack'ing msg ID %s\n", msg.ID)
 				}
-
 				continue
 			}
 

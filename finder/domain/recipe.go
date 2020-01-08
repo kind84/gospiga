@@ -3,7 +3,7 @@ package domain
 import (
 	"fmt"
 	"github.com/kind84/gospiga/pkg/types"
-	"strings"
+	"strconv"
 )
 
 type Recipe struct {
@@ -38,14 +38,13 @@ func (r *Recipe) MapFromType(rt *types.Recipe) {
 	r.ExtraNotes = rt.ExtraNotes
 
 	for _, ingr := range rt.Ingredients {
-		var sb strings.Builder
-		sb.WriteString(ingr.Quantity.(string))
-		sb.WriteString(" ")
-		sb.WriteString(ingr.UnitOfMeasure)
-		sb.WriteString(" ")
-		sb.WriteString(ingr.Name)
-
-		r.Ingredients = append(r.Ingredients, sb.String())
+		var qty string
+		if q, ok := ingr.Quantity.(string); ok {
+			qty = q
+		} else {
+			qty = strconv.Itoa(ingr.Quantity.(int))
+		}
+		r.Ingredients = append(r.Ingredients, fmt.Sprintf("%s %s %s", qty, ingr.UnitOfMeasure, ingr.Name))
 	}
 
 	for _, step := range rt.Steps {
