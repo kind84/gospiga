@@ -3,24 +3,21 @@ package usecase
 import (
 	"context"
 
+	"github.com/kind84/gospiga/finder/domain"
 	"github.com/kind84/gospiga/pkg/streamer"
-	"github.com/kind84/gospiga/server/domain"
 )
 
 type DB interface {
+	IDExists(id string) (bool, error)
 }
 
-type Service interface {
-	SaveRecipe(context.Context, *domain.Recipe) error
-	IDSaved(context.Context, string) (bool, error)
+type FT interface {
+	IndexRecipe(recipe *domain.Recipe) error
+	SearchRecipe(query string) ([]string, error)
 }
 
 type Streamer interface {
 	Ack(string, string, ...string) error
 	Add(string, *streamer.Message) error
 	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{})
-}
-
-type Provider interface {
-	GetRecipe(context.Context, string) (*domain.Recipe, error)
 }

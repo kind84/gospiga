@@ -9,12 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 
+	"github.com/kind84/gospiga/finder/api"
+	"github.com/kind84/gospiga/finder/db"
+	"github.com/kind84/gospiga/finder/fulltext"
+	"github.com/kind84/gospiga/finder/usecase"
 	"github.com/kind84/gospiga/pkg/redis"
 	"github.com/kind84/gospiga/pkg/streamer"
-	"github.com/kind84/gospiga/searcher/api"
-	"github.com/kind84/gospiga/searcher/domain"
-	"github.com/kind84/gospiga/searcher/fulltext"
-	"github.com/kind84/gospiga/searcher/usecase"
 )
 
 func init() {
@@ -41,10 +41,10 @@ func main() {
 		log.Fatal("cannot initialize redis fulltext")
 	}
 
-	ds := domain.NewService(rdb)
+	db := db.NewRedisDB(rdb)
 	streamer := streamer.NewRedisStreamer(rdb)
 
-	app := usecase.NewApp(ctx, ft, ds, streamer)
+	app := usecase.NewApp(ctx, db, ft, streamer)
 	service := api.NewService(app)
 
 	r := gin.Default()

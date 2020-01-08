@@ -10,5 +10,5 @@ const stream = "new-recipes"
 
 func (a *App) NewRecipe(ctx context.Context, recipeID string) error {
 	msg := &streamer.Message{Payload: recipeID}
-	return a.streamer.Add(ctx, stream, msg)
+	return a.streamer.Add(stream, msg)
 }

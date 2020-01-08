@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
-	"github.com/kind84/gospiga/searcher/domain"
+	"github.com/kind84/gospiga/finder/domain"
 )
 
 type redisFT struct {
@@ -15,7 +15,7 @@ type redisFT struct {
 func NewRedisFT(addr string) *redisFT {
 	// Create a client. By default a client is schemaless
 	// unless a schema is provided when creating the index
-	c := redisearch.NewClient(addr, "myIndex")
+	c := redisearch.NewClient(addr, "recipes")
 	if c == nil {
 		return nil
 	}
@@ -43,6 +43,7 @@ func NewRedisFT(addr string) *redisFT {
 func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 	// Create a document with an id and given score
 	doc := redisearch.NewDocument(fmt.Sprintf("recipe-%s", recipe.ID), 1.0)
+
 	doc.Set("title", recipe.Title).
 		Set("subtitle", recipe.Subtitle).
 		Set("description", recipe.Description).

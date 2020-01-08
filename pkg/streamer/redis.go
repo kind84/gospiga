@@ -22,7 +22,12 @@ func NewRedisStreamer(client *redis.Client) *redisStreamer {
 	return &redisStreamer{client}
 }
 
-func (s *redisStreamer) Add(ctx context.Context, stream string, msg *Message) error {
+func (s *redisStreamer) Ack(stream, group string, ids ...string) error {
+	_, err := s.rdb.XAck(stream, group, ids...).Result()
+	return err
+}
+
+func (s *redisStreamer) Add(stream string, msg *Message) error {
 	jmsg, err := json.Marshal(msg)
 	if err != nil {
 		return err
