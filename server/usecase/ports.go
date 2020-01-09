@@ -18,6 +18,7 @@ type Service interface {
 type Streamer interface {
 	Ack(string, string, ...string) error
 	Add(string, *streamer.Message) error
+	AckAndAdd(from *streamer.StreamArgs, toStream string, id string, msg *streamer.Message) error
 	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{})
 }
 

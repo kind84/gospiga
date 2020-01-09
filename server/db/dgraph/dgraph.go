@@ -98,6 +98,7 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 	}
 
 	dRecipe := Recipe{*recipe, []string{}}
+	dRecipe.ID = "_:recipe"
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
@@ -105,10 +106,12 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 	}
 
 	mu.SetJson = rb
-	_, err = db.Dgraph.NewTxn().Mutate(ctx, mu)
+	res, err := db.Dgraph.NewTxn().Mutate(ctx, mu)
 	if err != nil {
 		return err
 	}
+	ruid := res.Uids["recipe"]
+	recipe.ID = ruid
 	return nil
 }
 

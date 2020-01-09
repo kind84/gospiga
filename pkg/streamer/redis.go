@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v7"
 )
 
 type redisStreamer struct {
@@ -38,6 +38,30 @@ func (s *redisStreamer) Add(stream string, msg *Message) error {
 		Values: map[string]interface{}{"message": string(jmsg)},
 	}
 	_, err = s.rdb.XAdd(xargs).Result()
+	return err
+}
+
+// AckAndAdd atomically acknowledges a given message ID from a stream and
+// sends the given message to another stream.
+func (s *redisStreamer) AckAndAdd(from *StreamArgs, toStream string, id string, msg *Message) error {
+	jmsg, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	ackNaddScript := redis.NewScript(`
+		if redis.call("xack", KEYS[1], ARGV[1], ARGV[2]) == 1 then
+			return redis.call("xadd", KEYS[2], "*", ARGV[3], ARGV[4])
+		end
+		return false
+	`)
+
+	_, err = ackNaddScript.Run(
+		s.rdb,
+		[]string{from.Stream, toStream}, // KEYS
+		[]string{from.Group, id, "message", string(jmsg)}, // ARGV
+	).Result()
+
 	return err
 }
 

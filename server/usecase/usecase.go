@@ -75,8 +75,11 @@ func (a *App) readNewRecipes(ctx context.Context) {
 				continue
 			}
 
-			// ack (& add recipeSaved?)
-			err = a.streamer.Ack(stream, group, msg.ID)
+			rMsg := &gostreamer.Message{
+				Payload: r,
+			}
+
+			err = a.streamer.AckAndAdd(args, "saved-recipes", msg.ID, rMsg)
 			if err != nil {
 				fmt.Printf("error ack'ing msg ID %s\n", msg.ID)
 			}

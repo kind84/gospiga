@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v7"
 )
 
 func NewClient(host string) (*redis.Client, error) {

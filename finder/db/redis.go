@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v7"
 )
 
 type redisDB struct {
