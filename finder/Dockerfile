@@ -1,17 +1,17 @@
 FROM dependencies AS builder
 
-WORKDIR /gospiga/searcher
+WORKDIR /gospiga/finder
 
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-go build -o /go/bin/searcher /gospiga/searcher/cmd/searcher
+go build -o /go/bin/finder /gospiga/finder/cmd/finder
 
-ENTRYPOINT ["/go/bin/searcher"]
+ENTRYPOINT ["/go/bin/finder"]
 
 
 FROM alpine:latest
 
-COPY --from=builder /go/bin/searcher /bin/searcher
+COPY --from=builder /go/bin/finder /bin/finder
 
-ENTRYPOINT ["/bin/searcher"]
+ENTRYPOINT ["/bin/finder"]

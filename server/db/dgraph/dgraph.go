@@ -3,6 +3,9 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/dgraph-io/dgo/v2"
 	"github.com/dgraph-io/dgo/v2/protos/api"
@@ -16,9 +19,21 @@ type DB struct {
 }
 
 func NewDB(ctx context.Context) (*DB, error) {
-	d, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
+	fmt.Println("connecting to dgraph")
+	d, err := grpc.Dial("alpha:9080", grpc.WithInsecure())
 	if err != nil {
-		return nil, err
+		fmt.Println("failed to connect to dgraph, retrying")
+		for i := 1; i < 4; i++ {
+			err = nil
+			time.Sleep(time.Second)
+			d, err = grpc.Dial("alpha:9080", grpc.WithInsecure())
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	dgraph := dgo.NewDgraphClient(
@@ -83,6 +98,13 @@ func NewDB(ctx context.Context) (*DB, error) {
 		image: uid .
 		url: string .
 	`
+	// check if server is ready to go
+	res, err := http.Get("http://alpha:8080/health")
+	for err != nil || res.StatusCode != http.StatusOK {
+		time.Sleep(time.Second)
+		res, err = http.Get("http://alpha:8080/health")
+	}
+	fmt.Println("server ready")
 
 	err = dgraph.Alter(ctx, op)
 	if err != nil {
