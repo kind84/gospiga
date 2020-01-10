@@ -104,7 +104,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 			// check if we are up to date
 			if len(items.Val()) == 0 || len(items.Val()[0].Messages) == 0 {
 				if checkHistory {
-					log.Debugf("Done reading stream history.")
+					log.Debug("Done reading stream history.")
 				}
 				checkHistory = false
 				continue

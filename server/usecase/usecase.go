@@ -2,7 +2,8 @@ package usecase
 
 import (
 	"context"
-	"fmt"
+
+	log "github.com/sirupsen/logrus"
 
 	gostreamer "github.com/kind84/gospiga/pkg/streamer"
 )
@@ -46,17 +47,18 @@ func (a *App) readNewRecipes(ctx context.Context) {
 		case msg := <-msgChan:
 			recipeID, ok := msg.Payload.(string)
 			if !ok {
-				fmt.Println("cannot read recipe ID from message.")
+				log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
+				continue
 			}
-			fmt.Printf("Got message for a new recipe ID %s\n", recipeID)
+			log.Debugf("Got message for a new recipe ID [%s]", recipeID)
 
 			// check if ID is already stored
 			if saved, _ := a.service.IDSaved(ctx, recipeID); saved {
-				fmt.Printf("recipe ID [%s] already saved\n", recipeID)
+				log.Debugf("recipe ID [%s] already saved", recipeID)
 				// ack HERE
 				err := a.streamer.Ack(stream, group, msg.ID)
 				if err != nil {
-					fmt.Printf("error ack'ing msg ID %s\n", msg.ID)
+					log.Errorf("error ack'ing msg ID [%s]", msg.ID)
 				}
 				continue
 			}
@@ -64,14 +66,14 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			// call datocms to get the full recipe
 			r, err := a.provider.GetRecipe(ctx, recipeID)
 			if err != nil {
-				fmt.Println(err)
+				log.Error(err)
 				continue
 			}
 
 			// save recipe
 			err = a.service.SaveRecipe(ctx, r)
 			if err != nil {
-				fmt.Println(err)
+				log.Error(err)
 				continue
 			}
 
@@ -81,7 +83,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 
 			err = a.streamer.AckAndAdd(args, "saved-recipes", msg.ID, rMsg)
 			if err != nil {
-				fmt.Printf("error ack'ing msg ID %s\n", msg.ID)
+				log.Errorf("error ack'ing msg ID [%s]", msg.ID)
 			}
 
 		case <-ctx.Done():

@@ -3,12 +3,12 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/dgraph-io/dgo/v2"
 	"github.com/dgraph-io/dgo/v2/protos/api"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"github.com/kind84/gospiga/server/domain"
@@ -19,10 +19,9 @@ type DB struct {
 }
 
 func NewDB(ctx context.Context) (*DB, error) {
-	fmt.Println("connecting to dgraph")
 	d, err := grpc.Dial("alpha:9080", grpc.WithInsecure())
 	if err != nil {
-		fmt.Println("failed to connect to dgraph, retrying")
+		log.Warn("failed to connect to dgraph, retrying..")
 		for i := 1; i < 4; i++ {
 			err = nil
 			time.Sleep(time.Second)
@@ -32,6 +31,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 			}
 		}
 		if err != nil {
+			log.Error("failed to connect to dgraph")
 			return nil, err
 		}
 	}
@@ -104,7 +104,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 		time.Sleep(time.Second)
 		res, err = http.Get("http://alpha:8080/health")
 	}
-	fmt.Println("server ready")
+	log.Debug("dgraph server ready")
 
 	err = dgraph.Alter(ctx, op)
 	if err != nil {

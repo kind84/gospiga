@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -48,12 +47,11 @@ func (a *App) readNewRecipes(ctx context.Context) {
 		select {
 		case msg := <-msgChan:
 			// parse recipe from message
-			var recipeRaw types.Recipe
-			err := json.Unmarshal(msg.Payload.([]byte), &recipeRaw)
-			if err != nil {
-				log.Errorf("cannot parse recipe from message: %s\n", err)
+			recipeRaw, ok := msg.Payload.(types.Recipe)
+			if !ok {
+				log.Fatalf("cannot parse recipe from message ID [%s]: ", msg.ID)
 			}
-			log.Debugf("Got message for a new recipe ID %s\n", recipeRaw.ID)
+			log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
 
 			// check if ID is already indexed
 			if exists, _ := a.db.IDExists(fmt.Sprintf("recipe-%s", recipeRaw.ID)); exists {
@@ -61,7 +59,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 
 				err := a.streamer.Ack(stream, group, msg.ID)
 				if err != nil {
-					log.Errorf("error ack'ing msg ID %s\n", msg.ID)
+					log.Errorf("error ack'ing msg ID [%s]", msg.ID)
 				}
 				continue
 			}
@@ -70,7 +68,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			r.MapFromType(&recipeRaw)
 
 			// index recipe
-			err = a.ft.IndexRecipe(r)
+			err := a.ft.IndexRecipe(r)
 			if err != nil {
 				log.Error(err)
 				continue
@@ -79,7 +77,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			// ack (& add recipeIndexed?)
 			err = a.streamer.Ack(stream, group, msg.ID)
 			if err != nil {
-				log.Errorf("error ack'ing msg ID %s\n", msg.ID)
+				log.Errorf("error ack'ing msg ID [%s]", msg.ID)
 			}
 
 		case <-ctx.Done():

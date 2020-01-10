@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,12 +17,7 @@ import (
 )
 
 func init() {
-	log.SetReportCaller(true)
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stderr)
-	log.SetLevel(log.DebugLevel)
-
-	log.Infof("Setting up configuration...")
+	log.Info("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("gospiga")
