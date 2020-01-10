@@ -6,6 +6,7 @@ import (
 	"time"
 
 	redis "github.com/go-redis/redis/v7"
+	log "github.com/sirupsen/logrus"
 )
 
 type redisStreamer struct {
@@ -94,7 +95,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 			if items == nil {
 				// Timeout, check if it's time to exit
 				if s.shouldExit(ctx, exitChan) {
-					// log.Debugf("Stop reading stream [%s]", args.Stream)
+					log.Debugf("Time to exit, stop reading stream [%s]", args.Stream)
 					return
 				}
 				continue
@@ -103,22 +104,22 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 			// check if we are up to date
 			if len(items.Val()) == 0 || len(items.Val()[0].Messages) == 0 {
 				if checkHistory {
-					// log.Debugf("Done reading stream history.")
+					log.Debugf("Done reading stream history.")
 				}
 				checkHistory = false
 				continue
 			}
 
 			stream := items.Val()[0]
-			// msgs := len(jobStream.Messages)
-			// plural := ""
-			// if msgs > 1 {
-			// 	plural = "s"
-			// }
-			// log.Debugf("Consumer [%s] recived %d message%s", args.Consumer, msgs, plural)
+			msgs := len(stream.Messages)
+			plural := ""
+			if msgs > 1 {
+				plural = "s"
+			}
+			log.Debugf("Consumer [%s] recived %d message%s", args.Consumer, msgs, plural)
 
 			for _, rawMsg := range stream.Messages {
-				// log.Debugf("Consumer [%s] reading message [%s]", args.Consumer, rawMsg.ID)
+				log.Debugf("Consumer [%s] reading message [%s]", args.Consumer, rawMsg.ID)
 
 				lastID = rawMsg.ID
 

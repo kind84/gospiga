@@ -2,9 +2,10 @@ package fulltext
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kind84/gospiga/finder/domain"
 )
 

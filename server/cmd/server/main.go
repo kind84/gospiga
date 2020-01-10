@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
 	"github.com/kind84/gospiga/pkg/redis"
@@ -19,10 +19,15 @@ import (
 )
 
 func init() {
-	fmt.Println("Setting up configuration...")
+	log.SetReportCaller(true)
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stderr)
+	log.SetLevel(log.DebugLevel)
+
+	log.Infof("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
-	viper.SetEnvPrefix("gospiga")
+	// viper.SetEnvPrefix("gospiga")
 	viper.AutomaticEnv()
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)

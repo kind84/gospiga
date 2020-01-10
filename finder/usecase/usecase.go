@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kind84/gospiga/finder/domain"
 	gostreamer "github.com/kind84/gospiga/pkg/streamer"
 	"github.com/kind84/gospiga/pkg/types"
@@ -49,17 +51,17 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			var recipeRaw types.Recipe
 			err := json.Unmarshal(msg.Payload.([]byte), &recipeRaw)
 			if err != nil {
-				fmt.Printf("cannot parse recipe from message: %s\n", err)
+				log.Errorf("cannot parse recipe from message: %s\n", err)
 			}
-			fmt.Printf("Got message for a new recipe ID %s\n", recipeRaw.ID)
+			log.Debugf("Got message for a new recipe ID %s\n", recipeRaw.ID)
 
 			// check if ID is already indexed
 			if exists, _ := a.db.IDExists(fmt.Sprintf("recipe-%s", recipeRaw.ID)); exists {
-				fmt.Printf("recipe ID [%s] already indexed", recipeRaw.ID)
+				log.Debugf("recipe ID [%s] already indexed", recipeRaw.ID)
 
 				err := a.streamer.Ack(stream, group, msg.ID)
 				if err != nil {
-					fmt.Printf("error ack'ing msg ID %s\n", msg.ID)
+					log.Errorf("error ack'ing msg ID %s\n", msg.ID)
 				}
 				continue
 			}
@@ -70,14 +72,14 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			// index recipe
 			err = a.ft.IndexRecipe(r)
 			if err != nil {
-				fmt.Println(err)
+				log.Error(err)
 				continue
 			}
 
 			// ack (& add recipeIndexed?)
 			err = a.streamer.Ack(stream, group, msg.ID)
 			if err != nil {
-				fmt.Printf("error ack'ing msg ID %s\n", msg.ID)
+				log.Errorf("error ack'ing msg ID %s\n", msg.ID)
 			}
 
 		case <-ctx.Done():
