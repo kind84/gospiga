@@ -17,6 +17,8 @@ import (
 )
 
 func init() {
+	log.SetLevel(log.DebugLevel)
+
 	log.Info("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")

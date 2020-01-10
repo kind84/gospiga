@@ -33,7 +33,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 	msgChan := make(chan gostreamer.Message)
 	exitChan := make(chan struct{})
 	stream := "new-recipes"
-	group := "usecase"
+	group := "server-usecase"
 
 	args := &gostreamer.StreamArgs{
 		Stream:   stream,

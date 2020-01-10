@@ -23,7 +23,9 @@ type Recipe struct {
 	Conclusion  string                 `json:"conclusion,omitempty"`
 }
 
-func (r *Recipe) MapFromType(rt *types.Recipe) {
+func MapFromType(rt *types.Recipe) *Recipe {
+	var r Recipe
+
 	r.ID = rt.ID
 	r.Title = rt.Title
 	r.Subtitle = rt.Subtitle
@@ -42,7 +44,7 @@ func (r *Recipe) MapFromType(rt *types.Recipe) {
 		if q, ok := ingr.Quantity.(string); ok {
 			qty = q
 		} else {
-			qty = strconv.Itoa(ingr.Quantity.(int))
+			qty = strconv.Itoa(int(ingr.Quantity.(float64)))
 		}
 		r.Ingredients = append(r.Ingredients, fmt.Sprintf("%s %s %s", qty, ingr.UnitOfMeasure, ingr.Name))
 	}
@@ -50,4 +52,6 @@ func (r *Recipe) MapFromType(rt *types.Recipe) {
 	for _, step := range rt.Steps {
 		r.Steps = append(r.Steps, fmt.Sprintf("%s %s", step.Title, step.Description))
 	}
+
+	return &r
 }

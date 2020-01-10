@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -46,10 +47,15 @@ func (a *App) readNewRecipes(ctx context.Context) {
 	for {
 		select {
 		case msg := <-msgChan:
-			// parse recipe from message
-			recipeRaw, ok := msg.Payload.(types.Recipe)
-			if !ok {
-				log.Fatalf("cannot parse recipe from message ID [%s]: ", msg.ID)
+			// ping-pong to parse recipe from message
+			var recipeRaw types.Recipe
+			jr, err := json.Marshal(msg.Payload)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = json.Unmarshal(jr, &recipeRaw)
+			if err != nil {
+				log.Fatal(err)
 			}
 			log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
 
@@ -64,11 +70,10 @@ func (a *App) readNewRecipes(ctx context.Context) {
 				continue
 			}
 
-			var r *domain.Recipe
-			r.MapFromType(&recipeRaw)
+			r := domain.MapFromType(&recipeRaw)
 
 			// index recipe
-			err := a.ft.IndexRecipe(r)
+			err = a.ft.IndexRecipe(r)
 			if err != nil {
 				log.Error(err)
 				continue

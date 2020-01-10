@@ -42,6 +42,13 @@ services:
         image: redislabs/redisearch:latest
         ports:
             - "6379:6379"
+        volumes:
+            - type: volume
+              source: redis
+              target: /data
+              volume:
+                  nocopy: true
+        command: ["redis-server", "--appendonly", "yes", "--loadmodule", "/usr/lib/redis/modules/redisearch.so"]
     zero:
         image: dgraph/dgraph:latest
         volumes:
@@ -82,3 +89,4 @@ services:
 
 volumes:
     dgraph:
+    redis:
