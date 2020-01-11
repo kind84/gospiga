@@ -12,6 +12,7 @@ type DB interface {
 
 type Service interface {
 	SaveRecipe(context.Context, *domain.Recipe) error
+	GetRecipeByID(context.Context, string) (*domain.Recipe, error)
 	IDSaved(context.Context, string) (bool, error)
 }
 

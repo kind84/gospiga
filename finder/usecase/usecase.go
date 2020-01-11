@@ -91,3 +91,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 		}
 	}
 }
+
+func (a *App) Search(ctx context.Context, query string) ([]string, error) {
+	return a.ft.SearchRecipes(query)
+}

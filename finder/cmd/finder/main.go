@@ -50,6 +50,6 @@ func main() {
 	service := api.NewService(app)
 
 	r := gin.Default()
-	r.POST("/search-recipe", service.SearchRecipe)
+	r.POST("/search-recipe", service.SearchRecipes)
 	r.Run()
 }

@@ -2,6 +2,7 @@ package fulltext
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
 	log "github.com/sirupsen/logrus"
@@ -10,14 +11,14 @@ import (
 )
 
 type redisFT struct {
-	client *redisearch.Client
+	ft *redisearch.Client
 }
 
 func NewRedisFT(addr string) *redisFT {
 	// Create a client. By default a client is schemaless
 	// unless a schema is provided when creating the index
-	c := redisearch.NewClient(addr, "recipes")
-	if c == nil {
+	ft := redisearch.NewClient(addr, "recipes")
+	if ft == nil {
 		return nil
 	}
 
@@ -31,14 +32,14 @@ func NewRedisFT(addr string) *redisFT {
 		AddField(redisearch.NewTextField("conclusion"))
 
 	// Drop an existing index. If the index does not exist an error is returned
-	c.Drop()
+	ft.Drop()
 
 	// Create the index with the given schema
-	if err := c.CreateIndex(sc); err != nil {
+	if err := ft.CreateIndex(sc); err != nil {
 		log.Fatal(err)
 	}
 
-	return &redisFT{c}
+	return &redisFT{ft}
 }
 
 func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
@@ -53,24 +54,23 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 		Set("conclusion", recipe.Conclusion)
 
 	// Index the document. The API accepts multiple documents at a time,
-	if err := r.client.IndexOptions(redisearch.DefaultIndexingOptions, doc); err != nil {
+	if err := r.ft.IndexOptions(redisearch.DefaultIndexingOptions, doc); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *redisFT) SearchRecipe(query string) ([]string, error) {
-	// Searching with limit and sorting
-	docs, tot, err := r.client.Search(redisearch.NewQuery("hello world").
-		Limit(0, 2).
-		SetReturnFields("title"))
+func (r *redisFT) SearchRecipes(query string) ([]string, error) {
+	docs, tot, err := r.ft.Search(redisearch.NewQuery(query))
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
 	ids := make([]string, 0, tot)
 	for _, doc := range docs {
-		ids = append(ids, doc.Id)
+		id := strings.Split(doc.Id, "recipe-")[1]
+		ids = append(ids, id)
 	}
 	return ids, nil
 }

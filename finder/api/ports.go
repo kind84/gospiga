@@ -5,5 +5,5 @@ import (
 )
 
 type App interface {
-	SearchRecipe(context.Context, string) error
+	Search(context.Context, string) ([]string, error)
 }

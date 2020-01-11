@@ -52,11 +52,15 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			}
 			log.Debugf("Got message for a new recipe ID [%s]", recipeID)
 
-			// check if ID is already stored
-			if saved, _ := a.service.IDSaved(ctx, recipeID); saved {
+			// check if recipe is already stored
+			if r, err := a.service.GetRecipeByID(ctx, recipeID); err != nil && r != nil {
 				log.Debugf("recipe ID [%s] already saved", recipeID)
-				// ack HERE
-				err := a.streamer.Ack(stream, group, msg.ID)
+
+				rMsg := &gostreamer.Message{
+					Payload: r,
+				}
+
+				err = a.streamer.AckAndAdd(args, "saved-recipes", msg.ID, rMsg)
 				if err != nil {
 					log.Errorf("error ack'ing msg ID [%s]", msg.ID)
 				}

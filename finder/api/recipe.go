@@ -4,20 +4,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type NewRecipeRequest struct {
-	Message  string `json:"message"`
-	EntityID string `json:"entity_id"`
+type SearchRequest struct {
+	Query string `json:"query"`
 }
 
-func (s *GospigaService) SearchRecipe(c *gin.Context) {
-	var req NewRecipeRequest
+func (s *GospigaService) SearchRecipes(c *gin.Context) {
+	var req SearchRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.Error(err)
 	}
 
-	err = s.app.SearchRecipe(c.Copy().Request.Context(), req.EntityID)
+	ids, err := s.app.Search(c.Copy().Request.Context(), req.Query)
 	if err != nil {
 		c.Error(err)
 	}
+	c.JSON(200, gin.H{
+		"ids": ids,
+	})
 }
