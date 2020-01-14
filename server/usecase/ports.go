@@ -13,6 +13,7 @@ type DB interface {
 type Service interface {
 	SaveRecipe(context.Context, *domain.Recipe) error
 	GetRecipeByID(context.Context, string) (*domain.Recipe, error)
+	GetRecipesByIDs(context.Context, []string) ([]*domain.Recipe, error)
 	IDSaved(context.Context, string) (bool, error)
 }
 
@@ -25,4 +26,8 @@ type Streamer interface {
 
 type Provider interface {
 	GetRecipe(context.Context, string) (*domain.Recipe, error)
+}
+
+type Stub interface {
+	SearchRecipes(context.Context, string) ([]string, error)
 }

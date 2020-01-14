@@ -2,19 +2,27 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	"google.golang.org/grpc"
+
 	"github.com/kind84/gospiga/finder/api"
 	"github.com/kind84/gospiga/finder/db"
 	"github.com/kind84/gospiga/finder/fulltext"
+	gogrpc "github.com/kind84/gospiga/finder/grpc"
 	"github.com/kind84/gospiga/finder/usecase"
 	"github.com/kind84/gospiga/pkg/redis"
 	"github.com/kind84/gospiga/pkg/streamer"
+	pb "github.com/kind84/gospiga/proto"
 )
+
+const defaultPort = "50051"
 
 func init() {
 	log.SetLevel(log.DebugLevel)
@@ -48,6 +56,17 @@ func main() {
 
 	app := usecase.NewApp(ctx, db, ft, streamer)
 	service := api.NewService(app)
+
+	server := gogrpc.NewFinderServer(app)
+	grpcServer := grpc.NewServer()
+	pb.RegisterFinderServer(grpcServer, server)
+
+	port := viper.GetString("TCP_PORT")
+	if port == "" {
+		port = defaultPort
+	}
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	grpcServer.Serve(lis)
 
 	r := gin.Default()
 	r.POST("/search-recipe", service.SearchRecipes)

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+service Finder {
+	rpc SearchRecipes(SearchRecipesRequest) returns (SearchRecipesResponse) {}
+}
+
+message SearchRecipesRequest {
+	string query = 1;
+}
+
+message SearchRecipesResponse {
+	repeated string ids = 1;
+}

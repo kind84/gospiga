@@ -9,6 +9,7 @@ require (
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-redis/redis/v7 v7.0.0-beta.5
+	github.com/golang/protobuf v1.3.2
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/jaylane/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect

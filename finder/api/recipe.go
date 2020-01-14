@@ -15,7 +15,7 @@ func (s *GospigaService) SearchRecipes(c *gin.Context) {
 		c.Error(err)
 	}
 
-	ids, err := s.app.Search(c.Copy().Request.Context(), req.Query)
+	ids, err := s.app.SearchRecipes(c.Copy().Request.Context(), req.Query)
 	if err != nil {
 		c.Error(err)
 	}

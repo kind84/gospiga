@@ -2,20 +2,27 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	"google.golang.org/grpc"
+
 	"github.com/kind84/gospiga/pkg/redis"
 	"github.com/kind84/gospiga/pkg/streamer"
+	pb "github.com/kind84/gospiga/proto"
 	"github.com/kind84/gospiga/server/api"
 	"github.com/kind84/gospiga/server/db/dgraph"
 	"github.com/kind84/gospiga/server/domain"
+	gogrpc "github.com/kind84/gospiga/server/grpc"
 	"github.com/kind84/gospiga/server/provider"
 	"github.com/kind84/gospiga/server/usecase"
 )
+
+const defaultFinderPort = "50051"
 
 func init() {
 	log.SetLevel(log.DebugLevel)
@@ -55,7 +62,20 @@ func main() {
 		log.Fatalf("can't connect to dato cms: %s", err)
 	}
 
-	app := usecase.NewApp(ctx, ds, db, streamer, provider)
+	finderPort := viper.GetString("FINDER_PORT")
+	if finderPort == "" {
+		finderPort = defaultFinderPort
+	}
+	conn, err := grpc.Dial(fmt.Sprintf("finder:%s", finderPort))
+	if err != nil {
+		log.Fatalf("can't connect to finder grpc server: %s", err)
+	}
+	defer conn.Close()
+
+	grpcClient := pb.NewFinderClient(conn)
+	stub := gogrpc.NewStub(&grpcClient)
+
+	app := usecase.NewApp(ctx, ds, db, streamer, provider, stub)
 	service := api.NewService(app)
 
 	r := gin.Default()

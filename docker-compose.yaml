@@ -22,9 +22,11 @@ services:
             - redis
         ports:
             - "8070:8070"
+            - "50051:50051"
         # env_file: ./finder/.env
         environment:
             PORT: 8070
+            TCP_PORT: 50051
             REDIS_HOST: redis:6379
     # translator:
     #    build:

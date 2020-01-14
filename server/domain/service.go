@@ -20,6 +20,10 @@ func (s *Service) GetRecipeByID(ctx context.Context, id string) (*Recipe, error)
 	return s.db.GetRecipeByID(ctx, id)
 }
 
+func (s *Service) GetRecipesByIDs(ctx context.Context, ids []string) ([]*Recipe, error) {
+	return s.db.GetRecipesByUIDs(ctx, ids)
+}
+
 func (s *Service) IDSaved(ctx context.Context, id string) (bool, error) {
 	return s.db.IDSaved(ctx, id)
 }

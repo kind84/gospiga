@@ -4,8 +4,6 @@ import (
 	"context"
 )
 
-const stream = "new-recipes"
-
-func (a *App) SearchRecipe(ctx context.Context, recipeID string) error {
-	return nil
+func (a *App) SearchRecipes(ctx context.Context, query string) ([]string, error) {
+	return a.ft.SearchRecipes(query)
 }

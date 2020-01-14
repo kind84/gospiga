@@ -3,6 +3,7 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/dgraph-io/dgo/v2/protos/api"
 
@@ -22,6 +23,7 @@ func (r Recipe) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(r))
 }
 
+// SaveRecipe on disk.
 func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 	mu := &api.Mutation{
 		CommitNow: true,
@@ -45,11 +47,12 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 	return nil
 }
 
+// GetRecipeByID and return the domain recipe matching the external id.
 func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, error) {
 	vars := map[string]string{"$id": id}
 	q := `query IDSaved($id: string){
 		recipes(func: eq(id, $id)) {
-			expand(_all_)	
+			expand(_all_)
 		}
 	}`
 
@@ -71,6 +74,40 @@ func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, err
 	return &root.Recipes[0].Recipe, nil
 }
 
+// GetRecipesByUIDs and return domain recipes.
+func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Recipe, error) {
+	uu := strings.Join(uids, ", ")
+	vars := map[string]string{"$uids": uu}
+	q := `query IDSaved($uid: []string){
+		recipes(func: uid($uids)) {
+			expand(_all_)
+		}
+	}`
+
+	resp, err := db.Dgraph.NewTxn().QueryWithVars(ctx, q, vars)
+	if err != nil {
+		return nil, err
+	}
+
+	var root struct {
+		Recipes []Recipe `json:"recipes"`
+	}
+	err = json.Unmarshal(resp.Json, &root)
+	if err != nil {
+		return nil, err
+	}
+	if len(root.Recipes) == 0 {
+		return nil, nil
+	}
+
+	recipes := make([]*domain.Recipe, 0, len(root.Recipes))
+	for _, recipe := range root.Recipes {
+		recipes = append(recipes, &recipe.Recipe)
+	}
+	return recipes, nil
+}
+
+// IDSaved check if the given external id is stored.
 func (db *DB) IDSaved(ctx context.Context, id string) (bool, error) {
 	vars := map[string]string{"$id": id}
 	q := `query IDSaved($id: string){
