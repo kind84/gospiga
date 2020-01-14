@@ -1,11 +1,11 @@
 FROM dependencies AS builder
 
-WORKDIR /gospiga/server
+WORKDIR /github.com/kind84/gospiga/server
 
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-go build -o /go/bin/server /gospiga/server/cmd/server
+go build -o /go/bin/server /github.com/kind84/gospiga/server/cmd/server
 
 ENTRYPOINT ["/go/bin/server"]
 

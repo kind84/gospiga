@@ -81,5 +81,6 @@ func main() {
 	r := gin.Default()
 	r.GET("/ping", service.Ping)
 	r.POST("/new-recipe", service.NewRecipe)
+	r.POST("/search-recipes", service.SearchRecipes)
 	r.Run()
 }
