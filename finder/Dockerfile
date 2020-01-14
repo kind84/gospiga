@@ -1,11 +1,11 @@
 FROM dependencies AS builder
 
-WORKDIR /github.com/kind84/gospiga/finder
+WORKDIR /gospiga/finder
 
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-go build -o /go/bin/finder /github.com/kind84/gospiga/finder/cmd/finder
+go build -o /go/bin/finder /gospiga/finder/cmd/finder
 
 ENTRYPOINT ["/go/bin/finder"]
 

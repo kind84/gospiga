@@ -2,7 +2,7 @@ FROM golang:alpine AS dep
 
 ENV GOPROXY=https://proxy.golang.org
 
-WORKDIR /github.com/kind84/gospiga
+WORKDIR /gospiga
 
 COPY go.mod .
 COPY go.sum .
@@ -12,4 +12,5 @@ RUN go mod download
 
 # Add here shared packages
 COPY ./pkg ./pkg
+COPY ./proto ./proto
 

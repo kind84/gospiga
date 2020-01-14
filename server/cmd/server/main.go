@@ -66,7 +66,7 @@ func main() {
 	if finderPort == "" {
 		finderPort = defaultFinderPort
 	}
-	conn, err := grpc.Dial(fmt.Sprintf("finder:%s", finderPort))
+	conn, err := grpc.Dial(fmt.Sprintf("finder:%s", finderPort), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("can't connect to finder grpc server: %s", err)
 	}
