@@ -51,7 +51,10 @@ func main() {
 	}
 
 	ds := domain.NewService(db)
-	streamer := streamer.NewRedisStreamer(rdb)
+	streamer, err := streamer.NewRedisStreamer(rdb)
+	if err != nil {
+		log.Fatalf("error initializing redis streamer: %s", err)
+	}
 
 	token := viper.GetString("dato.token")
 	if token == "" {

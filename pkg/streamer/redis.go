@@ -3,12 +3,16 @@ package streamer
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 
 	redis "github.com/go-redis/redis/v7"
 	log "github.com/sirupsen/logrus"
 )
+
+var ackAndAddLua = ""
 
 type redisStreamer struct {
 	rdb *redis.Client
@@ -20,8 +24,20 @@ type StreamArgs struct {
 	Consumer string
 }
 
-func NewRedisStreamer(client *redis.Client) *redisStreamer {
-	return &redisStreamer{client}
+func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
+	file, err := os.Open("ackAndAdd.lua")
+	if err != nil {
+		return nil, err
+	}
+	script, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	ackAndAddLua, err = client.ScriptLoad(string(script)).Result()
+	if err != nil {
+		return nil, err
+	}
+	return &redisStreamer{client}, nil
 }
 
 func (s *redisStreamer) Ack(stream, group string, ids ...string) error {
@@ -51,15 +67,9 @@ func (s *redisStreamer) AckAndAdd(from *StreamArgs, toStream string, id string, 
 		return err
 	}
 
-	ackNaddScript := redis.NewScript(`
-		if redis.call("xack", KEYS[1], ARGV[1], ARGV[2]) == 1 then
-			return redis.call("xadd", KEYS[2], "*", ARGV[3], ARGV[4])
-		end
-		return false
-	`)
-
-	_, err = ackNaddScript.Run(
-		s.rdb,
+	// run pre-loaded script
+	_, err = s.rdb.EvalSha(
+		ackAndAddLua,
 		[]string{from.Stream, toStream}, // KEYS
 		[]string{from.Group, id, "message", string(jmsg)}, // ARGV
 	).Result()

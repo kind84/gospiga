@@ -46,13 +46,16 @@ func main() {
 		log.Fatalf("can't connect to redis: %s", err)
 	}
 
-	ft := fulltext.NewRedisFT("redis:6379")
-	if ft == nil {
-		log.Fatal("cannot initialize redis fulltext")
+	ft, err := fulltext.NewRedisFT("redis:6379")
+	if err != nil {
+		log.Fatalf("cannot initialize redis fulltext: %s", err)
 	}
 
 	db := db.NewRedisDB(rdb)
-	streamer := streamer.NewRedisStreamer(rdb)
+	streamer, err := streamer.NewRedisStreamer(rdb)
+	if err != nil {
+		log.Fatalf("error initializing redis streamer: %s", err)
+	}
 
 	app := usecase.NewApp(ctx, db, ft, streamer)
 	service := api.NewService(app)

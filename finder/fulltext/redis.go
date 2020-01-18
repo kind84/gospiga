@@ -1,6 +1,7 @@
 package fulltext
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,12 +15,12 @@ type redisFT struct {
 	ft *redisearch.Client
 }
 
-func NewRedisFT(addr string) *redisFT {
+func NewRedisFT(addr string) (*redisFT, error) {
 	// Create a client. By default a client is schemaless
 	// unless a schema is provided when creating the index
 	ft := redisearch.NewClient(addr, "recipes")
 	if ft == nil {
-		return nil
+		return nil, errors.New("cannot initialize redis client")
 	}
 
 	// Create a schema
@@ -36,10 +37,10 @@ func NewRedisFT(addr string) *redisFT {
 
 	// Create the index with the given schema
 	if err := ft.CreateIndex(sc); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return &redisFT{ft}
+	return &redisFT{ft}, nil
 }
 
 func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
