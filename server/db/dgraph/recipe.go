@@ -23,13 +23,22 @@ func (r Recipe) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(r))
 }
 
-// SaveRecipe on disk.
+// SaveRecipe on disk if a recipe with the same external ID is not already
+// present.
 func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
+	dRecipe, err := db.getRecipeByID(ctx, recipe.ExternalID)
+	if err != nil {
+		return err
+	}
+	if dRecipe != nil {
+		return nil
+	}
+
 	mu := &api.Mutation{
 		CommitNow: true,
 	}
 
-	dRecipe := Recipe{*recipe, []string{}}
+	dRecipe = &Recipe{*recipe, []string{}}
 	dRecipe.ID = "_:recipe"
 
 	rb, err := json.Marshal(dRecipe)
@@ -49,6 +58,14 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 
 // GetRecipeByID and return the domain recipe matching the external id.
 func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, error) {
+	dRecipe, err := db.getRecipeByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &dRecipe.Recipe, nil
+}
+
+func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	vars := map[string]string{"$id": id}
 	q := `query IDSaved($id: string){
 		recipes(func: eq(id, $id)) {
@@ -71,7 +88,7 @@ func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, err
 	if len(root.Recipes) == 0 {
 		return nil, nil
 	}
-	return &root.Recipes[0].Recipe, nil
+	return &root.Recipes[0], nil
 }
 
 // GetRecipesByUIDs and return domain recipes.

@@ -85,15 +85,17 @@ func (a *App) readNewRecipes(ctx context.Context) {
 				continue
 			}
 
+			// ack message and relay
 			rMsg := &gostreamer.Message{
 				Payload: r,
 			}
-
 			err = a.streamer.AckAndAdd(args, "saved-recipes", msg.ID, rMsg)
 			if err != nil {
-				log.Errorf("error ack'ing msg ID [%s]", msg.ID)
+				log.Errorf("error on AckAndAdd for msg ID [%s]", msg.ID)
+				continue
 			}
 
+			// unleash streamer
 			wg.Done()
 
 		case <-ctx.Done():
