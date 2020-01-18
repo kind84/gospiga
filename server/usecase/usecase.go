@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 
@@ -34,6 +35,7 @@ func NewApp(ctx context.Context, service Service, db DB, streamer Streamer, prov
 func (a *App) readNewRecipes(ctx context.Context) {
 	msgChan := make(chan gostreamer.Message)
 	exitChan := make(chan struct{})
+	var wg sync.WaitGroup
 	stream := "new-recipes"
 	group := "server-usecase"
 
@@ -42,7 +44,7 @@ func (a *App) readNewRecipes(ctx context.Context) {
 		Group:    group,
 		Consumer: "usecase",
 	}
-	a.streamer.ReadGroup(ctx, args, msgChan, exitChan)
+	a.streamer.ReadGroup(ctx, args, msgChan, exitChan, &wg)
 
 	for {
 		select {
@@ -91,6 +93,8 @@ func (a *App) readNewRecipes(ctx context.Context) {
 			if err != nil {
 				log.Errorf("error ack'ing msg ID [%s]", msg.ID)
 			}
+
+			wg.Done()
 
 		case <-ctx.Done():
 			// time to exit

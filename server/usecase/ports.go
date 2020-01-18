@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"sync"
 
 	"github.com/kind84/gospiga/pkg/streamer"
 	"github.com/kind84/gospiga/server/domain"
@@ -21,7 +22,7 @@ type Streamer interface {
 	Ack(string, string, ...string) error
 	Add(string, *streamer.Message) error
 	AckAndAdd(from *streamer.StreamArgs, toStream string, id string, msg *streamer.Message) error
-	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{})
+	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{}, *sync.WaitGroup)
 }
 
 type Provider interface {

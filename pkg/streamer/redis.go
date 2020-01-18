@@ -3,6 +3,7 @@ package streamer
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	redis "github.com/go-redis/redis/v7"
@@ -66,7 +67,7 @@ func (s *redisStreamer) AckAndAdd(from *StreamArgs, toStream string, id string, 
 	return err
 }
 
-func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan chan Message, exitChan chan struct{}) {
+func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan chan Message, exitChan chan struct{}, wg *sync.WaitGroup) {
 	go func() {
 		// create consumer group if not done yet
 		s.rdb.XGroupCreateMkStream(args.Stream, args.Group, "$").Result()
@@ -112,6 +113,8 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 
 			stream := items.Val()[0]
 			msgs := len(stream.Messages)
+			wg.Add(msgs)
+
 			plural := ""
 			if msgs > 1 {
 				plural = "s"
@@ -141,6 +144,9 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 
 				msgChan <- msg
 			}
+
+			// avoid back-pressure
+			wg.Wait()
 		}
 	}()
 }
