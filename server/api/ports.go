@@ -8,5 +8,6 @@ import (
 
 type App interface {
 	NewRecipe(context.Context, string) error
+	UpdatedRecipe(context.Context, string) error
 	SearchRecipes(context.Context, string) ([]*domain.Recipe, error)
 }

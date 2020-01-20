@@ -13,4 +13,5 @@ RUN go mod download
 # Add here shared packages
 COPY ./pkg ./pkg
 COPY ./proto ./proto
+COPY ./scripts ./scripts
 

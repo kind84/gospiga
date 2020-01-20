@@ -16,6 +16,10 @@ func (s *Service) SaveRecipe(ctx context.Context, recipe *Recipe) error {
 	return s.db.SaveRecipe(ctx, recipe)
 }
 
+func (s *Service) UpdateRecipe(ctx context.Context, recipe *Recipe) error {
+	return s.db.UpdateRecipe(ctx, recipe)
+}
+
 func (s *Service) GetRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	return s.db.GetRecipeByID(ctx, id)
 }

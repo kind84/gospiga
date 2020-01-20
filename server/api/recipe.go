@@ -4,11 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// NewRecipeRequest.
 type NewRecipeRequest struct {
 	Message  string `json:"message"`
 	EntityID string `json:"entity_id"`
 }
 
+// NewRecipe listens for new recipe IDs.
 func (s *GospigaService) NewRecipe(c *gin.Context) {
 	var req NewRecipeRequest
 	err := c.BindJSON(&req)
@@ -22,10 +24,32 @@ func (s *GospigaService) NewRecipe(c *gin.Context) {
 	}
 }
 
+// UpdatedRecipeRequest.
+type UpdatedRecipeRequest struct {
+	Message  string `json:"message"`
+	EntityID string `json:"entity_id"`
+}
+
+// UpdatedRecipe listens for IDs of recipes that have been updated.
+func (s *GospigaService) UpdatedRecipe(c *gin.Context) {
+	var req NewRecipeRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.Error(err)
+	}
+
+	err = s.app.UpdatedRecipe(c.Copy().Request.Context(), req.EntityID)
+	if err != nil {
+		c.Error(err)
+	}
+}
+
+// SearchRecipesRequest.
 type SearchRecipesRequest struct {
 	Query string `json:"query"`
 }
 
+// SearchRecipes matching the given query string.
 func (s *GospigaService) SearchRecipes(c *gin.Context) {
 	var req SearchRecipesRequest
 	err := c.BindJSON(&req)

@@ -7,12 +7,21 @@ import (
 	"github.com/kind84/gospiga/server/domain"
 )
 
-const stream = "new-recipes"
+const (
+	newRecipeStream     = "new-recipes"
+	updatedRecipeStream = "updated-recipes"
+)
 
-// NewRecipe inform of a new recipe id sending it over the stream.
+// NewRecipe inform of a new recipe ID sending it over the stream.
 func (a *App) NewRecipe(ctx context.Context, recipeID string) error {
 	msg := &streamer.Message{Payload: recipeID}
-	return a.streamer.Add(stream, msg)
+	return a.streamer.Add(newRecipeStream, msg)
+}
+
+// UpdatedRecipe inform of an updated recipe ID sending it over the stream.
+func (a *App) UpdatedRecipe(ctx context.Context, recipeID string) error {
+	msg := &streamer.Message{Payload: recipeID}
+	return a.streamer.Add(updatedRecipeStream, msg)
 }
 
 // SearchRecipes matching the query string.

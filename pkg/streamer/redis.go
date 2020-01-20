@@ -25,7 +25,7 @@ type StreamArgs struct {
 }
 
 func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
-	file, err := os.Open("ackAndAdd.lua")
+	file, err := os.Open("/scripts/ackAndAdd.lua")
 	if err != nil {
 		return nil, err
 	}

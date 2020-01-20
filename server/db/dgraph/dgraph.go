@@ -19,9 +19,9 @@ func NewDB(ctx context.Context) (*DB, error) {
 	d, err := grpc.Dial("alpha:9080", grpc.WithInsecure())
 	if err != nil {
 		log.Warn("failed to connect to dgraph, retrying..")
-		for i := 1; i < 4; i++ {
+		for i := 0; i < 10; i++ {
 			err = nil
-			time.Sleep(time.Second)
+			time.Sleep(5 * 100 * time.Millisecond)
 			d, err = grpc.Dial("alpha:9080", grpc.WithInsecure())
 			if err == nil {
 				break
@@ -37,12 +37,16 @@ func NewDB(ctx context.Context) (*DB, error) {
 		api.NewDgraphClient(d),
 	)
 
-	// load schema
 	// check if server is ready to go
 	res, err := http.Get("http://alpha:8080/health")
-	for err != nil || res.StatusCode != http.StatusOK {
-		time.Sleep(time.Second)
+	for i := 0; i < 20; i++ {
 		res, err = http.Get("http://alpha:8080/health")
+		if err == nil {
+			if res.StatusCode != http.StatusOK {
+				break
+			}
+		}
+		time.Sleep(5 * 100 * time.Millisecond)
 	}
 	log.Debug("dgraph server ready")
 
