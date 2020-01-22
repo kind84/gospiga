@@ -58,7 +58,7 @@ func (s *GospigaService) DeletedRecipe(c *gin.Context) {
 		c.Error(err)
 	}
 
-	err = s.app.UpdatedRecipe(c.Copy().Request.Context(), req.EntityID)
+	err = s.app.DeletedRecipe(c.Copy().Request.Context(), req.EntityID)
 	if err != nil {
 		c.Error(err)
 	}
