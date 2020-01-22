@@ -78,7 +78,10 @@ func main() {
 	grpcClient := pb.NewFinderClient(conn)
 	stub := gogrpc.NewStub(&grpcClient)
 
-	app := usecase.NewApp(ctx, ds, db, streamer, provider, stub)
+	app, err := usecase.NewApp(ctx, ds, db, streamer, provider, stub)
+	if err != nil {
+		log.Fatalf("cannot initalize application: %s", err)
+	}
 	service := api.NewService(app)
 
 	r := gin.Default()

@@ -32,7 +32,27 @@ type UpdatedRecipeRequest struct {
 
 // UpdatedRecipe listens for IDs of recipes that have been updated.
 func (s *GospigaService) UpdatedRecipe(c *gin.Context) {
-	var req NewRecipeRequest
+	var req UpdatedRecipeRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.Error(err)
+	}
+
+	err = s.app.UpdatedRecipe(c.Copy().Request.Context(), req.EntityID)
+	if err != nil {
+		c.Error(err)
+	}
+}
+
+// DeletedRecipeRequest.
+type DeletedRecipeRequest struct {
+	Message  string `json:"message"`
+	EntityID string `json:"entity_id"`
+}
+
+// DeletedRecipe listens for IDs of recipes that have been deleted.
+func (s *GospigaService) DeletedRecipe(c *gin.Context) {
+	var req DeletedRecipeRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.Error(err)

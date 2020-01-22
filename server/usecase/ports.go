@@ -13,6 +13,8 @@ type DB interface {
 
 type Service interface {
 	SaveRecipe(context.Context, *domain.Recipe) error
+	UpdateRecipe(context.Context, *domain.Recipe) error
+	DeleteRecipe(context.Context, string) error
 	GetRecipeByID(context.Context, string) (*domain.Recipe, error)
 	GetRecipesByIDs(context.Context, []string) ([]*domain.Recipe, error)
 	IDSaved(context.Context, string) (bool, error)
@@ -21,8 +23,8 @@ type Service interface {
 type Streamer interface {
 	Ack(string, string, ...string) error
 	Add(string, *streamer.Message) error
-	AckAndAdd(from *streamer.StreamArgs, toStream string, id string, msg *streamer.Message) error
-	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{}, *sync.WaitGroup)
+	AckAndAdd(fromStream, toStream, group, id string, msg *streamer.Message) error
+	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{}, *sync.WaitGroup) error
 }
 
 type Provider interface {

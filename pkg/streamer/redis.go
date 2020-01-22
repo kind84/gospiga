@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,12 +19,14 @@ type redisStreamer struct {
 	rdb *redis.Client
 }
 
+// StreamArgs required to deal with streams.
 type StreamArgs struct {
-	Stream   string
+	Streams  []string
 	Group    string
 	Consumer string
 }
 
+// NewRedisStreamer returns an instance of redisStreamer.
 func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
 	file, err := os.Open("/scripts/ackAndAdd.lua")
 	if err != nil {
@@ -61,7 +64,7 @@ func (s *redisStreamer) Add(stream string, msg *Message) error {
 
 // AckAndAdd atomically acknowledges a given message ID from a stream and
 // sends the given message to another stream.
-func (s *redisStreamer) AckAndAdd(from *StreamArgs, toStream string, id string, msg *Message) error {
+func (s *redisStreamer) AckAndAdd(fromStream, toStream, group, id string, msg *Message) error {
 	jmsg, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -70,18 +73,24 @@ func (s *redisStreamer) AckAndAdd(from *StreamArgs, toStream string, id string, 
 	// run pre-loaded script
 	_, err = s.rdb.EvalSha(
 		ackAndAddLua,
-		[]string{from.Stream, toStream}, // KEYS
-		[]string{from.Group, id, "message", string(jmsg)}, // ARGV
+		[]string{fromStream, toStream},               // KEYS
+		[]string{group, id, "message", string(jmsg)}, // ARGV
 	).Result()
 
 	return err
 }
 
-func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan chan Message, exitChan chan struct{}, wg *sync.WaitGroup) {
-	go func() {
-		// create consumer group if not done yet
-		s.rdb.XGroupCreateMkStream(args.Stream, args.Group, "$").Result()
+// ReadGroup reads messages on the given stream and sends them over a channel.
+func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan chan Message, exitChan chan struct{}, wg *sync.WaitGroup) error {
+	// create consumer group if not done yet
+	for _, stream := range args.Streams {
+		_, err := s.rdb.XGroupCreateMkStream(stream, args.Group, "$").Result()
+		if err != nil && !strings.HasPrefix(err.Error(), "BUSYGROUP") {
+			return err
+		}
+	}
 
+	go func() {
 		lastID := "0-0"
 		checkHistory := true
 
@@ -90,11 +99,15 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 				lastID = ">"
 			}
 
+			streams := make([]string, len(args.Streams))
+			for _, stream := range args.Streams {
+				streams = append(streams, stream, lastID)
+			}
 			xargs := &redis.XReadGroupArgs{
 				Group:    args.Group,
 				Consumer: args.Consumer,
 				// List of streams and ids.
-				Streams: []string{args.Stream, lastID},
+				Streams: streams,
 				// Max no. of elements per stream fo each call.
 				Count: 10,
 				Block: time.Millisecond * 2000,
@@ -106,7 +119,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 			if items == nil {
 				// Timeout, check if it's time to exit
 				if s.shouldExit(ctx, exitChan) {
-					log.Debugf("Time to exit, stop reading stream [%s]", args.Stream)
+					log.Debugf("Time to exit, stop reading streams [%s]", args.Streams)
 					return
 				}
 				continue
@@ -121,44 +134,48 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs, msgChan
 				continue
 			}
 
-			stream := items.Val()[0]
-			msgs := len(stream.Messages)
-			wg.Add(msgs)
+			respStreams := items.Val()
+			for _, stream := range respStreams {
+				msgs := len(stream.Messages)
+				wg.Add(msgs)
 
-			plural := ""
-			if msgs > 1 {
-				plural = "s"
-			}
-			log.Debugf("Consumer [%s] recived %d message%s", args.Consumer, msgs, plural)
-
-			for _, rawMsg := range stream.Messages {
-				log.Debugf("Consumer [%s] reading message [%s]", args.Consumer, rawMsg.ID)
-
-				lastID = rawMsg.ID
-
-				// parse message
-				strMsg, ok := rawMsg.Values["message"].(string)
-				if !ok {
-					// error parsing stream message
-					continue
+				plural := ""
+				if msgs > 1 {
+					plural = "s"
 				}
+				log.Debugf("Consumer [%s] recived %d message%s", args.Consumer, msgs, plural)
 
-				var msg Message
+				for _, rawMsg := range stream.Messages {
+					log.Debugf("Consumer [%s] reading message [%s]", args.Consumer, rawMsg.ID)
 
-				err := json.Unmarshal([]byte(strMsg), &msg)
-				if err != nil {
-					// malformed message, skip it.
-					continue
+					lastID = rawMsg.ID
+
+					// parse message
+					strMsg, ok := rawMsg.Values["message"].(string)
+					if !ok {
+						// error parsing stream message
+						continue
+					}
+
+					var msg Message
+
+					err := json.Unmarshal([]byte(strMsg), &msg)
+					if err != nil {
+						// malformed message, skip it.
+						continue
+					}
+					msg.ID = rawMsg.ID
+					msg.Stream = stream.Stream
+
+					msgChan <- msg
 				}
-				msg.ID = rawMsg.ID
-
-				msgChan <- msg
 			}
 
 			// avoid back-pressure
 			wg.Wait()
 		}
 	}()
+	return nil
 }
 
 func (s *redisStreamer) shouldExit(ctx context.Context, exitCh chan struct{}) bool {
