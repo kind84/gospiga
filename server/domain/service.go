@@ -20,6 +20,10 @@ func (s *Service) UpdateRecipe(ctx context.Context, recipe *Recipe) error {
 	return s.db.UpdateRecipe(ctx, recipe)
 }
 
+func (s *Service) DeleteRecipe(ctx context.Context, recipeID string) error {
+	return s.db.DeleteRecipe(ctx, recipeID)
+}
+
 func (s *Service) GetRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	return s.db.GetRecipeByID(ctx, id)
 }

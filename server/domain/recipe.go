@@ -2,7 +2,7 @@ package domain
 
 type Recipe struct {
 	ID          string           `json:"uid,omitempty"`
-	ExternalID  string           `json:"id,omitempty"`
+	ExternalID  string           `json:"xid,omitempty"`
 	Title       string           `json:"title,omitempty"`
 	Subtitle    string           `json:"subtitle,omitempty"`
 	MainImage   Image            `json:"mainImage,omitempty"`

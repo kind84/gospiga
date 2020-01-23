@@ -57,7 +57,10 @@ func main() {
 		log.Fatalf("error initializing redis streamer: %s", err)
 	}
 
-	app := usecase.NewApp(ctx, db, ft, streamer)
+	app, err := usecase.NewApp(ctx, db, ft, streamer)
+	if err != nil {
+		log.Fatalf("cannot initalize application: %s", err)
+	}
 	service := api.NewService(app)
 
 	server := gogrpc.NewFinderServer(app)

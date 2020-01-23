@@ -20,5 +20,5 @@ type FT interface {
 type Streamer interface {
 	Ack(string, string, ...string) error
 	Add(string, *streamer.Message) error
-	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{}, *sync.WaitGroup)
+	ReadGroup(context.Context, *streamer.StreamArgs, chan streamer.Message, chan struct{}, *sync.WaitGroup) error
 }
