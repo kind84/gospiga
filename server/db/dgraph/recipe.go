@@ -12,11 +12,13 @@ import (
 	"github.com/kind84/gospiga/server/domain"
 )
 
+// TODO: add dgraph type on ingredients and steps.
+
 type Recipe struct {
 	domain.Recipe
-	DType      []string  `json:"dgraph.type,omitempty"`
-	CretedAt   time.Time `json:"createdAt,omitempty"`
-	ModifiedAt time.Time `json:"modifiedAt,omitempty"`
+	DType      []string   `json:"dgraph.type,omitempty"`
+	CretedAt   *time.Time `json:"createdAt,omitempty"`
+	ModifiedAt *time.Time `json:"modifiedAt,omitempty"`
 }
 
 func (r Recipe) MarshalJSON() ([]byte, error) {
@@ -27,35 +29,61 @@ func (r Recipe) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(r))
 }
 
-// SaveRecipe on disk if a recipe with the same external ID is not already
-// present.
+// SaveRecipe on disk with upsert. If a recipe with the same external ID is
+// already present it gets replaced with the given recipe.
 func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
-	dRecipe, err := db.getRecipeByID(ctx, recipe.ExternalID)
-	if err != nil {
-		return err
-	}
-	if dRecipe != nil {
-		return nil
-	}
+	req := &api.Request{CommitNow: true}
+	req.Vars = map[string]string{"$xid": recipe.ExternalID}
+	req.Query = `
+		query RecipeUID($xid: string){
+			recipeUID(func: eq(xid, $xid)) {
+				...fragmentA
+			}
+		}
 
-	mu := &api.Mutation{CommitNow: true}
-
+		fragment fragmentA {
+			v as uid
+			c as createdAt
+		}
+	`
 	now := time.Now()
-	dRecipe = &Recipe{*recipe, []string{}, now, now}
-	dRecipe.ID = "_:recipe"
+	dRecipe := &Recipe{*recipe, []string{}, &now, &now}
+	dRecipe.ID = "uid(v)"
 
-	rb, err := json.Marshal(dRecipe)
+	pb, err := json.Marshal(dRecipe)
 	if err != nil {
 		return err
 	}
 
-	mu.SetJson = rb
-	res, err := db.Dgraph.NewTxn().Mutate(ctx, mu)
+	mu := &api.Mutation{
+		SetJson: pb,
+	}
+
+	mm := map[string]interface{}{
+		"cond": fmt.Sprintf("@if(NOT(lt(val(c), %s)))", now.Format(time.RFC3339Nano)),
+		"set": map[string]interface{}{
+			"uid":       "uid(v)",
+			"createdAt": "val(c)",
+		},
+	}
+	pb2, err := json.Marshal(mm)
 	if err != nil {
 		return err
 	}
-	ruid := res.Uids["recipe"]
-	recipe.ID = ruid
+	mu2 := &api.Mutation{
+		SetJson: pb2,
+	}
+
+	req.Mutations = []*api.Mutation{mu, mu2}
+
+	fmt.Println(req.String())
+	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	fmt.Println(err)
+	fmt.Println(res)
+
+	if ruid, creaded := res.Uids["uid(v)"]; creaded && recipe.ID == "" {
+		recipe.ID = ruid
+	}
 	return nil
 }
 
@@ -71,7 +99,8 @@ func (db *DB) UpdateRecipe(ctx context.Context, recipe *domain.Recipe) error {
 
 	mu := &api.Mutation{CommitNow: true}
 
-	dRecipe.ModifiedAt = time.Now()
+	now := time.Now()
+	dRecipe.ModifiedAt = &now
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
@@ -89,10 +118,10 @@ func (db *DB) UpdateRecipe(ctx context.Context, recipe *domain.Recipe) error {
 // DeleteRecipe matching the given external ID.
 func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	req := &api.Request{CommitNow: true}
-	req.Vars = map[string]string{"$id": recipeID}
+	req.Vars = map[string]string{"$xid": recipeID}
 	req.Query = `
-		query RecipeUID($id: string){
-			recipeUID(func: eq(id, $id)) {
+		query RecipeUID($xid: string){
+			recipeUID(func: eq(xid, $xid)) {
 				...fragmentA
 			}
 		}
@@ -129,10 +158,10 @@ func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, err
 }
 
 func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
-	vars := map[string]string{"$id": id}
+	vars := map[string]string{"$xid": id}
 	q := `
-		query IDSaved($id: string){
-			recipes(func: eq(id, $id)) {
+		query Recipes($xid: string){
+			recipes(func: eq(xid, $xid)) {
 				expand(_all_)
 			}
 		}
@@ -161,7 +190,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 	uu := strings.Join(uids, ", ")
 	vars := map[string]string{"$uids": uu}
 	q := `
-		query IDSaved($uid: []string){
+		query Recipes($uid: []string){
 			recipes(func: uid($uids)) {
 				expand(_all_)
 			}
@@ -221,7 +250,7 @@ func loadRecipeSchema() *api.Operation {
 	op := &api.Operation{}
 	op.Schema = `
 		type Recipe {
-			id
+			xid
 			title
 			subtitle
 			mainImage
@@ -244,6 +273,7 @@ func loadRecipeSchema() *api.Operation {
 			name
 			quantity
 			unitOfMeasure
+			<~ingredients>
 		}
 
 		type Step {
@@ -256,7 +286,7 @@ func loadRecipeSchema() *api.Operation {
 			url
 		}
 
-		id: string @index(exact) .
+		xid: string @index(exact) .
 		title: string @lang @index(fulltext) .
 		subtitle: string @lang @index(fulltext) .
 		mainImage: uid .
@@ -276,8 +306,8 @@ func loadRecipeSchema() *api.Operation {
 		unitOfMeasure: string .
 		image: uid .
 		url: string .
-		createdAt: dateTime @index(day).
-		modifiedAt: dateTime @index(day).
+		createdAt: dateTime @index(hour) @upsert .
+		modifiedAt: dateTime @index(hour) @upsert .
 	`
 	return op
 }

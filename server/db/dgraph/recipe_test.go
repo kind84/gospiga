@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kind84/gospiga/server/domain"
@@ -19,6 +20,20 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestDgraphSaveRecipe(t *testing.T) {
+	recipe := getTestRecipe()
+
+	err := db.SaveRecipe(context.Background(), recipe)
+
+	require.NoError(t, err)
+	r, err := db.GetRecipeByID(context.Background(), recipe.ExternalID)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, r.ExternalID, recipe.ExternalID)
+	err = db.DeleteRecipe(context.Background(), recipe.ExternalID)
+	require.NoError(t, err)
 }
 
 func TestDgraphDeleteRecipe(t *testing.T) {
