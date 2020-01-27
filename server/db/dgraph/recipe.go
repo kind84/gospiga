@@ -29,6 +29,10 @@ func (r Recipe) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(r))
 }
 
+func (db *DB) CountRecipes(ctx context.Context) (int, error) {
+	return db.count(ctx, "Recipe")
+}
+
 // SaveRecipe on disk with upsert. If a recipe with the same external ID is
 // already present it gets replaced with the given recipe.
 func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
@@ -76,12 +80,12 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 
 	req.Mutations = []*api.Mutation{mu, mu2}
 
-	fmt.Println(req.String())
 	res, err := db.Dgraph.NewTxn().Do(ctx, req)
-	fmt.Println(err)
-	fmt.Println(res)
+	if err != nil {
+		return err
+	}
 
-	if ruid, creaded := res.Uids["uid(v)"]; creaded && recipe.ID == "" {
+	if ruid, created := res.Uids["uid(v)"]; created && recipe.ID == "" {
 		recipe.ID = ruid
 	}
 	return nil
@@ -167,7 +171,7 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 		}
 	`
 
-	resp, err := db.Dgraph.NewTxn().QueryWithVars(ctx, q, vars)
+	resp, err := db.Dgraph.NewReadOnlyTxn().QueryWithVars(ctx, q, vars)
 	if err != nil {
 		return nil, err
 	}
