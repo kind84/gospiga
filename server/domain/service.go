@@ -4,34 +4,32 @@ import (
 	"context"
 )
 
-type Service struct {
+// service implements the domain service interface.
+type service struct {
 	db DB
 }
 
-func NewService(db DB) *Service {
-	return &Service{db}
+// NewService constructor.
+func NewService(db DB) *service {
+	return &service{db}
 }
 
-func (s *Service) SaveRecipe(ctx context.Context, recipe *Recipe) error {
+func (s *service) SaveRecipe(ctx context.Context, recipe *Recipe) error {
 	return s.db.SaveRecipe(ctx, recipe)
 }
 
-func (s *Service) UpdateRecipe(ctx context.Context, recipe *Recipe) error {
-	return s.db.UpdateRecipe(ctx, recipe)
-}
-
-func (s *Service) DeleteRecipe(ctx context.Context, recipeID string) error {
+func (s *service) DeleteRecipe(ctx context.Context, recipeID string) error {
 	return s.db.DeleteRecipe(ctx, recipeID)
 }
 
-func (s *Service) GetRecipeByID(ctx context.Context, id string) (*Recipe, error) {
+func (s *service) GetRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	return s.db.GetRecipeByID(ctx, id)
 }
 
-func (s *Service) GetRecipesByIDs(ctx context.Context, ids []string) ([]*Recipe, error) {
+func (s *service) GetRecipesByIDs(ctx context.Context, ids []string) ([]*Recipe, error) {
 	return s.db.GetRecipesByUIDs(ctx, ids)
 }
 
-func (s *Service) IDSaved(ctx context.Context, id string) (bool, error) {
+func (s *service) IDSaved(ctx context.Context, id string) (bool, error) {
 	return s.db.IDSaved(ctx, id)
 }

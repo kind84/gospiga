@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type App struct {
+type app struct {
 	service  Service
 	db       DB
 	streamer Streamer
@@ -12,8 +12,8 @@ type App struct {
 	stub     Stub
 }
 
-func NewApp(ctx context.Context, service Service, db DB, streamer Streamer, provider Provider, stub Stub) (*App, error) {
-	app := &App{
+func NewApp(ctx context.Context, service Service, db DB, streamer Streamer, provider Provider, stub Stub) (*app, error) {
+	a := &app{
 		service:  service,
 		db:       db,
 		streamer: streamer,
@@ -22,10 +22,10 @@ func NewApp(ctx context.Context, service Service, db DB, streamer Streamer, prov
 	}
 
 	// start streamer to listen for new recipes.
-	err := app.readRecipes(ctx)
+	err := a.readRecipes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return app, nil
+	return a, nil
 }

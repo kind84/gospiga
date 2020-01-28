@@ -14,21 +14,46 @@ import (
 
 // TODO: add dgraph type on ingredients and steps.
 
-type Recipe struct {
+// recipe represents repository version of the domain recipe.
+type recipe struct {
 	domain.Recipe
 	DType      []string   `json:"dgraph.type,omitempty"`
 	CretedAt   *time.Time `json:"createdAt,omitempty"`
 	ModifiedAt *time.Time `json:"modifiedAt,omitempty"`
 }
 
-func (r Recipe) MarshalJSON() ([]byte, error) {
-	type Alias Recipe
+func (r recipe) MarshalJSON() ([]byte, error) {
+	type Alias recipe
 	if len(r.DType) == 0 {
 		r.DType = []string{"Recipe"}
 	}
 	return json.Marshal((Alias)(r))
 }
 
+// Ingredient represents repository verison of the domain ingredient.
+type ingredient struct {
+	domain.Ingredient
+	DType []string `json:"dgraph.type,omitempty"`
+}
+
+func (i ingredient) MarshalJSON() ([]byte, error) {
+	type Alias ingredient
+	if len(i.DType) == 0 {
+		i.DType = []string{"Ingredient"}
+	}
+	return json.Marshal((Alias)(i))
+}
+
+func newRecipe(r *domain.Recipe) *recipe {
+	// ings := make([]ingredient, 0, len(r.Ingredients))
+	// for _, i := range r.Ingredients {
+	// 	ings = append(ings, ingredient{*i, []string{}})
+	// }
+	now := time.Now()
+	return &recipe{*r, []string{}, &now, &now}
+}
+
+// CountRecipes total number.
 func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 	return db.count(ctx, "Recipe")
 }
@@ -51,7 +76,7 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 		}
 	`
 	now := time.Now()
-	dRecipe := &Recipe{*recipe, []string{}, &now, &now}
+	dRecipe := newRecipe(recipe)
 	dRecipe.ID = "uid(v)"
 
 	pb, err := json.Marshal(dRecipe)
@@ -87,34 +112,6 @@ func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
 
 	if ruid, created := res.Uids["uid(v)"]; created && recipe.ID == "" {
 		recipe.ID = ruid
-	}
-	return nil
-}
-
-// UpdateRecipe matching the external ID. ModifiedAt field gets updated.
-func (db *DB) UpdateRecipe(ctx context.Context, recipe *domain.Recipe) error {
-	dRecipe, err := db.getRecipeByID(ctx, recipe.ExternalID)
-	if err != nil {
-		return err
-	}
-	if dRecipe == nil {
-		return fmt.Errorf("recipe external ID [%s] not found", recipe.ExternalID)
-	}
-
-	mu := &api.Mutation{CommitNow: true}
-
-	now := time.Now()
-	dRecipe.ModifiedAt = &now
-
-	rb, err := json.Marshal(dRecipe)
-	if err != nil {
-		return err
-	}
-
-	mu.SetJson = rb
-	_, err = db.Dgraph.NewTxn().Mutate(ctx, mu)
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -161,7 +158,7 @@ func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, err
 	return &dRecipe.Recipe, nil
 }
 
-func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
+func (db *DB) getRecipeByID(ctx context.Context, id string) (*recipe, error) {
 	vars := map[string]string{"$xid": id}
 	q := `
 		query Recipes($xid: string){
@@ -177,7 +174,7 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	}
 
 	var root struct {
-		Recipes []Recipe `json:"recipes"`
+		Recipes []recipe `json:"recipes"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
@@ -207,7 +204,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 	}
 
 	var root struct {
-		Recipes []Recipe `json:"recipes"`
+		Recipes []recipe `json:"recipes"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
@@ -241,7 +238,7 @@ func (db *DB) IDSaved(ctx context.Context, id string) (bool, error) {
 	}
 
 	var root struct {
-		Recipes []Recipe `json:"recipes"`
+		Recipes []recipe `json:"recipes"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
