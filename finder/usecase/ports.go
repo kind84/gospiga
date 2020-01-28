@@ -13,8 +13,9 @@ type DB interface {
 }
 
 type FT interface {
-	IndexRecipe(recipe *domain.Recipe) error
-	SearchRecipes(query string) ([]string, error)
+	IndexRecipe(*domain.Recipe) error
+	DeleteRecipe(string) error
+	SearchRecipes(string) ([]string, error)
 }
 
 type Streamer interface {

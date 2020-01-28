@@ -13,37 +13,47 @@ import (
 	"github.com/kind84/gospiga/pkg/types"
 )
 
-type App struct {
+const (
+	newRecipeStream     = "new-recipes"
+	updatedRecipeStream = "updated-recipes"
+	deletedRecipeStream = "deleted-recipes"
+	group               = "finder-usecase"
+)
+
+type app struct {
 	db       DB
 	ft       FT
 	streamer Streamer
 }
 
-func NewApp(ctx context.Context, db DB, ft FT, streamer Streamer) (*App, error) {
-	app := &App{
+func NewApp(ctx context.Context, db DB, ft FT, streamer Streamer) (*app, error) {
+	a := &app{
 		db:       db,
 		ft:       ft,
 		streamer: streamer,
 	}
 
 	// start streamer to listen for new recipes.
-	err := app.readNewRecipes(ctx)
+	err := a.readNewRecipes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return app, nil
+	return a, nil
 }
 
-func (a *App) readNewRecipes(ctx context.Context) error {
+func (a *app) readNewRecipes(ctx context.Context) error {
 	msgChan := make(chan gostreamer.Message)
 	exitChan := make(chan struct{})
 	var wg sync.WaitGroup
-	stream := "saved-recipes"
-	group := "finder-usecase"
 
+	streams := []string{
+		newRecipeStream,
+		updatedRecipeStream,
+		deletedRecipeStream,
+	}
 	args := &gostreamer.StreamArgs{
-		Streams:  []string{stream},
+		Streams:  streams,
 		Group:    group,
 		Consumer: "finder-usecase",
 	}
@@ -56,45 +66,52 @@ func (a *App) readNewRecipes(ctx context.Context) error {
 		for {
 			select {
 			case msg := <-msgChan:
-				// ping-pong to parse recipe from message
-				var recipeRaw types.Recipe
-				jr, err := json.Marshal(msg.Payload)
-				if err != nil {
-					log.Fatal(err)
-				}
-				err = json.Unmarshal(jr, &recipeRaw)
-				if err != nil {
-					log.Fatal(err)
-				}
-				log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
-
-				// check if ID is already indexed
-				if exists, _ := a.db.IDExists(fmt.Sprintf("recipe-%s", recipeRaw.ID)); exists {
-					log.Debugf("recipe ID [%s] already indexed", recipeRaw.ID)
-
-					err := a.streamer.Ack(stream, group, msg.ID)
+				switch msg.Stream {
+				case newRecipeStream:
+					// ping-pong to parse recipe from message
+					var recipeRaw types.Recipe
+					jr, err := json.Marshal(msg.Payload)
 					if err != nil {
-						log.Errorf("error ack'ing msg ID [%s]", msg.ID)
+						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
+						// TODO: ack??
 					}
-					continue
+					err = json.Unmarshal(jr, &recipeRaw)
+					if err != nil {
+						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
+						// TODO: ack??
+					}
+					log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
+
+					go a.indexRecipe(recipeRaw, msg.Stream, msg.ID, &wg)
+
+				case updatedRecipeStream:
+					// ping-pong to parse recipe from message
+					var recipeRaw types.Recipe
+					jr, err := json.Marshal(msg.Payload)
+					if err != nil {
+						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
+						// TODO: ack??
+					}
+					err = json.Unmarshal(jr, &recipeRaw)
+					if err != nil {
+						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
+						// TODO: ack??
+					}
+					log.Debugf("Got message for updated recipe ID [%s]", recipeRaw.ID)
+
+					go a.indexRecipe(recipeRaw, msg.Stream, msg.ID, &wg)
+
+				case deletedRecipeStream:
+					recipeID, ok := msg.Payload.(string)
+					if !ok {
+						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
+						// TODO: ack??
+						continue
+					}
+					log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
+
+					go a.deleteRecipe(recipeID, msg.ID, &wg)
 				}
-
-				r := domain.MapFromType(&recipeRaw)
-
-				// index recipe
-				err = a.ft.IndexRecipe(r)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-
-				// ack (& add recipeIndexed?)
-				err = a.streamer.Ack(stream, group, msg.ID)
-				if err != nil {
-					log.Errorf("error ack'ing msg ID [%s]", msg.ID)
-				}
-
-				wg.Done()
 
 			case <-ctx.Done():
 				// time to exit
@@ -103,4 +120,54 @@ func (a *App) readNewRecipes(ctx context.Context) error {
 		}
 	}()
 	return nil
+}
+
+func (a *app) indexRecipe(recipeRaw types.Recipe, stream, messageID string, wg *sync.WaitGroup) {
+	// check if ID is already indexed
+	if exists, _ := a.db.IDExists(fmt.Sprintf("recipe-%s", recipeRaw.ID)); exists {
+		log.Debugf("recipe ID [%s] already indexed", recipeRaw.ID)
+
+		err := a.streamer.Ack(stream, group, messageID)
+		if err != nil {
+			log.Errorf("error ack'ing msg ID [%s]", messageID)
+		}
+	}
+
+	r := domain.MapFromType(&recipeRaw)
+
+	// index recipe
+	err := a.ft.IndexRecipe(r)
+	if err != nil {
+		log.Error(err)
+		// TODO: ack??
+	}
+
+	// ack (& add recipeIndexed?)
+	err = a.streamer.Ack(stream, group, messageID)
+	if err != nil {
+		log.Errorf("error ack'ing msg ID [%s]", messageID)
+	}
+
+	// unleash streamer
+	wg.Done()
+}
+
+func (a *app) deleteRecipe(recipeID, messageID string, wg *sync.WaitGroup) {
+	err := a.ft.DeleteRecipe(recipeID)
+	if err != nil {
+		log.Errorf("error deleting recipe from index: %s", err)
+
+		err := a.streamer.Ack(deletedRecipeStream, group, messageID)
+		if err != nil {
+			log.Errorf("error ack'ing msg ID [%s]", messageID)
+		}
+	}
+
+	err = a.streamer.Ack(deletedRecipeStream, group, messageID)
+	if err != nil {
+		log.Errorf("error ack'ing msg ID [%s]", messageID)
+	}
+
+	// unleash streamer
+	wg.Done()
 }

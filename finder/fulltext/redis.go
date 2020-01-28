@@ -55,10 +55,16 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 		Set("conclusion", recipe.Conclusion)
 
 	// Index the document. The API accepts multiple documents at a time,
-	if err := r.ft.IndexOptions(redisearch.DefaultIndexingOptions, doc); err != nil {
+	opts := redisearch.DefaultIndexingOptions
+	opts.Replace = true // upsert
+	if err := r.ft.IndexOptions(opts, doc); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *redisFT) DeleteRecipe(recipeID string) error {
+	return r.ft.Delete(recipeID, true)
 }
 
 func (r *redisFT) SearchRecipes(query string) ([]string, error) {

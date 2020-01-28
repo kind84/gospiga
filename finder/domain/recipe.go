@@ -2,8 +2,9 @@ package domain
 
 import (
 	"fmt"
-	"github.com/kind84/gospiga/pkg/types"
 	"strconv"
+
+	"github.com/kind84/gospiga/pkg/types"
 )
 
 type Recipe struct {

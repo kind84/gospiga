@@ -84,7 +84,7 @@ func (a *app) readRecipes(ctx context.Context) error {
 					}
 					log.Debugf("Got message for a new recipe ID [%s]", recipeID)
 
-					a.UpsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+					go a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
 
 				case updatedRecipeStream:
 					recipeID, ok := msg.Payload.(string)
@@ -95,7 +95,7 @@ func (a *app) readRecipes(ctx context.Context) error {
 					}
 					log.Debugf("Got message for updated recipe ID [%s]", recipeID)
 
-					a.UpsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+					go a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
 
 				case deletedRecipeStream:
 					recipeID, ok := msg.Payload.(string)
@@ -106,7 +106,7 @@ func (a *app) readRecipes(ctx context.Context) error {
 					}
 					log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
 
-					a.DeleteRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+					go a.deleteRecipe(ctx, recipeID, msg.ID, &wg)
 
 				}
 
@@ -119,53 +119,49 @@ func (a *app) readRecipes(ctx context.Context) error {
 	return nil
 }
 
-func (a *app) UpsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
-	go func() {
-		// call provider to get the full recipe
-		r, err := a.provider.GetRecipe(ctx, recipeID)
-		if err != nil {
-			log.Error(err)
-			// TODO: ack?? new stream??
-		}
+func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
+	// call provider to get the full recipe
+	r, err := a.provider.GetRecipe(ctx, recipeID)
+	if err != nil {
+		log.Error(err)
+		// TODO: ack?? new stream??
+	}
 
-		// save recipe
-		err = a.service.SaveRecipe(ctx, r)
-		if err != nil {
-			log.Error(err)
-			// TODO: ack ??
-		}
+	// save recipe
+	err = a.service.SaveRecipe(ctx, r)
+	if err != nil {
+		log.Error(err)
+		// TODO: ack ??
+	}
 
-		// ack message and relay
-		rMsg := &gostreamer.Message{
-			Payload: r,
-		}
-		err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
-		if err != nil {
-			log.Errorf("error on AckAndAdd for msg ID [%s]", messageID)
-		}
+	// ack message and relay
+	rMsg := &gostreamer.Message{
+		Payload: r,
+	}
+	err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
+	if err != nil {
+		log.Errorf("error on AckAndAdd for msg ID [%s]", messageID)
+	}
 
-		// unleash the streamer
-		wg.Done()
-	}()
+	// unleash the streamer
+	wg.Done()
 }
 
-func (a *app) DeleteRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
-	go func() {
-		// delete recipe
-		err := a.service.DeleteRecipe(ctx, recipeID)
-		if err != nil {
-			log.Error(err)
-			// TODO: ack ??
-		}
+func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *sync.WaitGroup) {
+	// delete recipe
+	err := a.service.DeleteRecipe(ctx, recipeID)
+	if err != nil {
+		log.Error(err)
+		// TODO: ack ??
+	}
 
-		// ack message
-		// TODO: relay on deleted-stream??
-		err = a.streamer.Ack(fromStream, group, messageID)
-		if err != nil {
-			log.Errorf("error on Ack for msg ID [%s]", messageID)
-		}
+	// ack message
+	// TODO: relay on deleted-stream??
+	err = a.streamer.Ack(deletedRecipeStream, group, messageID)
+	if err != nil {
+		log.Errorf("error on Ack for msg ID [%s]", messageID)
+	}
 
-		// unleash the streamer
-		wg.Done()
-	}()
+	// unleash the streamer
+	wg.Done()
 }
