@@ -56,8 +56,11 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 		Streams:  streams,
 		Group:    group,
 		Consumer: "finder-usecase",
+		Messages: msgChan,
+		Exit:     exitChan,
+		WG:       &wg,
 	}
-	err := a.streamer.ReadGroup(ctx, args, msgChan, exitChan, &wg)
+	err := a.streamer.ReadGroup(ctx, args)
 	if err != nil {
 		return err
 	}
@@ -74,11 +77,15 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 					if err != nil {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
+						continue
 					}
 					err = json.Unmarshal(jr, &recipeRaw)
 					if err != nil {
 						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
+						continue
 					}
 					log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
 
@@ -91,11 +98,15 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 					if err != nil {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
+						continue
 					}
 					err = json.Unmarshal(jr, &recipeRaw)
 					if err != nil {
 						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
+						continue
 					}
 					log.Debugf("Got message for updated recipe ID [%s]", recipeRaw.ID)
 
@@ -106,6 +117,7 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 					if !ok {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
 						continue
 					}
 					log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
@@ -130,6 +142,8 @@ func (a *app) indexRecipe(recipeRaw types.Recipe, stream, messageID string, wg *
 		err := a.streamer.Ack(stream, group, messageID)
 		if err != nil {
 			log.Errorf("error ack'ing msg ID [%s]", messageID)
+			wg.Done()
+			return
 		}
 	}
 
@@ -140,6 +154,8 @@ func (a *app) indexRecipe(recipeRaw types.Recipe, stream, messageID string, wg *
 	if err != nil {
 		log.Error(err)
 		// TODO: ack??
+		wg.Done()
+		return
 	}
 
 	// ack (& add recipeIndexed?)
@@ -161,6 +177,8 @@ func (a *app) deleteRecipe(recipeID, messageID string, wg *sync.WaitGroup) {
 		if err != nil {
 			log.Errorf("error ack'ing msg ID [%s]", messageID)
 		}
+		wg.Done()
+		return
 	}
 
 	err = a.streamer.Ack(deletedRecipeStream, group, messageID)

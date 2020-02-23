@@ -63,9 +63,12 @@ func (a *app) readRecipes(ctx context.Context) error {
 		Streams:  streams,
 		Group:    group,
 		Consumer: "usecase",
+		Messages: msgChan,
+		Exit:     exitChan,
+		WG:       &wg,
 	}
 
-	err := a.streamer.ReadGroup(ctx, args, msgChan, exitChan, &wg)
+	err := a.streamer.ReadGroup(ctx, args)
 	if err != nil {
 		return err
 	}
@@ -80,6 +83,7 @@ func (a *app) readRecipes(ctx context.Context) error {
 					if !ok {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
 						continue
 					}
 					log.Debugf("Got message for a new recipe ID [%s]", recipeID)
@@ -91,6 +95,7 @@ func (a *app) readRecipes(ctx context.Context) error {
 					if !ok {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
 						continue
 					}
 					log.Debugf("Got message for updated recipe ID [%s]", recipeID)
@@ -102,6 +107,7 @@ func (a *app) readRecipes(ctx context.Context) error {
 					if !ok {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
 						// TODO: ack??
+						wg.Done()
 						continue
 					}
 					log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
@@ -125,6 +131,8 @@ func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	if err != nil {
 		log.Error(err)
 		// TODO: ack?? new stream??
+		wg.Done()
+		return
 	}
 
 	// save recipe
@@ -132,6 +140,8 @@ func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??
+		wg.Done()
+		return
 	}
 
 	// ack message and relay
@@ -153,6 +163,8 @@ func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??
+		wg.Done()
+		return
 	}
 
 	// ack message
