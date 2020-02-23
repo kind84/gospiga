@@ -19,7 +19,7 @@ type Service interface {
 }
 
 type Streamer interface {
-	Ack(string, string, ...string) error
+	Ack(stream, group string, ids ...string) error
 	Add(string, *streamer.Message) error
 	AckAndAdd(fromStream, toStream, group, id string, msg *streamer.Message) error
 	ReadGroup(context.Context, *streamer.StreamArgs) error

@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kind84/gospiga/finder/domain"
-	gostreamer "github.com/kind84/gospiga/pkg/streamer"
+	"github.com/kind84/gospiga/pkg/streamer"
 	"github.com/kind84/gospiga/pkg/types"
 )
 
@@ -43,7 +43,7 @@ func NewApp(ctx context.Context, db DB, ft FT, streamer Streamer) (*app, error) 
 }
 
 func (a *app) readNewRecipes(ctx context.Context) error {
-	msgChan := make(chan gostreamer.Message)
+	msgChan := make(chan streamer.Message)
 	exitChan := make(chan struct{})
 	var wg sync.WaitGroup
 
@@ -52,7 +52,7 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 		updatedRecipeStream,
 		deletedRecipeStream,
 	}
-	args := &gostreamer.StreamArgs{
+	args := &streamer.StreamArgs{
 		Streams:  streams,
 		Group:    group,
 		Consumer: "finder-usecase",
@@ -76,15 +76,13 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 					jr, err := json.Marshal(msg.Payload)
 					if err != nil {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
-						// TODO: ack??
-						wg.Done()
+						a.discardMessage(&msg, &wg)
 						continue
 					}
 					err = json.Unmarshal(jr, &recipeRaw)
 					if err != nil {
 						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
-						// TODO: ack??
-						wg.Done()
+						a.discardMessage(&msg, &wg)
 						continue
 					}
 					log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
@@ -97,15 +95,13 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 					jr, err := json.Marshal(msg.Payload)
 					if err != nil {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
-						// TODO: ack??
-						wg.Done()
+						a.discardMessage(&msg, &wg)
 						continue
 					}
 					err = json.Unmarshal(jr, &recipeRaw)
 					if err != nil {
 						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
-						// TODO: ack??
-						wg.Done()
+						a.discardMessage(&msg, &wg)
 						continue
 					}
 					log.Debugf("Got message for updated recipe ID [%s]", recipeRaw.ID)
@@ -116,8 +112,7 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 					recipeID, ok := msg.Payload.(string)
 					if !ok {
 						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
-						// TODO: ack??
-						wg.Done()
+						a.discardMessage(&msg, &wg)
 						continue
 					}
 					log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
@@ -187,5 +182,13 @@ func (a *app) deleteRecipe(recipeID, messageID string, wg *sync.WaitGroup) {
 	}
 
 	// unleash streamer
+	wg.Done()
+}
+
+func (a *app) discardMessage(m *streamer.Message, wg *sync.WaitGroup) {
+	err := a.streamer.Ack(m.Stream, group, m.ID)
+	if err != nil {
+		log.Warnf("error acknowledging message: %s", err)
+	}
 	wg.Done()
 }

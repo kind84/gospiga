@@ -18,7 +18,7 @@ type FT interface {
 }
 
 type Streamer interface {
-	Ack(string, string, ...string) error
+	Ack(stream, group string, ids ...string) error
 	Add(string, *streamer.Message) error
 	ReadGroup(context.Context, *streamer.StreamArgs) error
 }
