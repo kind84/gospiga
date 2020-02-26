@@ -266,6 +266,7 @@ func loadRecipeSchema() *api.Operation {
 			ingredients
 			steps
 			conclusion
+			finalImage
 			createdAt
 			modifiedAt
 		}
@@ -278,6 +279,7 @@ func loadRecipeSchema() *api.Operation {
 		}
 
 		type Step {
+			index
 			title
 			description
 			image
@@ -302,9 +304,11 @@ func loadRecipeSchema() *api.Operation {
 		ingredients: [uid] @count @reverse .
 		steps: [uid] @count .
 		conclusion: string .
+		finalImage: uid .
 		name: string @lang @index(term) .
 		quantity: string .
 		unitOfMeasure: string .
+		index: int @index(int) .
 		image: uid .
 		url: string .
 		createdAt: dateTime @index(hour) @upsert .

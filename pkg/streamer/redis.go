@@ -36,6 +36,8 @@ func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
+
 	script, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err

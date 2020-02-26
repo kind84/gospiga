@@ -2,90 +2,95 @@ type Recipe {
     uid: ID!
     title: String!
     subtitle: String!
+    mainImage : Image!
+    likes: Int!
+    difficulty: String!
+    cost: String!
+    prepTime: Int!
+    cookTime: Int
+    servings: Int!
+    extraNotes: String
     description: String
-    ingredient: [Ingredient!]!
-    step: [Step!]!
+    ingredients: [Ingredient!]!
+    steps: [Step!]!
     conclusion: String
-    tag: [Tag!]!
+    finalImage: Image
+    # tag: [Tag!]!
     createdAt: Time!
-    updatedAt: Time!
+    modifiedAt: Time!
 }
+ type Image {
+   url String!
+ }
 
 type Ingredient {
     uid: ID!
     name: String!
-    quantity(unit: Unit = GRAMS): Int
+    quantity: String
+    unitOfMeasure: String
     recipe: [Recipe]!
 }
 
 type Step {
     uid: ID!
     index: Int!
-    excerpt: String!
-    text: String!
-}
-
-type Tag {
-    uid: ID!
-    name: String!
-}
-
-enum Unit {
-  GRAMS
-  KILOGRAMS
-  OUNCES
-  POUNDS
-  LITERS
-  MILLILITERS
-}
-
-input NewRecipe {
     title: String!
-    subtitle: String!
-    description: String
-    ingredient: [UpIngredient!]!
-    step: [UpStep!]!
-    conclusion: String
-    tag: [UpTag!]!
+    description: String!
+    image: Image
 }
 
-input UpRecipe {
-    uid: ID
-    title: String!
-    subtitle: String!
-    description: String
-    ingredient: [UpIngredient!]!
-    step: [UpStep!]!
-    conclusion: String
-    tag: [UpTag!]!
-}
+# type Tag {
+#     uid: ID!
+#     name: String!
+# }
 
-input UpIngredient {
-    uid: ID
-    name: String!
-    quantity: Int
-}
-
-input UpStep {
-    uid: ID
-    index: Int!
-    excerpt: String!
-    text: String!
-}
-
-input UpTag {
-    uid: ID
-    name: String!
-}
+# input NewRecipe {
+#     title: String!
+#     subtitle: String!
+#     description: String
+#     ingredient: [UpIngredient!]!
+#     step: [UpStep!]!
+#     conclusion: String
+#     tag: [UpTag!]!
+# }
+#
+# input UpRecipe {
+#     uid: ID
+#     title: String!
+#     subtitle: String!
+#     description: String
+#     ingredient: [UpIngredient!]!
+#     step: [UpStep!]!
+#     conclusion: String
+#     tag: [UpTag!]!
+# }
+#
+# input UpIngredient {
+#     uid: ID
+#     name: String!
+#     quantity: Int
+# }
+#
+# input UpStep {
+#     uid: ID
+#     index: Int!
+#     excerpt: String!
+#     text: String!
+# }
+#
+# input UpTag {
+#     uid: ID
+#     name: String!
+# }
 
 type Query {
     recipes(uid: ID, tags: [String]): [Recipe!]!
     ingredients(uid: ID, name: String): [Ingredient!]!
 }
 
-type Mutation {
-    createRecipe(input: NewRecipe!): Recipe!
-    updateRecipe(input: UpRecipe!): Recipe!
-}
+# type Mutation {
+#     createRecipe(input: NewRecipe!): Recipe!
+#     updateRecipe(input: UpRecipe!): Recipe!
+# }
 
 scalar Time

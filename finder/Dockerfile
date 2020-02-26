@@ -11,5 +11,6 @@ go build -o /go/bin/finder /gospiga/finder/cmd/finder
 FROM alpine:latest
 
 COPY --from=builder /go/bin/finder /bin/finder
+COPY --from=builder /gospiga/scripts /scripts
 
 ENTRYPOINT ["/bin/finder"]

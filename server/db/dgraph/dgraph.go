@@ -41,8 +41,9 @@ func NewDB(ctx context.Context) (*DB, error) {
 	var res *http.Response
 	for i := 0; i < 20; i++ {
 		err = nil
-		res, err = http.Get("http://alpha:8090/health")
+		res, err = http.Get("http://alpha:8080/health")
 		if err == nil && res.StatusCode == http.StatusOK {
+			log.Debug("dgraph server ready")
 			break
 		}
 		time.Sleep(5 * 100 * time.Millisecond)
@@ -50,8 +51,6 @@ func NewDB(ctx context.Context) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Debug("dgraph server ready")
 
 	op := loadRecipeSchema()
 

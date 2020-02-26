@@ -20,6 +20,7 @@ services:
             dockerfile: Dockerfile
         depends_on:
             - redis
+            - server
         ports:
             - "8070:8070"
             - "50051:50051"
@@ -52,7 +53,7 @@ services:
                   nocopy: true
         command: ["redis-server", "--appendonly", "yes", "--loadmodule", "/usr/lib/redis/modules/redisearch.so"]
     zero:
-        image: dgraph/dgraph:latest
+        image: dgraph/dgraph:v2.0.0-rc1
         volumes:
             - type: volume
               source: dgraph
@@ -62,10 +63,12 @@ services:
         ports:
             - 5080:5080
             - 6080:6080
+            - 8060:8080
+            - 9060:9080
         restart: on-failure
         command: dgraph zero --my=zero:5080
     alpha:
-        image: dgraph/dgraph:latest
+        image: dgraph/dgraph:v2.0.0-rc1
         volumes:
             - type: volume
               source: dgraph
@@ -78,7 +81,7 @@ services:
         restart: on-failure
         command: dgraph alpha --my=alpha:7080 --lru_mb=2048 --zero=zero:5080
     ratel:
-        image: dgraph/dgraph:latest
+        image: dgraph/dgraph:v2.0.0-rc1
         volumes:
             - type: volume
               source: dgraph
