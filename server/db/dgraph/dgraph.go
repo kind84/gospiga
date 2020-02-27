@@ -3,6 +3,8 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -44,6 +46,8 @@ func NewDB(ctx context.Context) (*DB, error) {
 		res, err = http.Get("http://alpha:8080/health")
 		if err == nil && res.StatusCode == http.StatusOK {
 			log.Debug("dgraph server ready")
+			io.Copy(ioutil.Discard, res.Body)
+			res.Body.Close()
 			break
 		}
 		time.Sleep(5 * 100 * time.Millisecond)
