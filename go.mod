@@ -7,6 +7,7 @@ require (
 	github.com/RedisLabs/redisearch-go v0.2.0
 	github.com/dgraph-io/dgo/v2 v2.1.0
 	github.com/garyburd/redigo v1.6.0 // indirect
+	github.com/gin-contrib/cors v1.3.0
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-redis/redis/v7 v7.0.0-beta.5
 	github.com/golang/protobuf v1.3.2

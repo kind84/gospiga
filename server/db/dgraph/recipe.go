@@ -266,6 +266,7 @@ func loadRecipeSchema() *api.Operation {
 			ingredients
 			steps
 			conclusion
+			tags
 			finalImage
 			createdAt
 			modifiedAt
@@ -289,6 +290,10 @@ func loadRecipeSchema() *api.Operation {
 			url
 		}
 
+		type Tag {
+			tag
+		}
+
 		xid: string @index(exact) .
 		title: string @lang @index(fulltext) .
 		subtitle: string @lang @index(fulltext) .
@@ -305,6 +310,7 @@ func loadRecipeSchema() *api.Operation {
 		steps: [uid] @count .
 		conclusion: string .
 		finalImage: uid .
+		tags: [uid] .
 		name: string @lang @index(term) .
 		quantity: string .
 		unitOfMeasure: string .
@@ -313,6 +319,7 @@ func loadRecipeSchema() *api.Operation {
 		url: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
+		tag: string @index(hash) .
 	`
 	return op
 }

@@ -14,4 +14,5 @@ RUN go mod download
 COPY ./pkg ./pkg
 COPY ./proto ./proto
 COPY ./scripts ./scripts
+COPY ./templates ./templates
 

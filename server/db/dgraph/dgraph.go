@@ -3,9 +3,11 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dgraph-io/dgo/v2"
@@ -31,8 +33,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 		time.Sleep(5 * 100 * time.Millisecond)
 	}
 	if err != nil {
-		log.Error("failed to connect to dgraph")
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to dgraph: %w", err)
 	}
 
 	dgraph := dgo.NewDgraphClient(
@@ -53,15 +54,35 @@ func NewDB(ctx context.Context) (*DB, error) {
 		time.Sleep(5 * 100 * time.Millisecond)
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dgraph server not ready: %w", err)
+	}
+
+	drop := api.Operation{DropAll: true}
+	err = dgraph.Alter(ctx, &drop)
+	if err != nil {
+		return nil, fmt.Errorf("failed to flush dgraph schema: %w", err)
 	}
 
 	op := loadRecipeSchema()
 
 	err = dgraph.Alter(ctx, op)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load dgraph schema: %w", err)
 	}
+
+	// load graphql schema
+	file, err := os.Open("/gql/schema.graphql")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open graphql.schema file: %w", err)
+	}
+	defer file.Close()
+
+	res, err = http.Post("http://alpha:8080/admin/schema", "x-www-form-urlencoded", file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load graphql schema into dgraph: %w", err)
+	}
+	io.Copy(ioutil.Discard, res.Body)
+	res.Body.Close()
 
 	return &DB{dgraph}, nil
 }

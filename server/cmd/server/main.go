@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -47,7 +49,7 @@ func main() {
 
 	db, err := dgraph.NewDB(ctx)
 	if err != nil {
-		log.Fatalf("can't connect to database: %s", err)
+		log.Fatalf("error initializing database: %s", err)
 	}
 
 	ds := domain.NewService(db)
@@ -84,8 +86,20 @@ func main() {
 	}
 	service := api.NewService(app)
 
+	config := cors.DefaultConfig()
+	config.AddAllowHeaders("X-Apollo-Tracing")
+	config.AllowAllOrigins = true
+	c := cors.New(config)
+
 	r := gin.Default()
+	r.Use(c)
+	r.LoadHTMLFiles("/templates/graphql-playground.html")
 	r.GET("/ping", service.Ping)
+	r.GET("/x/gql/play", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "graphql-playground.html", gin.H{
+			"title": "GraphQL Playground",
+		})
+	})
 	r.POST("/new-recipe", service.NewRecipe)
 	r.POST("/updated-recipe", service.UpdatedRecipe)
 	r.POST("/deleted-recipe", service.DeletedRecipe)

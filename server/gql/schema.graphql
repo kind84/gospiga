@@ -1,5 +1,5 @@
 type Recipe {
-    uid: ID!
+    xid: String!
     title: String!
     subtitle: String!
     mainImage : Image!
@@ -15,16 +15,16 @@ type Recipe {
     steps: [Step!]!
     conclusion: String
     finalImage: Image
-    # tag: [Tag!]!
-    createdAt: Time!
-    modifiedAt: Time!
+    tags: [Tag!]!
+    createdAt: DateTime!
+    modifiedAt: DateTime!
 }
- type Image {
-   url String!
- }
+
+type Image {
+    url: String!
+}
 
 type Ingredient {
-    uid: ID!
     name: String!
     quantity: String
     unitOfMeasure: String
@@ -32,65 +32,13 @@ type Ingredient {
 }
 
 type Step {
-    uid: ID!
     index: Int!
     title: String!
     description: String!
     image: Image
 }
 
-# type Tag {
-#     uid: ID!
-#     name: String!
-# }
-
-# input NewRecipe {
-#     title: String!
-#     subtitle: String!
-#     description: String
-#     ingredient: [UpIngredient!]!
-#     step: [UpStep!]!
-#     conclusion: String
-#     tag: [UpTag!]!
-# }
-#
-# input UpRecipe {
-#     uid: ID
-#     title: String!
-#     subtitle: String!
-#     description: String
-#     ingredient: [UpIngredient!]!
-#     step: [UpStep!]!
-#     conclusion: String
-#     tag: [UpTag!]!
-# }
-#
-# input UpIngredient {
-#     uid: ID
-#     name: String!
-#     quantity: Int
-# }
-#
-# input UpStep {
-#     uid: ID
-#     index: Int!
-#     excerpt: String!
-#     text: String!
-# }
-#
-# input UpTag {
-#     uid: ID
-#     name: String!
-# }
-
-type Query {
-    recipes(uid: ID, tags: [String]): [Recipe!]!
-    ingredients(uid: ID, name: String): [Ingredient!]!
+type Tag {
+    tag: String!
 }
 
-# type Mutation {
-#     createRecipe(input: NewRecipe!): Recipe!
-#     updateRecipe(input: UpRecipe!): Recipe!
-# }
-
-scalar Time
