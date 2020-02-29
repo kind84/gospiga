@@ -294,7 +294,7 @@ func loadRecipeSchema() *api.Operation {
 			tag
 		}
 
-		xid: string @index(exact) .
+		xid: string @index(hash) .
 		title: string @lang @index(fulltext) .
 		subtitle: string @lang @index(fulltext) .
 		mainImage: uid .
@@ -319,7 +319,7 @@ func loadRecipeSchema() *api.Operation {
 		url: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
-		tag: string @index(hash) .
+		tag: string @index(term) .
 	`
 	return op
 }

@@ -1,44 +1,44 @@
 type Recipe {
-    xid: String!
-    title: String!
-    subtitle: String!
-    mainImage : Image!
-    likes: Int!
-    difficulty: String!
-    cost: String!
-    prepTime: Int!
-    cookTime: Int
-    servings: Int!
-    extraNotes: String
-    description: String
-    ingredients: [Ingredient!]!
-    steps: [Step!]!
-    conclusion: String
-    finalImage: Image
-    tags: [Tag!]!
-    createdAt: DateTime!
-    modifiedAt: DateTime!
+    xid: String! @id @dgraph(xid)
+    title: String! @search(by: [fulltext]) @dgraph(title)
+    subtitle: String! @search(by: [fulltext]) @dgraph(subtitle)
+    mainImage : Image! @dgraph(mainImage)
+    likes: Int! @search @dgraph(likes)
+    difficulty: String! @dgraph(difficulty)
+    cost: String! @dgraph(cost)
+    prepTime: Int! @search @dgraph(prepTime)
+    cookTime: Int @search @dgraph(cookTime)
+    servings: Int! @dgraph(servings)
+    extraNotes: String @dgraph(extraNotes)
+    description: String @search(by: [fulltext]) @dgraph(description)
+    ingredients: [Ingredient!]! @hasInverse(field: recipes) @dgraph(ingredients)
+    steps: [Step!]! @dgraph(steps)
+    conclusion: String @dgraph(conclusion)
+    finalImage: Image @dgraph(finalImage)
+    tags: [Tag!]! @dgraph(tags)
+    createdAt: DateTime! @search @dgraph(createdAt)
+    modifiedAt: DateTime! @search @dgraph(modifiedAt)
 }
 
 type Image {
-    url: String!
+    url: String! @dgraph(url)
 }
 
 type Ingredient {
-    name: String!
-    quantity: String
-    unitOfMeasure: String
-    recipe: [Recipe]!
+    name: String! @search(by: [term]) @dgraph(name)
+    quantity: String @dgraph(quantity)
+    unitOfMeasure: String @dgraph(unitOfMeasure)
+    recipes: [Recipe]! @dgraph(recipes)
 }
 
 type Step {
-    index: Int!
-    title: String!
-    description: String!
-    image: Image
+    index: Int! @search @dgraph(index)
+    title: String! @search(by: [fulltext]) @dgraph(title)
+    description: String! @search(by: [fulltext]) @dgraph(description)
+    image: Image @dgraph(image)
 }
 
 type Tag {
-    tag: String!
+    tag: String! @search(by: [term]) @dgraph(tag)
 }
 

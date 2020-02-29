@@ -63,13 +63,6 @@ func NewDB(ctx context.Context) (*DB, error) {
 		return nil, fmt.Errorf("failed to flush dgraph schema: %w", err)
 	}
 
-	op := loadRecipeSchema()
-
-	err = dgraph.Alter(ctx, op)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load dgraph schema: %w", err)
-	}
-
 	// load graphql schema
 	file, err := os.Open("/gql/schema.graphql")
 	if err != nil {
@@ -83,6 +76,13 @@ func NewDB(ctx context.Context) (*DB, error) {
 	}
 	io.Copy(ioutil.Discard, res.Body)
 	res.Body.Close()
+
+	// load dgraph schema
+	op := loadRecipeSchema()
+	err = dgraph.Alter(ctx, op)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load dgraph schema: %w", err)
+	}
 
 	return &DB{dgraph}, nil
 }
