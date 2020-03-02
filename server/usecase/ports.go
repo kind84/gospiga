@@ -22,7 +22,7 @@ type Streamer interface {
 	Ack(stream, group string, ids ...string) error
 	Add(string, *streamer.Message) error
 	AckAndAdd(fromStream, toStream, group, id string, msg *streamer.Message) error
-	ReadGroup(context.Context, *streamer.StreamArgs) error
+	ReadGroup(*streamer.StreamArgs) error
 }
 
 type Provider interface {

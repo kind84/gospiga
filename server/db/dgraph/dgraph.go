@@ -57,13 +57,9 @@ func NewDB(ctx context.Context) (*DB, error) {
 		return nil, fmt.Errorf("dgraph server not ready: %w", err)
 	}
 
-	drop := api.Operation{DropAll: true}
-	err = dgraph.Alter(ctx, &drop)
-	if err != nil {
-		return nil, fmt.Errorf("failed to flush dgraph schema: %w", err)
-	}
-
+	time.Sleep(5 * time.Second)
 	// load graphql schema
+	log.Debug("loading graphql schema..")
 	file, err := os.Open("/gql/schema.graphql")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open graphql.schema file: %w", err)
@@ -77,7 +73,9 @@ func NewDB(ctx context.Context) (*DB, error) {
 	io.Copy(ioutil.Discard, res.Body)
 	res.Body.Close()
 
+	time.Sleep(5 * time.Second)
 	// load dgraph schema
+	log.Debug("loading dgraph schema..")
 	op := loadRecipeSchema()
 	err = dgraph.Alter(ctx, op)
 	if err != nil {

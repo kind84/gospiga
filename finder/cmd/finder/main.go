@@ -1,10 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -39,7 +42,17 @@ func init() {
 }
 
 func main() {
-	ctx := context.Background()
+	shutdownCh := make(chan os.Signal, 1)
+
+	// Wire shutdownCh to get events depending on the OS we are running in
+	if runtime.GOOS == "windows" {
+		fmt.Println("Listening to Windows OS interrupt signal for graceful shutdown.")
+		signal.Notify(shutdownCh, os.Interrupt)
+
+	} else {
+		fmt.Println("Listening to SIGINT or SIGTERM for graceful shutdown.")
+		signal.Notify(shutdownCh, syscall.SIGINT, syscall.SIGTERM)
+	}
 
 	rdb, err := redis.NewClient("redis:6379")
 	if err != nil {
@@ -57,7 +70,7 @@ func main() {
 		log.Fatalf("error initializing redis streamer: %s", err)
 	}
 
-	app, err := usecase.NewApp(ctx, db, ft, streamer)
+	app := usecase.NewApp(db, ft, streamer)
 	if err != nil {
 		log.Fatalf("cannot initalize application: %s", err)
 	}
@@ -76,5 +89,12 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/search-recipe", service.SearchRecipes)
-	r.Run()
+	go r.Run()
+
+	// wait for shutdown
+	if <-shutdownCh != nil {
+		fmt.Println("\nShutdown signal detected, gracefully shutting down...")
+		app.CloseGracefully()
+	}
+	fmt.Println("bye")
 }

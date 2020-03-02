@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -14,8 +13,7 @@ import (
 )
 
 const (
-	newRecipeStream     = "new-recipes"
-	updatedRecipeStream = "updated-recipes"
+	savedRecipeStream   = "saved-recipes"
 	deletedRecipeStream = "deleted-recipes"
 	group               = "finder-usecase"
 )
@@ -24,32 +22,34 @@ type app struct {
 	db       DB
 	ft       FT
 	streamer Streamer
+	shutdown chan struct{}
 }
 
-func NewApp(ctx context.Context, db DB, ft FT, streamer Streamer) (*app, error) {
+// CloseGracefully sends the shutdown signal to start closing all app processes
+func (a *app) CloseGracefully() {
+	close(a.shutdown)
+}
+
+func NewApp(db DB, ft FT, streamer Streamer) *app {
 	a := &app{
 		db:       db,
 		ft:       ft,
 		streamer: streamer,
+		shutdown: make(chan struct{}),
 	}
 
 	// start streamer to listen for new recipes.
-	err := a.readNewRecipes(ctx)
-	if err != nil {
-		return nil, err
-	}
+	go a.readNewRecipes()
 
-	return a, nil
+	return a
 }
 
-func (a *app) readNewRecipes(ctx context.Context) error {
+func (a *app) readNewRecipes() {
 	msgChan := make(chan streamer.Message)
-	exitChan := make(chan struct{})
 	var wg sync.WaitGroup
 
 	streams := []string{
-		newRecipeStream,
-		updatedRecipeStream,
+		savedRecipeStream,
 		deletedRecipeStream,
 	}
 	args := &streamer.StreamArgs{
@@ -57,76 +57,54 @@ func (a *app) readNewRecipes(ctx context.Context) error {
 		Group:    group,
 		Consumer: "finder-usecase",
 		Messages: msgChan,
-		Exit:     exitChan,
+		Exit:     a.shutdown,
 		WG:       &wg,
 	}
-	err := a.streamer.ReadGroup(ctx, args)
+	err := a.streamer.ReadGroup(args)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	go func() {
-		for {
-			select {
-			case msg := <-msgChan:
-				switch msg.Stream {
-				case newRecipeStream:
-					// ping-pong to parse recipe from message
-					var recipeRaw types.Recipe
-					jr, err := json.Marshal(msg.Payload)
-					if err != nil {
-						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					err = json.Unmarshal(jr, &recipeRaw)
-					if err != nil {
-						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
-
-					go a.indexRecipe(recipeRaw, msg.Stream, msg.ID, &wg)
-
-				case updatedRecipeStream:
-					// ping-pong to parse recipe from message
-					var recipeRaw types.Recipe
-					jr, err := json.Marshal(msg.Payload)
-					if err != nil {
-						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					err = json.Unmarshal(jr, &recipeRaw)
-					if err != nil {
-						log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					log.Debugf("Got message for updated recipe ID [%s]", recipeRaw.ID)
-
-					go a.indexRecipe(recipeRaw, msg.Stream, msg.ID, &wg)
-
-				case deletedRecipeStream:
-					recipeID, ok := msg.Payload.(string)
-					if !ok {
-						log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
-
-					go a.deleteRecipe(recipeID, msg.ID, &wg)
+	for {
+		select {
+		case msg := <-msgChan:
+			switch msg.Stream {
+			case savedRecipeStream:
+				// ping-pong to parse recipe from message
+				var recipeRaw types.Recipe
+				jr, err := json.Marshal(msg.Payload)
+				if err != nil {
+					log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
+					a.discardMessage(&msg, &wg)
+					continue
 				}
+				err = json.Unmarshal(jr, &recipeRaw)
+				if err != nil {
+					log.Errorf("cannot parse recipe ID from message ID [%s].", msg.ID)
+					a.discardMessage(&msg, &wg)
+					continue
+				}
+				log.Debugf("Got message for a new recipe ID [%s]", recipeRaw.ID)
 
-			case <-ctx.Done():
-				// time to exit
-				close(exitChan)
+				a.indexRecipe(recipeRaw, msg.Stream, msg.ID, &wg)
+
+			case deletedRecipeStream:
+				recipeID, ok := msg.Payload.(string)
+				if !ok {
+					log.Errorf("cannot read recipe ID from message ID [%s].", msg.ID)
+					a.discardMessage(&msg, &wg)
+					continue
+				}
+				log.Debugf("Got message for deleted recipe ID [%s]", recipeID)
+
+				a.deleteRecipe(recipeID, msg.ID, &wg)
 			}
+
+		case <-a.shutdown:
+			// time to exit
+			return
 		}
-	}()
-	return nil
+	}
 }
 
 func (a *app) indexRecipe(recipeRaw types.Recipe, stream, messageID string, wg *sync.WaitGroup) {

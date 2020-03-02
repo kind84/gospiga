@@ -1,8 +1,6 @@
 package usecase
 
 import (
-	"context"
-
 	"github.com/kind84/gospiga/finder/domain"
 	"github.com/kind84/gospiga/pkg/streamer"
 )
@@ -20,5 +18,5 @@ type FT interface {
 type Streamer interface {
 	Ack(stream, group string, ids ...string) error
 	Add(string, *streamer.Message) error
-	ReadGroup(context.Context, *streamer.StreamArgs) error
+	ReadGroup(*streamer.StreamArgs) error
 }

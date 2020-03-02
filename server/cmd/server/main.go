@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -41,6 +45,18 @@ func init() {
 
 func main() {
 	ctx := context.Background()
+
+	shutdownCh := make(chan os.Signal, 1)
+
+	// Wire shutdownCh to get events depending on the OS we are running in
+	if runtime.GOOS == "windows" {
+		fmt.Println("Listening to Windows OS interrupt signal for graceful shutdown.")
+		signal.Notify(shutdownCh, os.Interrupt)
+
+	} else {
+		fmt.Println("Listening to SIGINT or SIGTERM for graceful shutdown.")
+		signal.Notify(shutdownCh, syscall.SIGINT, syscall.SIGTERM)
+	}
 
 	rdb, err := redis.NewClient("redis:6379")
 	if err != nil {
@@ -80,10 +96,7 @@ func main() {
 	grpcClient := pb.NewFinderClient(conn)
 	stub := gogrpc.NewStub(&grpcClient)
 
-	app, err := usecase.NewApp(ctx, ds, db, streamer, provider, stub)
-	if err != nil {
-		log.Fatalf("cannot initalize application: %s", err)
-	}
+	app := usecase.NewApp(ds, db, streamer, provider, stub)
 	service := api.NewService(app)
 
 	config := cors.DefaultConfig()
@@ -104,5 +117,12 @@ func main() {
 	r.POST("/updated-recipe", service.UpdatedRecipe)
 	r.POST("/deleted-recipe", service.DeletedRecipe)
 	r.POST("/search-recipes", service.SearchRecipes)
-	r.Run()
+	go r.Run()
+
+	// wait for shutdown
+	if <-shutdownCh != nil {
+		fmt.Println("\nShutdown signal detected, gracefully shutting down...")
+		app.CloseGracefully()
+	}
+	fmt.Println("bye")
 }

@@ -1,7 +1,6 @@
 package streamer
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -87,7 +86,7 @@ func (s *redisStreamer) AckAndAdd(fromStream, toStream, group, id string, msg *M
 }
 
 // ReadGroup reads messages on the given stream and sends them over a channel.
-func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs) error {
+func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 	// create consumer group if not done yet
 	for _, stream := range args.Streams {
 		_, err := s.rdb.XGroupCreateMkStream(stream, args.Group, "0-0").Result()
@@ -136,7 +135,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs) error {
 					log.Errorf("error reading streams %s: %s", args.Streams, err)
 				}
 				// Timeout, check if it's time to exit
-				if s.shouldExit(ctx, args.Exit) {
+				if s.shouldExit(args.Exit) {
 					log.Debugf("stop reading streams %s", args.Streams)
 					return
 				}
@@ -200,13 +199,11 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, args *StreamArgs) error {
 	return nil
 }
 
-func (s *redisStreamer) shouldExit(ctx context.Context, exitCh chan struct{}) bool {
+func (s *redisStreamer) shouldExit(exitCh chan struct{}) bool {
 	// TODO: is exitChan really necessary?
 	select {
 	case _, ok := <-exitCh:
 		return !ok
-	case <-ctx.Done():
-		return true
 	default:
 	}
 	return false

@@ -19,19 +19,28 @@ const (
 
 // NewRecipe inform of a new recipe ID sending it over the stream.
 func (a *app) NewRecipe(ctx context.Context, recipeID string) error {
-	msg := &streamer.Message{Payload: recipeID}
+	msg := &streamer.Message{
+		Stream:  newRecipeStream,
+		Payload: recipeID,
+	}
 	return a.streamer.Add(newRecipeStream, msg)
 }
 
 // UpdatedRecipe inform of an updated recipe ID sending it over the stream.
 func (a *app) UpdatedRecipe(ctx context.Context, recipeID string) error {
-	msg := &streamer.Message{Payload: recipeID}
+	msg := &streamer.Message{
+		Stream:  updatedRecipeStream,
+		Payload: recipeID,
+	}
 	return a.streamer.Add(updatedRecipeStream, msg)
 }
 
 // DeletedRecipe inform of an deleted recipe ID sending it over the stream.
 func (a *app) DeletedRecipe(ctx context.Context, recipeID string) error {
-	msg := &streamer.Message{Payload: recipeID}
+	msg := &streamer.Message{
+		Stream:  deletedRecipeStream,
+		Payload: recipeID,
+	}
 	return a.streamer.Add(deletedRecipeStream, msg)
 }
 
@@ -48,9 +57,9 @@ func (a *app) SearchRecipes(ctx context.Context, query string) ([]*domain.Recipe
 	return a.service.GetRecipesByIDs(ctx, ids)
 }
 
-func (a *app) readRecipes(ctx context.Context) error {
+func (a *app) readRecipes() {
+	ctx, exit := context.WithCancel(context.Background())
 	msgChan := make(chan streamer.Message)
-	exitChan := make(chan struct{})
 	var wg sync.WaitGroup
 
 	streams := []string{
@@ -63,62 +72,60 @@ func (a *app) readRecipes(ctx context.Context) error {
 		Group:    group,
 		Consumer: "usecase",
 		Messages: msgChan,
-		Exit:     exitChan,
+		Exit:     a.shutdown,
 		WG:       &wg,
 	}
 
-	err := a.streamer.ReadGroup(ctx, args)
+	err := a.streamer.ReadGroup(args)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	go func() {
-		for {
-			select {
-			case msg := <-msgChan:
-				switch msg.Stream {
-				case newRecipeStream:
-					recipeID, ok := msg.Payload.(string)
-					if !ok {
-						log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					log.Debugf("Got message for a new recipe ID %q", recipeID)
-
-					go a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
-
-				case updatedRecipeStream:
-					recipeID, ok := msg.Payload.(string)
-					if !ok {
-						log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					log.Debugf("Got message for updated recipe ID %q", recipeID)
-
-					go a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
-
-				case deletedRecipeStream:
-					recipeID, ok := msg.Payload.(string)
-					if !ok {
-						log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
-						a.discardMessage(&msg, &wg)
-						continue
-					}
-					log.Debugf("Got message for deleted recipe ID %q", recipeID)
-
-					go a.deleteRecipe(ctx, recipeID, msg.ID, &wg)
-
+	for {
+		select {
+		case msg := <-msgChan:
+			switch msg.Stream {
+			case newRecipeStream:
+				recipeID, ok := msg.Payload.(string)
+				if !ok {
+					log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
+					a.discardMessage(&msg, &wg)
+					continue
 				}
+				log.Debugf("Got message for a new recipe ID %q", recipeID)
 
-			case <-ctx.Done():
-				// time to exit
-				close(exitChan)
+				a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+
+			case updatedRecipeStream:
+				recipeID, ok := msg.Payload.(string)
+				if !ok {
+					log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
+					a.discardMessage(&msg, &wg)
+					continue
+				}
+				log.Debugf("Got message for updated recipe ID %q", recipeID)
+
+				a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+
+			case deletedRecipeStream:
+				recipeID, ok := msg.Payload.(string)
+				if !ok {
+					log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
+					a.discardMessage(&msg, &wg)
+					continue
+				}
+				log.Debugf("Got message for deleted recipe ID %q", recipeID)
+
+				a.deleteRecipe(ctx, recipeID, msg.ID, &wg)
+
 			}
+
+		case <-a.shutdown:
+			// time to exit
+			exit()
+			return
 		}
-	}()
-	return nil
+	}
 }
 
 func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
