@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/jaylane/graphql"
@@ -62,11 +63,35 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*domain.Reci
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.token))
 
 	var r struct {
-		Recipe domain.Recipe
+		Recipe struct {
+			domain.Recipe
+			DatoID string `json:"id"`
+		}
 	}
 	err := p.client.Run(ctx, req, &r)
 	if err != nil {
 		return nil, err
 	}
-	return &r.Recipe, nil
+	r.Recipe.ExternalID = r.Recipe.DatoID
+
+	// ping-pong to get the domain recipe.
+	var mrecipe map[string]interface{}
+	bs, err := json.Marshal(r.Recipe)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(bs, &mrecipe)
+	if err != nil {
+		return nil, err
+	}
+	var recipe domain.Recipe
+	bs, err = json.Marshal(mrecipe)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(bs, &recipe)
+	if err != nil {
+		return nil, err
+	}
+	return &recipe, nil
 }
