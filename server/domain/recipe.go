@@ -5,7 +5,7 @@ type Recipe struct {
 	ExternalID  string           `json:"xid,omitempty"`
 	Title       string           `json:"title,omitempty"`
 	Subtitle    string           `json:"subtitle,omitempty"`
-	MainImage   Image            `json:"mainImage,omitempty"`
+	MainImage   *Image           `json:"mainImage,omitempty"`
 	Likes       int              `json:"likes,omitempty"`
 	Difficulty  RecipeDifficulty `json:"difficulty,omitempty"`
 	Cost        RecipeCost       `json:"cost,omitempty"`
@@ -44,11 +44,11 @@ type Ingredient struct {
 type Step struct {
 	Title       string `json:"title,omitempty"`
 	Description string `json:"description,omitempty"`
-	Image       Image  `json:"image,omitempty"`
+	Image       *Image `json:"image,omitempty"`
 }
 
 type Image struct {
-	Url string `json:"url,omitempty"`
+	URL string `json:"url,omitempty"`
 }
 
 func NewRecipe(id string, title string) (*Recipe, error) {

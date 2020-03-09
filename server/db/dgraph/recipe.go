@@ -191,9 +191,35 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 	uu := strings.Join(uids, ", ")
 	vars := map[string]string{"$uids": uu}
 	q := `
-		query Recipes($uid: []string){
+		query Recipes($uids: string){
 			recipes(func: uid($uids)) {
-				expand(_all_)
+				id
+				title
+				subtitle
+				mainImage {
+					url
+				}
+				likes
+				difficulty
+				cost
+				prepTime
+				cookTime
+				servings
+				extraNotes
+				description
+				ingredients {
+					name
+					quantity
+					unitOfMeasure
+				}
+				steps {
+					title
+					description
+					image {
+						url
+					}
+				}
+				conclusion
 			}
 		}
 	`

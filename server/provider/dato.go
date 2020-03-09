@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/jaylane/graphql"
@@ -74,24 +73,26 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*domain.Reci
 	}
 	r.Recipe.ExternalID = r.Recipe.DatoID
 
-	// ping-pong to get the domain recipe.
-	var mrecipe map[string]interface{}
-	bs, err := json.Marshal(r.Recipe)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(bs, &mrecipe)
-	if err != nil {
-		return nil, err
-	}
-	var recipe domain.Recipe
-	bs, err = json.Marshal(mrecipe)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(bs, &recipe)
-	if err != nil {
-		return nil, err
+	// map to the domain recipe.
+	recipe := domain.Recipe{
+		ID:         r.Recipe.ID,
+		ExternalID: r.Recipe.ExternalID,
+		Title:      r.Recipe.Title,
+		Subtitle:   r.Recipe.Subtitle,
+		MainImage: &domain.Image{
+			URL: r.Recipe.MainImage.URL,
+		},
+		Likes:       r.Recipe.Likes,
+		Difficulty:  r.Recipe.Difficulty,
+		Cost:        r.Recipe.Cost,
+		PrepTime:    r.Recipe.PrepTime,
+		CookTime:    r.Recipe.CookTime,
+		Servings:    r.Recipe.Servings,
+		ExtraNotes:  r.Recipe.ExtraNotes,
+		Description: r.Recipe.Description,
+		Ingredients: r.Recipe.Ingredients,
+		Steps:       r.Recipe.Steps,
+		Conclusion:  r.Recipe.Conclusion,
 	}
 	return &recipe, nil
 }

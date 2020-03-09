@@ -19,29 +19,17 @@ const (
 
 // NewRecipe inform of a new recipe ID sending it over the stream.
 func (a *app) NewRecipe(ctx context.Context, recipeID string) error {
-	msg := &streamer.Message{
-		Stream:  newRecipeStream,
-		Payload: recipeID,
-	}
-	return a.streamer.Add(newRecipeStream, msg)
+	return a.streamer.Add(newRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
 // UpdatedRecipe inform of an updated recipe ID sending it over the stream.
 func (a *app) UpdatedRecipe(ctx context.Context, recipeID string) error {
-	msg := &streamer.Message{
-		Stream:  updatedRecipeStream,
-		Payload: recipeID,
-	}
-	return a.streamer.Add(updatedRecipeStream, msg)
+	return a.streamer.Add(updatedRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
 // DeletedRecipe inform of an deleted recipe ID sending it over the stream.
 func (a *app) DeletedRecipe(ctx context.Context, recipeID string) error {
-	msg := &streamer.Message{
-		Stream:  deletedRecipeStream,
-		Payload: recipeID,
-	}
-	return a.streamer.Add(deletedRecipeStream, msg)
+	return a.streamer.Add(deletedRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
 // SearchRecipes matching the query string.

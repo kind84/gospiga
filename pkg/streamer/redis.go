@@ -175,7 +175,7 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 
 					lastIDs[stream.Stream] = rawMsg.ID
 
-					msg, err := parseMessage(rawMsg)
+					msg, err := parseMessage(rawMsg, stream.Stream)
 					if err != nil {
 						log.Errorf(err.Error())
 						// clear malformed message
@@ -209,7 +209,7 @@ func (s *redisStreamer) shouldExit(exitCh chan struct{}) bool {
 	return false
 }
 
-func parseMessage(rawMsg redis.XMessage) (*Message, error) {
+func parseMessage(rawMsg redis.XMessage, stream string) (*Message, error) {
 	strMsg, ok := rawMsg.Values["message"].(string)
 	if !ok {
 		return nil, fmt.Errorf("cannot parse stream message %q", rawMsg.ID)
@@ -221,6 +221,7 @@ func parseMessage(rawMsg redis.XMessage) (*Message, error) {
 		return nil, fmt.Errorf("malformed stream message %q, cannot unmarshal to mq.Message", rawMsg.ID)
 	}
 	msg.ID = rawMsg.ID
+	msg.Stream = stream
 
 	return &msg, nil
 }
