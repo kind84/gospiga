@@ -219,6 +219,9 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 						url
 					}
 				}
+				tags {
+					tag
+				}
 				conclusion
 			}
 		}

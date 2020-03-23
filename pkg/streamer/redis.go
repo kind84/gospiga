@@ -200,7 +200,6 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 }
 
 func (s *redisStreamer) shouldExit(exitCh chan struct{}) bool {
-	// TODO: is exitChan really necessary?
 	select {
 	case _, ok := <-exitCh:
 		return !ok

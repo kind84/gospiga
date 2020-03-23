@@ -5,7 +5,7 @@ type Recipe struct {
 	ExternalID  string           `json:"id,omitempty"`
 	Title       string           `json:"title,omitempty"`
 	Subtitle    string           `json:"subtitle,omitempty"`
-	MainImage   Image            `json:"mainImage,omitempty"`
+	MainImage   *Image           `json:"mainImage,omitempty"`
 	Likes       int              `json:"likes,omitempty"`
 	Difficulty  RecipeDifficulty `json:"difficulty,omitempty"`
 	Cost        RecipeCost       `json:"cost,omitempty"`
@@ -16,6 +16,7 @@ type Recipe struct {
 	Description string           `json:"description,omitempty"`
 	Ingredients []*Ingredient    `json:"ingredients,omitempty"`
 	Steps       []*Step          `json:"steps,omitempty"`
+	Tags        string           `json:"tags,omitempty"`
 	Conclusion  string           `json:"conclusion,omitempty"`
 }
 
@@ -44,9 +45,9 @@ type Ingredient struct {
 type Step struct {
 	Title       string `json:"title,omitempty"`
 	Description string `json:"description,omitempty"`
-	Image       Image  `json:"image,omitempty"`
+	Image       *Image `json:"image,omitempty"`
 }
 
 type Image struct {
-	Url string `json:"url,omitempty"`
+	URL string `json:"url,omitempty"`
 }

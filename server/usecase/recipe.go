@@ -137,7 +137,7 @@ func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID 
 
 	// ack message and relay
 	rMsg := &streamer.Message{
-		Payload: r,
+		Payload: r.ToType(),
 	}
 	err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
 	if err != nil {

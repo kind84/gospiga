@@ -15,6 +15,7 @@ type redisFT struct {
 	ft *redisearch.Client
 }
 
+// NewRedisFT returns a new instance of the Full Text Redis client.
 func NewRedisFT(addr string) (*redisFT, error) {
 	// Create a client. By default a client is schemaless
 	// unless a schema is provided when creating the index
@@ -30,7 +31,8 @@ func NewRedisFT(addr string) (*redisFT, error) {
 		AddField(redisearch.NewTextField("description")).
 		AddField(redisearch.NewTextFieldOptions("ingredients", redisearch.TextFieldOptions{Weight: 4.0})).
 		AddField(redisearch.NewTextField("steps")).
-		AddField(redisearch.NewTextField("conclusion"))
+		AddField(redisearch.NewTextField("conclusion")).
+		AddField(redisearch.NewTagField("tags"))
 
 	// Drop an existing index. If the index does not exist an error is returned
 	ft.Drop()
@@ -43,16 +45,18 @@ func NewRedisFT(addr string) (*redisFT, error) {
 	return &redisFT{ft}, nil
 }
 
+// IndexRecipe adds a new recipe to the index.
 func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 	// Create a document with an id and given score
-	doc := redisearch.NewDocument(fmt.Sprintf("recipe-%s", recipe.ID), 1.0)
+	doc := redisearch.NewDocument(fmt.Sprintf("recipe:%s", recipe.ID), 1.0)
 
 	doc.Set("title", recipe.Title).
 		Set("subtitle", recipe.Subtitle).
 		Set("description", recipe.Description).
 		Set("ingredients", recipe.Ingredients).
 		Set("steps", recipe.Steps).
-		Set("conclusion", recipe.Conclusion)
+		Set("conclusion", recipe.Conclusion).
+		Set("tags", recipe.Tags)
 
 	// Index the document. The API accepts multiple documents at a time,
 	opts := redisearch.DefaultIndexingOptions
@@ -76,7 +80,7 @@ func (r *redisFT) SearchRecipes(query string) ([]string, error) {
 
 	ids := make([]string, 0, tot)
 	for _, doc := range docs {
-		id := strings.Split(doc.Id, "recipe-")[1]
+		id := strings.Split(doc.Id, "recipe:")[1]
 		ids = append(ids, id)
 	}
 	return ids, nil

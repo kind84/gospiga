@@ -109,7 +109,7 @@ func (a *app) readNewRecipes() {
 
 func (a *app) indexRecipe(recipeRaw types.Recipe, stream, messageID string, wg *sync.WaitGroup) {
 	// check if ID is already indexed
-	if exists, _ := a.db.IDExists(fmt.Sprintf("recipe-%s", recipeRaw.ID)); exists {
+	if exists, _ := a.db.IDExists(fmt.Sprintf("recipe:%s", recipeRaw.ID)); exists {
 		log.Debugf("recipe ID [%s] already indexed", recipeRaw.ID)
 
 		err := a.streamer.Ack(stream, group, messageID)
@@ -120,7 +120,7 @@ func (a *app) indexRecipe(recipeRaw types.Recipe, stream, messageID string, wg *
 		}
 	}
 
-	r := domain.MapFromType(&recipeRaw)
+	r := domain.FromType(&recipeRaw)
 
 	// index recipe
 	err := a.ft.IndexRecipe(r)
