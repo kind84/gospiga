@@ -85,10 +85,11 @@ func main() {
 		port = defaultPort
 	}
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
-	grpcServer.Serve(lis)
+	go grpcServer.Serve(lis)
 
 	r := gin.Default()
-	r.POST("/search-recipe", service.SearchRecipes)
+	r.POST("/search-recipe", service.SearchRecipes) // NOTE: debug endpoint to be removed
+	r.POST("/all-recipe-tags", service.AllRecipeTags)
 	go r.Run()
 
 	// wait for shutdown

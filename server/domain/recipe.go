@@ -65,6 +65,7 @@ type Tag struct {
 func (r *Recipe) ToType() *types.Recipe {
 	var rt types.Recipe
 
+	rt.ID = r.ID
 	rt.ExternalID = r.ExternalID
 	rt.Title = r.Title
 	rt.Subtitle = r.Subtitle

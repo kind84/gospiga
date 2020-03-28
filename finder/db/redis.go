@@ -19,7 +19,7 @@ func (r *redisDB) IDExists(id string) (bool, error) {
 }
 
 func (r *redisDB) Tags(index, field string) ([]string, error) {
-	cmd := redis.NewStringSliceCmd("tagvals", index, field)
+	cmd := redis.NewStringSliceCmd("ft.tagvals", index, field)
 	err := r.rdb.Process(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("error collecting tags: %w", err)

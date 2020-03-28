@@ -6,4 +6,5 @@ import (
 
 type App interface {
 	SearchRecipes(context.Context, string) ([]string, error)
+	AllRecipeTags() ([]string, error)
 }

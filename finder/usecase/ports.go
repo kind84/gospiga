@@ -7,6 +7,7 @@ import (
 
 type DB interface {
 	IDExists(id string) (bool, error)
+	Tags(index, field string) ([]string, error)
 }
 
 type FT interface {

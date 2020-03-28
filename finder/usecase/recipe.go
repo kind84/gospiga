@@ -17,6 +17,10 @@ func (a *app) SearchRecipes(ctx context.Context, query string) ([]string, error)
 	return a.ft.SearchRecipes(query)
 }
 
+func (a *app) AllRecipeTags() ([]string, error) {
+	return a.db.Tags("recipes", "tags")
+}
+
 func (a *app) readNewRecipes() {
 	msgChan := make(chan streamer.Message)
 	var wg sync.WaitGroup

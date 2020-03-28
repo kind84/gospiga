@@ -19,7 +19,13 @@ func (s *GospigaService) SearchRecipes(c *gin.Context) {
 	if err != nil {
 		c.Error(err)
 	}
-	c.JSON(200, gin.H{
-		"ids": ids,
-	})
+	c.JSON(200, gin.H{"ids": ids})
+}
+
+func (s *GospigaService) AllRecipeTags(c *gin.Context) {
+	tags, err := s.app.AllRecipeTags()
+	if err != nil {
+		c.Error(err)
+	}
+	c.JSON(200, gin.H{"tags": tags})
 }

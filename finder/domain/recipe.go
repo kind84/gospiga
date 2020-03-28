@@ -9,6 +9,7 @@ import (
 
 type Recipe struct {
 	ID          string           `json:"id,omitempty"`
+	ExternalID  string           `json:"xid,omitempty"`
 	Title       string           `json:"title,omitempty"`
 	Subtitle    string           `json:"subtitle,omitempty"`
 	Likes       int              `json:"likes,omitempty"`
@@ -45,6 +46,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	var r Recipe
 
 	r.ID = rt.ID
+	r.ExternalID = rt.ExternalID
 	r.Title = rt.Title
 	r.Subtitle = rt.Subtitle
 	r.Likes = rt.Likes
