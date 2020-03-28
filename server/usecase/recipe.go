@@ -76,7 +76,7 @@ func (a *app) readRecipes() {
 			case newRecipeStream:
 				recipeID, ok := msg.Payload.(string)
 				if !ok {
-					log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
+					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
 					a.discardMessage(&msg, &wg)
 					continue
 				}
@@ -87,7 +87,7 @@ func (a *app) readRecipes() {
 			case updatedRecipeStream:
 				recipeID, ok := msg.Payload.(string)
 				if !ok {
-					log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
+					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
 					a.discardMessage(&msg, &wg)
 					continue
 				}
@@ -98,7 +98,7 @@ func (a *app) readRecipes() {
 			case deletedRecipeStream:
 				recipeID, ok := msg.Payload.(string)
 				if !ok {
-					log.Errorf("cannot read recipe ID from message ID %q.", msg.ID)
+					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
 					a.discardMessage(&msg, &wg)
 					continue
 				}
@@ -141,7 +141,7 @@ func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	}
 	err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
 	if err != nil {
-		log.Errorf("error on AckAndAdd for msg ID [%s]", messageID)
+		log.Errorf("error on AckAndAdd for msg ID %q", messageID)
 	}
 
 	// unleash the streamer
@@ -161,7 +161,7 @@ func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *
 	// TODO: relay on deleted-stream??
 	err = a.streamer.Ack(deletedRecipeStream, group, messageID)
 	if err != nil {
-		log.Errorf("error on Ack for msg ID [%s]", messageID)
+		log.Errorf("error on Ack for msg ID %q", messageID)
 	}
 
 	// unleash the streamer

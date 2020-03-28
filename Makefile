@@ -1,3 +1,5 @@
+default: all
+
 all: build run
 
 build-dependencies:

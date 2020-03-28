@@ -87,10 +87,14 @@ func (r *Recipe) ToType() *types.Recipe {
 	}
 
 	for _, step := range r.Steps {
+		var img *types.Image
+		if step.Image != nil {
+			img = &types.Image{URL: step.Image.URL}
+		}
 		rt.Steps = append(rt.Steps, &types.Step{
 			Title:       step.Title,
 			Description: step.Description,
-			Image:       &types.Image{URL: step.Image.URL},
+			Image:       img,
 		})
 	}
 
@@ -131,10 +135,14 @@ func FromType(rt *types.Recipe) *Recipe {
 	}
 
 	for _, step := range rt.Steps {
+		var img *Image
+		if step.Image != nil {
+			img = &Image{URL: step.Image.URL}
+		}
 		r.Steps = append(r.Steps, &Step{
 			Title:       step.Title,
 			Description: step.Description,
-			Image:       &Image{URL: step.Image.URL},
+			Image:       img,
 		})
 	}
 
