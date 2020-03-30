@@ -102,24 +102,99 @@ func (m *SearchRecipesResponse) GetIds() []string {
 	return nil
 }
 
+type AllRecipeTagsRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AllRecipeTagsRequest) Reset()         { *m = AllRecipeTagsRequest{} }
+func (m *AllRecipeTagsRequest) String() string { return proto.CompactTextString(m) }
+func (*AllRecipeTagsRequest) ProtoMessage()    {}
+func (*AllRecipeTagsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02dfec63316bfb34, []int{2}
+}
+
+func (m *AllRecipeTagsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AllRecipeTagsRequest.Unmarshal(m, b)
+}
+func (m *AllRecipeTagsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AllRecipeTagsRequest.Marshal(b, m, deterministic)
+}
+func (m *AllRecipeTagsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AllRecipeTagsRequest.Merge(m, src)
+}
+func (m *AllRecipeTagsRequest) XXX_Size() int {
+	return xxx_messageInfo_AllRecipeTagsRequest.Size(m)
+}
+func (m *AllRecipeTagsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AllRecipeTagsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AllRecipeTagsRequest proto.InternalMessageInfo
+
+type AllRecipeTagsResponse struct {
+	Tags                 []string `protobuf:"bytes,1,rep,name=tags,proto3" json:"tags,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AllRecipeTagsResponse) Reset()         { *m = AllRecipeTagsResponse{} }
+func (m *AllRecipeTagsResponse) String() string { return proto.CompactTextString(m) }
+func (*AllRecipeTagsResponse) ProtoMessage()    {}
+func (*AllRecipeTagsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02dfec63316bfb34, []int{3}
+}
+
+func (m *AllRecipeTagsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AllRecipeTagsResponse.Unmarshal(m, b)
+}
+func (m *AllRecipeTagsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AllRecipeTagsResponse.Marshal(b, m, deterministic)
+}
+func (m *AllRecipeTagsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AllRecipeTagsResponse.Merge(m, src)
+}
+func (m *AllRecipeTagsResponse) XXX_Size() int {
+	return xxx_messageInfo_AllRecipeTagsResponse.Size(m)
+}
+func (m *AllRecipeTagsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AllRecipeTagsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AllRecipeTagsResponse proto.InternalMessageInfo
+
+func (m *AllRecipeTagsResponse) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*SearchRecipesRequest)(nil), "SearchRecipesRequest")
 	proto.RegisterType((*SearchRecipesResponse)(nil), "SearchRecipesResponse")
+	proto.RegisterType((*AllRecipeTagsRequest)(nil), "AllRecipeTagsRequest")
+	proto.RegisterType((*AllRecipeTagsResponse)(nil), "AllRecipeTagsResponse")
 }
 
 func init() { proto.RegisterFile("finder.proto", fileDescriptor_02dfec63316bfb34) }
 
 var fileDescriptor_02dfec63316bfb34 = []byte{
-	// 139 bytes of a gzipped FileDescriptorProto
+	// 190 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x49, 0xcb, 0xcc, 0x4b,
 	0x49, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0xd2, 0xe1, 0x12, 0x09, 0x4e, 0x4d, 0x2c,
 	0x4a, 0xce, 0x08, 0x4a, 0x4d, 0xce, 0x2c, 0x48, 0x2d, 0x0e, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e,
 	0x11, 0x12, 0xe1, 0x62, 0x2d, 0x2c, 0x4d, 0x2d, 0xaa, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c,
 	0x82, 0x70, 0x94, 0x34, 0xb9, 0x44, 0xd1, 0x54, 0x17, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0x0a, 0x09,
-	0x70, 0x31, 0x67, 0xa6, 0x14, 0x4b, 0x30, 0x2a, 0x30, 0x6b, 0x70, 0x06, 0x81, 0x98, 0x46, 0x5e,
-	0x5c, 0x6c, 0x6e, 0x60, 0x8b, 0x84, 0x1c, 0xb8, 0x78, 0x51, 0x34, 0x09, 0x89, 0xea, 0x61, 0xb3,
-	0x52, 0x4a, 0x4c, 0x0f, 0xab, 0xd9, 0x4a, 0x0c, 0x49, 0x6c, 0x60, 0xb7, 0x1a, 0x03, 0x02, 0x00,
-	0x00, 0xff, 0xff, 0x0e, 0x8a, 0x70, 0x1d, 0xbb, 0x00, 0x00, 0x00,
+	0x70, 0x31, 0x67, 0xa6, 0x14, 0x4b, 0x30, 0x2a, 0x30, 0x6b, 0x70, 0x06, 0x81, 0x98, 0x4a, 0x62,
+	0x5c, 0x22, 0x8e, 0x39, 0x39, 0x10, 0x75, 0x21, 0x89, 0xe9, 0x30, 0x83, 0x95, 0xb4, 0xb9, 0x44,
+	0xd1, 0xc4, 0xa1, 0x46, 0x08, 0x71, 0xb1, 0x94, 0x24, 0xa6, 0xc3, 0xcc, 0x00, 0xb3, 0x8d, 0x7a,
+	0x18, 0xb9, 0xd8, 0xdc, 0xc0, 0xce, 0x15, 0x72, 0xe0, 0xe2, 0x45, 0xb1, 0x5a, 0x48, 0x54, 0x0f,
+	0x9b, 0xc3, 0xa5, 0xc4, 0xf4, 0xb0, 0xba, 0x50, 0x89, 0x01, 0x64, 0x02, 0x8a, 0xcd, 0x42, 0xa2,
+	0x7a, 0xd8, 0x5c, 0x28, 0x25, 0xa6, 0x87, 0xd5, 0x81, 0x4a, 0x0c, 0x49, 0x6c, 0xe0, 0x30, 0x33,
+	0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xe3, 0xcf, 0x98, 0x25, 0x43, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -135,6 +210,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type FinderClient interface {
 	SearchRecipes(ctx context.Context, in *SearchRecipesRequest, opts ...grpc.CallOption) (*SearchRecipesResponse, error)
+	AllRecipeTags(ctx context.Context, in *AllRecipeTagsRequest, opts ...grpc.CallOption) (*AllRecipeTagsResponse, error)
 }
 
 type finderClient struct {
@@ -154,9 +230,19 @@ func (c *finderClient) SearchRecipes(ctx context.Context, in *SearchRecipesReque
 	return out, nil
 }
 
+func (c *finderClient) AllRecipeTags(ctx context.Context, in *AllRecipeTagsRequest, opts ...grpc.CallOption) (*AllRecipeTagsResponse, error) {
+	out := new(AllRecipeTagsResponse)
+	err := c.cc.Invoke(ctx, "/Finder/AllRecipeTags", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FinderServer is the server API for Finder service.
 type FinderServer interface {
 	SearchRecipes(context.Context, *SearchRecipesRequest) (*SearchRecipesResponse, error)
+	AllRecipeTags(context.Context, *AllRecipeTagsRequest) (*AllRecipeTagsResponse, error)
 }
 
 // UnimplementedFinderServer can be embedded to have forward compatible implementations.
@@ -165,6 +251,9 @@ type UnimplementedFinderServer struct {
 
 func (*UnimplementedFinderServer) SearchRecipes(ctx context.Context, req *SearchRecipesRequest) (*SearchRecipesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchRecipes not implemented")
+}
+func (*UnimplementedFinderServer) AllRecipeTags(ctx context.Context, req *AllRecipeTagsRequest) (*AllRecipeTagsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AllRecipeTags not implemented")
 }
 
 func RegisterFinderServer(s *grpc.Server, srv FinderServer) {
@@ -189,6 +278,24 @@ func _Finder_SearchRecipes_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Finder_AllRecipeTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AllRecipeTagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FinderServer).AllRecipeTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Finder/AllRecipeTags",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FinderServer).AllRecipeTags(ctx, req.(*AllRecipeTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Finder_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "Finder",
 	HandlerType: (*FinderServer)(nil),
@@ -196,6 +303,10 @@ var _Finder_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchRecipes",
 			Handler:    _Finder_SearchRecipes_Handler,
+		},
+		{
+			MethodName: "AllRecipeTags",
+			Handler:    _Finder_AllRecipeTags_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

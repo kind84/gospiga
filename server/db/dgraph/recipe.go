@@ -220,7 +220,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 					}
 				}
 				tags {
-					tag
+					tagName
 				}
 				conclusion
 			}
@@ -320,7 +320,8 @@ func loadRecipeSchema() *api.Operation {
 		}
 
 		type Tag {
-			tag
+			tagName
+			<~tags>
 		}
 
 		xid: string @index(hash) .
@@ -339,7 +340,7 @@ func loadRecipeSchema() *api.Operation {
 		steps: [uid] @count .
 		conclusion: string .
 		finalImage: uid .
-		tags: [uid] .
+		tags: [uid] @reverse .
 		name: string @lang @index(term) .
 		quantity: string .
 		unitOfMeasure: string .
@@ -348,7 +349,7 @@ func loadRecipeSchema() *api.Operation {
 		url: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
-		tag: string @index(term) .
+		tagName: string @index(term) .
 	`
 	return op
 }

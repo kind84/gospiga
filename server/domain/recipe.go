@@ -59,7 +59,7 @@ type Image struct {
 }
 
 type Tag struct {
-	Tag string `json:"tag,omitempty"`
+	TagName string `json:"tagName,omitempty"`
 }
 
 func (r *Recipe) ToType() *types.Recipe {
@@ -102,10 +102,10 @@ func (r *Recipe) ToType() *types.Recipe {
 	var sb strings.Builder
 	numTags := len(r.Tags)
 	for i := 0; i < numTags-1; i++ {
-		sb.WriteString(r.Tags[i].Tag)
+		sb.WriteString(r.Tags[i].TagName)
 		sb.WriteString(", ")
 	}
-	sb.WriteString(r.Tags[numTags-1].Tag)
+	sb.WriteString(r.Tags[numTags-1].TagName)
 	rt.Tags = sb.String()
 
 	return &rt
@@ -150,7 +150,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	tags := strings.Split(rt.Tags, ", ")
 
 	for _, tag := range tags {
-		r.Tags = append(r.Tags, &Tag{Tag: tag})
+		r.Tags = append(r.Tags, &Tag{TagName: tag})
 	}
 
 	return &r

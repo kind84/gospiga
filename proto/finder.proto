@@ -2,6 +2,7 @@ syntax = "proto3";
 
 service Finder {
 	rpc SearchRecipes(SearchRecipesRequest) returns (SearchRecipesResponse) {}
+	rpc AllRecipeTags(AllRecipeTagsRequest) returns (AllRecipeTagsResponse) {}
 }
 
 message SearchRecipesRequest {
@@ -10,4 +11,11 @@ message SearchRecipesRequest {
 
 message SearchRecipesResponse {
 	repeated string ids = 1;
+}
+
+message AllRecipeTagsRequest {
+}
+
+message AllRecipeTagsResponse {
+	repeated string tags = 1;
 }

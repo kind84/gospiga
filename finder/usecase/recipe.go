@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -13,7 +12,7 @@ import (
 	"github.com/kind84/gospiga/pkg/types"
 )
 
-func (a *app) SearchRecipes(ctx context.Context, query string) ([]string, error) {
+func (a *app) SearchRecipes(query string) ([]string, error) {
 	return a.ft.SearchRecipes(query)
 }
 

@@ -45,6 +45,16 @@ func (a *app) SearchRecipes(ctx context.Context, query string) ([]*domain.Recipe
 	return a.service.GetRecipesByIDs(ctx, ids)
 }
 
+// RecipeTags returns the set of used tags.
+func (a *app) RecipeTags(ctx context.Context) ([]string, error) {
+	tags, err := a.stub.AllRecipeTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return tags, nil
+}
+
 func (a *app) readRecipes() {
 	ctx, exit := context.WithCancel(context.Background())
 	msgChan := make(chan streamer.Message)

@@ -64,7 +64,7 @@ func FromType(rt *types.Recipe) *Recipe {
 		var qty string
 		if q, ok := ingr.Quantity.(string); ok {
 			qty = q
-		} else {
+		} else if ingr.Quantity != nil {
 			qty = strconv.Itoa(int(ingr.Quantity.(float64)))
 		}
 		r.Ingredients = append(r.Ingredients, fmt.Sprintf("%s %s %s", qty, ingr.UnitOfMeasure, ingr.Name))
