@@ -69,6 +69,7 @@ func (r *Recipe) ToType() *types.Recipe {
 	rt.ExternalID = r.ExternalID
 	rt.Title = r.Title
 	rt.Subtitle = r.Subtitle
+	rt.MainImage = &types.Image{URL: r.MainImage.URL}
 	rt.Likes = r.Likes
 	rt.Description = r.Description
 	rt.Conclusion = r.Conclusion
@@ -117,6 +118,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	r.ExternalID = rt.ExternalID
 	r.Title = rt.Title
 	r.Subtitle = rt.Subtitle
+	r.MainImage = &Image{URL: rt.MainImage.URL}
 	r.Likes = rt.Likes
 	r.Description = rt.Description
 	r.Conclusion = rt.Conclusion

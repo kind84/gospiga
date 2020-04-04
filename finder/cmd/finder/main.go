@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -87,7 +88,12 @@ func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	go grpcServer.Serve(lis)
 
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	c := cors.New(config)
+
 	r := gin.Default()
+	r.Use(c)
 	r.POST("/search-recipe", service.SearchRecipes) // NOTE: debug endpoint to be removed
 	r.POST("/all-recipe-tags", service.AllRecipeTags)
 	go r.Run()
