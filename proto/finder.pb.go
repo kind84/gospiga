@@ -24,84 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type SearchRecipesRequest struct {
-	Query                string   `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SearchRecipesRequest) Reset()         { *m = SearchRecipesRequest{} }
-func (m *SearchRecipesRequest) String() string { return proto.CompactTextString(m) }
-func (*SearchRecipesRequest) ProtoMessage()    {}
-func (*SearchRecipesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02dfec63316bfb34, []int{0}
-}
-
-func (m *SearchRecipesRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SearchRecipesRequest.Unmarshal(m, b)
-}
-func (m *SearchRecipesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SearchRecipesRequest.Marshal(b, m, deterministic)
-}
-func (m *SearchRecipesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchRecipesRequest.Merge(m, src)
-}
-func (m *SearchRecipesRequest) XXX_Size() int {
-	return xxx_messageInfo_SearchRecipesRequest.Size(m)
-}
-func (m *SearchRecipesRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SearchRecipesRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SearchRecipesRequest proto.InternalMessageInfo
-
-func (m *SearchRecipesRequest) GetQuery() string {
-	if m != nil {
-		return m.Query
-	}
-	return ""
-}
-
-type SearchRecipesResponse struct {
-	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SearchRecipesResponse) Reset()         { *m = SearchRecipesResponse{} }
-func (m *SearchRecipesResponse) String() string { return proto.CompactTextString(m) }
-func (*SearchRecipesResponse) ProtoMessage()    {}
-func (*SearchRecipesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02dfec63316bfb34, []int{1}
-}
-
-func (m *SearchRecipesResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SearchRecipesResponse.Unmarshal(m, b)
-}
-func (m *SearchRecipesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SearchRecipesResponse.Marshal(b, m, deterministic)
-}
-func (m *SearchRecipesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchRecipesResponse.Merge(m, src)
-}
-func (m *SearchRecipesResponse) XXX_Size() int {
-	return xxx_messageInfo_SearchRecipesResponse.Size(m)
-}
-func (m *SearchRecipesResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SearchRecipesResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SearchRecipesResponse proto.InternalMessageInfo
-
-func (m *SearchRecipesResponse) GetIds() []string {
-	if m != nil {
-		return m.Ids
-	}
-	return nil
-}
-
 type AllRecipeTagsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -112,7 +34,7 @@ func (m *AllRecipeTagsRequest) Reset()         { *m = AllRecipeTagsRequest{} }
 func (m *AllRecipeTagsRequest) String() string { return proto.CompactTextString(m) }
 func (*AllRecipeTagsRequest) ProtoMessage()    {}
 func (*AllRecipeTagsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02dfec63316bfb34, []int{2}
+	return fileDescriptor_02dfec63316bfb34, []int{0}
 }
 
 func (m *AllRecipeTagsRequest) XXX_Unmarshal(b []byte) error {
@@ -144,7 +66,7 @@ func (m *AllRecipeTagsResponse) Reset()         { *m = AllRecipeTagsResponse{} }
 func (m *AllRecipeTagsResponse) String() string { return proto.CompactTextString(m) }
 func (*AllRecipeTagsResponse) ProtoMessage()    {}
 func (*AllRecipeTagsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_02dfec63316bfb34, []int{3}
+	return fileDescriptor_02dfec63316bfb34, []int{1}
 }
 
 func (m *AllRecipeTagsResponse) XXX_Unmarshal(b []byte) error {
@@ -173,8 +95,6 @@ func (m *AllRecipeTagsResponse) GetTags() []string {
 }
 
 func init() {
-	proto.RegisterType((*SearchRecipesRequest)(nil), "SearchRecipesRequest")
-	proto.RegisterType((*SearchRecipesResponse)(nil), "SearchRecipesResponse")
 	proto.RegisterType((*AllRecipeTagsRequest)(nil), "AllRecipeTagsRequest")
 	proto.RegisterType((*AllRecipeTagsResponse)(nil), "AllRecipeTagsResponse")
 }
@@ -182,19 +102,15 @@ func init() {
 func init() { proto.RegisterFile("finder.proto", fileDescriptor_02dfec63316bfb34) }
 
 var fileDescriptor_02dfec63316bfb34 = []byte{
-	// 190 bytes of a gzipped FileDescriptorProto
+	// 122 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x49, 0xcb, 0xcc, 0x4b,
-	0x49, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0xd2, 0xe1, 0x12, 0x09, 0x4e, 0x4d, 0x2c,
-	0x4a, 0xce, 0x08, 0x4a, 0x4d, 0xce, 0x2c, 0x48, 0x2d, 0x0e, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e,
-	0x11, 0x12, 0xe1, 0x62, 0x2d, 0x2c, 0x4d, 0x2d, 0xaa, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c,
-	0x82, 0x70, 0x94, 0x34, 0xb9, 0x44, 0xd1, 0x54, 0x17, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0x0a, 0x09,
-	0x70, 0x31, 0x67, 0xa6, 0x14, 0x4b, 0x30, 0x2a, 0x30, 0x6b, 0x70, 0x06, 0x81, 0x98, 0x4a, 0x62,
-	0x5c, 0x22, 0x8e, 0x39, 0x39, 0x10, 0x75, 0x21, 0x89, 0xe9, 0x30, 0x83, 0x95, 0xb4, 0xb9, 0x44,
-	0xd1, 0xc4, 0xa1, 0x46, 0x08, 0x71, 0xb1, 0x94, 0x24, 0xa6, 0xc3, 0xcc, 0x00, 0xb3, 0x8d, 0x7a,
-	0x18, 0xb9, 0xd8, 0xdc, 0xc0, 0xce, 0x15, 0x72, 0xe0, 0xe2, 0x45, 0xb1, 0x5a, 0x48, 0x54, 0x0f,
-	0x9b, 0xc3, 0xa5, 0xc4, 0xf4, 0xb0, 0xba, 0x50, 0x89, 0x01, 0x64, 0x02, 0x8a, 0xcd, 0x42, 0xa2,
-	0x7a, 0xd8, 0x5c, 0x28, 0x25, 0xa6, 0x87, 0xd5, 0x81, 0x4a, 0x0c, 0x49, 0x6c, 0xe0, 0x30, 0x33,
-	0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xe3, 0xcf, 0x98, 0x25, 0x43, 0x01, 0x00, 0x00,
+	0x49, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0x12, 0xe3, 0x12, 0x71, 0xcc, 0xc9, 0x09,
+	0x4a, 0x4d, 0xce, 0x2c, 0x48, 0x0d, 0x49, 0x4c, 0x2f, 0x0e, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e,
+	0x51, 0xd2, 0xe6, 0x12, 0x45, 0x13, 0x2f, 0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0x12, 0xe2, 0x62,
+	0x29, 0x49, 0x4c, 0x2f, 0x96, 0x60, 0x54, 0x60, 0xd6, 0xe0, 0x0c, 0x02, 0xb3, 0x8d, 0xbc, 0xb8,
+	0xd8, 0xdc, 0xc0, 0x86, 0x0a, 0x39, 0x70, 0xf1, 0xa2, 0x68, 0x13, 0x12, 0xd5, 0xc3, 0x66, 0xbc,
+	0x94, 0x98, 0x1e, 0x56, 0xd3, 0x95, 0x18, 0x92, 0xd8, 0xc0, 0xee, 0x32, 0x06, 0x04, 0x00, 0x00,
+	0xff, 0xff, 0xb3, 0x84, 0xfc, 0x04, 0xa7, 0x00, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -209,7 +125,6 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type FinderClient interface {
-	SearchRecipes(ctx context.Context, in *SearchRecipesRequest, opts ...grpc.CallOption) (*SearchRecipesResponse, error)
 	AllRecipeTags(ctx context.Context, in *AllRecipeTagsRequest, opts ...grpc.CallOption) (*AllRecipeTagsResponse, error)
 }
 
@@ -219,15 +134,6 @@ type finderClient struct {
 
 func NewFinderClient(cc *grpc.ClientConn) FinderClient {
 	return &finderClient{cc}
-}
-
-func (c *finderClient) SearchRecipes(ctx context.Context, in *SearchRecipesRequest, opts ...grpc.CallOption) (*SearchRecipesResponse, error) {
-	out := new(SearchRecipesResponse)
-	err := c.cc.Invoke(ctx, "/Finder/SearchRecipes", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *finderClient) AllRecipeTags(ctx context.Context, in *AllRecipeTagsRequest, opts ...grpc.CallOption) (*AllRecipeTagsResponse, error) {
@@ -241,7 +147,6 @@ func (c *finderClient) AllRecipeTags(ctx context.Context, in *AllRecipeTagsReque
 
 // FinderServer is the server API for Finder service.
 type FinderServer interface {
-	SearchRecipes(context.Context, *SearchRecipesRequest) (*SearchRecipesResponse, error)
 	AllRecipeTags(context.Context, *AllRecipeTagsRequest) (*AllRecipeTagsResponse, error)
 }
 
@@ -249,33 +154,12 @@ type FinderServer interface {
 type UnimplementedFinderServer struct {
 }
 
-func (*UnimplementedFinderServer) SearchRecipes(ctx context.Context, req *SearchRecipesRequest) (*SearchRecipesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SearchRecipes not implemented")
-}
 func (*UnimplementedFinderServer) AllRecipeTags(ctx context.Context, req *AllRecipeTagsRequest) (*AllRecipeTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AllRecipeTags not implemented")
 }
 
 func RegisterFinderServer(s *grpc.Server, srv FinderServer) {
 	s.RegisterService(&_Finder_serviceDesc, srv)
-}
-
-func _Finder_SearchRecipes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchRecipesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FinderServer).SearchRecipes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/Finder/SearchRecipes",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinderServer).SearchRecipes(ctx, req.(*SearchRecipesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Finder_AllRecipeTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -300,10 +184,6 @@ var _Finder_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "Finder",
 	HandlerType: (*FinderServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "SearchRecipes",
-			Handler:    _Finder_SearchRecipes_Handler,
-		},
 		{
 			MethodName: "AllRecipeTags",
 			Handler:    _Finder_AllRecipeTags_Handler,

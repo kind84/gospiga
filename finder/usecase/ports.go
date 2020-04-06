@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"github.com/kind84/gospiga/finder/domain"
+	"github.com/kind84/gospiga/finder/fulltext"
 	"github.com/kind84/gospiga/pkg/streamer"
 )
 
@@ -13,7 +14,7 @@ type DB interface {
 type FT interface {
 	IndexRecipe(*domain.Recipe) error
 	DeleteRecipe(string) error
-	SearchRecipes(string) ([]string, error)
+	SearchRecipes(string) ([]*fulltext.Recipe, error)
 }
 
 type Streamer interface {

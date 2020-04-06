@@ -17,16 +17,6 @@ func NewFinderServer(app App) *finderServer {
 	return &finderServer{app}
 }
 
-// SearchRecipes implements grpc server interface method.
-func (s *finderServer) SearchRecipes(ctx context.Context, req *pb.SearchRecipesRequest) (*pb.SearchRecipesResponse, error) {
-	ids, err := s.app.SearchRecipes(req.Query)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.SearchRecipesResponse{Ids: ids}, nil
-}
-
 func (s *finderServer) AllRecipeTags(ctx context.Context, req *pb.AllRecipeTagsRequest) (*pb.AllRecipeTagsResponse, error) {
 	tags, err := s.app.AllRecipeTags()
 	if err != nil {

@@ -8,11 +8,12 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kind84/gospiga/finder/domain"
+	"github.com/kind84/gospiga/finder/fulltext"
 	"github.com/kind84/gospiga/pkg/streamer"
 	"github.com/kind84/gospiga/pkg/types"
 )
 
-func (a *app) SearchRecipes(query string) ([]string, error) {
+func (a *app) SearchRecipes(query string) ([]*fulltext.Recipe, error) {
 	return a.ft.SearchRecipes(query)
 }
 

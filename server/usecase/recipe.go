@@ -7,7 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kind84/gospiga/pkg/streamer"
-	"github.com/kind84/gospiga/server/domain"
 )
 
 const (
@@ -30,19 +29,6 @@ func (a *app) UpdatedRecipe(ctx context.Context, recipeID string) error {
 // DeletedRecipe inform of an deleted recipe ID sending it over the stream.
 func (a *app) DeletedRecipe(ctx context.Context, recipeID string) error {
 	return a.streamer.Add(deletedRecipeStream, &streamer.Message{Payload: recipeID})
-}
-
-// SearchRecipes matching the query string.
-func (a *app) SearchRecipes(ctx context.Context, query string) ([]*domain.Recipe, error) {
-	ids, err := a.stub.SearchRecipes(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if len(ids) == 0 {
-		return []*domain.Recipe{}, nil
-	}
-
-	return a.service.GetRecipesByIDs(ctx, ids)
 }
 
 // RecipeTags returns the set of used tags.

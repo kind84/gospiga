@@ -8,22 +8,23 @@ import (
 )
 
 type Recipe struct {
-	ID          string           `json:"id,omitempty"`
-	ExternalID  string           `json:"xid,omitempty"`
-	Title       string           `json:"title,omitempty"`
-	Subtitle    string           `json:"subtitle,omitempty"`
-	Likes       int              `json:"likes,omitempty"`
-	Difficulty  RecipeDifficulty `json:"difficulty,omitempty"`
-	Cost        RecipeCost       `json:"cost,omitempty"`
-	PrepTime    int              `json:"prepTime,omitempty"`
-	CookTime    int              `json:"cookTime,omitempty"`
-	Servings    int              `json:"servings,omitempty"`
-	ExtraNotes  string           `json:"extraNotes,omitempty"`
-	Description string           `json:"description,omitempty"`
-	Ingredients []string         `json:"ingredients,omitempty"`
-	Steps       []string         `json:"steps,omitempty"`
-	Tags        string           `json:"tags,omitempty"`
-	Conclusion  string           `json:"conclusion,omitempty"`
+	ID           string           `json:"id,omitempty"`
+	ExternalID   string           `json:"xid,omitempty"`
+	Title        string           `json:"title,omitempty"`
+	Subtitle     string           `json:"subtitle,omitempty"`
+	MainImageURL string           `json:"mainImageURL,omitempty"`
+	Likes        int              `json:"likes,omitempty"`
+	Difficulty   RecipeDifficulty `json:"difficulty,omitempty"`
+	Cost         RecipeCost       `json:"cost,omitempty"`
+	PrepTime     int              `json:"prepTime,omitempty"`
+	CookTime     int              `json:"cookTime,omitempty"`
+	Servings     int              `json:"servings,omitempty"`
+	ExtraNotes   string           `json:"extraNotes,omitempty"`
+	Description  string           `json:"description,omitempty"`
+	Ingredients  []string         `json:"ingredients,omitempty"`
+	Steps        []string         `json:"steps,omitempty"`
+	Tags         string           `json:"tags,omitempty"`
+	Conclusion   string           `json:"conclusion,omitempty"`
 }
 
 type RecipeDifficulty string
@@ -49,6 +50,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	r.ExternalID = rt.ExternalID
 	r.Title = rt.Title
 	r.Subtitle = rt.Subtitle
+	r.MainImageURL = rt.MainImage.URL
 	r.Likes = rt.Likes
 	r.Description = rt.Description
 	r.Conclusion = rt.Conclusion

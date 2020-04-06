@@ -30,6 +30,5 @@ type Provider interface {
 }
 
 type Stub interface {
-	SearchRecipes(context.Context, string) ([]string, error)
 	AllRecipeTags(context.Context) ([]string, error)
 }

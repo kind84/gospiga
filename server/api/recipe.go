@@ -63,24 +63,3 @@ func (s *GospigaService) DeletedRecipe(c *gin.Context) {
 		c.Error(err)
 	}
 }
-
-// SearchRecipesRequest.
-type SearchRecipesRequest struct {
-	Query string `json:"query"`
-}
-
-// SearchRecipes matching the given query string.
-func (s *GospigaService) SearchRecipes(c *gin.Context) {
-	var req SearchRecipesRequest
-	err := c.BindJSON(&req)
-	if err != nil {
-		c.Error(err)
-	}
-
-	recipes, err := s.app.SearchRecipes(c.Copy().Request.Context(), req.Query)
-	if err != nil {
-		c.Error(err)
-	}
-
-	c.JSON(200, recipes)
-}

@@ -116,7 +116,6 @@ func main() {
 	r.POST("/new-recipe", service.NewRecipe)
 	r.POST("/updated-recipe", service.UpdatedRecipe)
 	r.POST("/deleted-recipe", service.DeletedRecipe)
-	r.POST("/search-recipes", service.SearchRecipes)
 	go r.Run()
 
 	// wait for shutdown

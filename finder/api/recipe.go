@@ -15,11 +15,11 @@ func (s *GospigaService) SearchRecipes(c *gin.Context) {
 		c.Error(err)
 	}
 
-	ids, err := s.app.SearchRecipes(req.Query)
+	recipes, err := s.app.SearchRecipes(req.Query)
 	if err != nil {
 		c.Error(err)
 	}
-	c.JSON(200, gin.H{"ids": ids})
+	c.JSON(200, gin.H{"recipes": recipes})
 }
 
 func (s *GospigaService) AllRecipeTags(c *gin.Context) {

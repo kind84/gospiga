@@ -1,9 +1,9 @@
 package fulltext
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
 	log "github.com/sirupsen/logrus"
@@ -26,9 +26,15 @@ func NewRedisFT(addr string) (*redisFT, error) {
 
 	// Create a schema
 	sc := redisearch.NewSchema(redisearch.DefaultOptions).
+		AddField(redisearch.NewTextFieldOptions("id", redisearch.TextFieldOptions{NoIndex: true})).
+		AddField(redisearch.NewTextFieldOptions("xid", redisearch.TextFieldOptions{NoIndex: true})).
 		AddField(redisearch.NewTextFieldOptions("title", redisearch.TextFieldOptions{Weight: 5.0, Sortable: true})).
 		AddField(redisearch.NewTextField("subtitle")).
+		AddField(redisearch.NewTextFieldOptions("mainImage", redisearch.TextFieldOptions{NoIndex: true})).
 		AddField(redisearch.NewTextField("description")).
+		AddField(redisearch.NewNumericFieldOptions("prepTime", redisearch.NumericFieldOptions{NoIndex: true})).
+		AddField(redisearch.NewNumericFieldOptions("cookTime", redisearch.NumericFieldOptions{NoIndex: true})).
+		AddField(redisearch.NewNumericFieldOptions("time", redisearch.NumericFieldOptions{Sortable: true})).
 		AddField(redisearch.NewTextFieldOptions("ingredients", redisearch.TextFieldOptions{Weight: 4.0})).
 		AddField(redisearch.NewTextField("steps")).
 		AddField(redisearch.NewTextField("conclusion")).
@@ -50,9 +56,15 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 	// Create a document with an id and given score
 	doc := redisearch.NewDocument(fmt.Sprintf("recipe:%s", recipe.ID), 1.0)
 
-	doc.Set("title", recipe.Title).
+	doc.Set("id", recipe.ID).
+		Set("xid", recipe.ExternalID).
+		Set("title", recipe.Title).
 		Set("subtitle", recipe.Subtitle).
+		Set("mainImage", recipe.MainImageURL).
 		Set("description", recipe.Description).
+		Set("prepTime", recipe.PrepTime).
+		Set("cookTime", recipe.CookTime).
+		Set("time", recipe.PrepTime+recipe.CookTime).
 		Set("ingredients", recipe.Ingredients).
 		Set("steps", recipe.Steps).
 		Set("conclusion", recipe.Conclusion).
@@ -71,17 +83,27 @@ func (r *redisFT) DeleteRecipe(recipeID string) error {
 	return r.ft.Delete(recipeID, true)
 }
 
-func (r *redisFT) SearchRecipes(query string) ([]string, error) {
+func (r *redisFT) SearchRecipes(query string) ([]*Recipe, error) {
 	docs, tot, err := r.ft.Search(redisearch.NewQuery(query))
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
-	ids := make([]string, 0, tot)
+	recipes := make([]*Recipe, 0, tot)
 	for _, doc := range docs {
-		id := strings.Split(doc.Id, "recipe:")[1]
-		ids = append(ids, id)
+		var recipe Recipe
+		jr, err := json.Marshal(doc.Properties)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+		err = json.Unmarshal(jr, &recipe)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+		recipes = append(recipes, &recipe)
 	}
-	return ids, nil
+	return recipes, nil
 }
