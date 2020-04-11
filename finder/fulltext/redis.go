@@ -1,9 +1,11 @@
 package fulltext
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
@@ -25,8 +27,15 @@ func NewRedisFT(addr string) (*redisFT, error) {
 		return nil, errors.New("cannot initialize redis client")
 	}
 
+	sw, err := getStopWords()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving stopwords list: %w", err)
+	}
+	opts := redisearch.DefaultOptions
+	opts.Stopwords = sw
+
 	// Create a schema
-	sc := redisearch.NewSchema(redisearch.DefaultOptions).
+	sc := redisearch.NewSchema(opts).
 		AddField(redisearch.NewTextFieldOptions("id", redisearch.TextFieldOptions{NoIndex: true})).
 		AddField(redisearch.NewTextFieldOptions("xid", redisearch.TextFieldOptions{NoIndex: true})).
 		AddField(redisearch.NewTextFieldOptions("title", redisearch.TextFieldOptions{Weight: 5.0, Sortable: true})).
@@ -40,6 +49,8 @@ func NewRedisFT(addr string) (*redisFT, error) {
 		AddField(redisearch.NewTextField("steps")).
 		AddField(redisearch.NewTextField("conclusion")).
 		AddField(redisearch.NewTagField("tags"))
+
+	sc.Options = opts // needed until issue is fixed (https://github.com/RediSearch/redisearch-go/issues/56)
 
 	// Drop an existing index. If the index does not exist an error is returned
 	ft.Drop()
@@ -73,6 +84,7 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 
 	// Index the document. The API accepts multiple documents at a time,
 	opts := redisearch.DefaultIndexingOptions
+	opts.Language = "italian"
 	opts.Replace = true // upsert
 	if err := r.ft.IndexOptions(opts, doc); err != nil {
 		return err
@@ -123,4 +135,21 @@ func mapRecipes(docs []redisearch.Document, tot int) ([]*Recipe, error) {
 		recipes = append(recipes, &recipe)
 	}
 	return recipes, nil
+}
+
+func getStopWords() ([]string, error) {
+	file, err := os.Open("../include/stopwords-it")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var words []string
+	for scanner.Scan() {
+		words = append(words, scanner.Text())
+	}
+
+	return words, nil
 }

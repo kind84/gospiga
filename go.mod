@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/RediSearch/redisearch-go v0.2.0 // indirect
-	github.com/RedisLabs/redisearch-go v0.2.0
+	github.com/RedisLabs/redisearch-go v0.9.0
 	github.com/dgraph-io/dgo/v2 v2.1.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/gin-contrib/cors v1.3.0

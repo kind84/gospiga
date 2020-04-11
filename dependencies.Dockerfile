@@ -15,4 +15,5 @@ COPY ./pkg ./pkg
 COPY ./proto ./proto
 COPY ./scripts ./scripts
 COPY ./templates ./templates
+COPY ./include ./include
 
