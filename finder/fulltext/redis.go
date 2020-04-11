@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
 	log "github.com/sirupsen/logrus"
@@ -89,7 +90,23 @@ func (r *redisFT) SearchRecipes(query string) ([]*Recipe, error) {
 		log.Error(err)
 		return nil, err
 	}
+	return mapRecipes(docs, tot)
+}
 
+func (r *redisFT) SearchByTag(tags []string) ([]*Recipe, error) {
+	t := strings.Join(tags, " | ")
+	query := fmt.Sprintf("@tags:{%s}", t)
+
+	docs, tot, err := r.ft.Search(redisearch.NewQuery(query))
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return mapRecipes(docs, tot)
+}
+
+func mapRecipes(docs []redisearch.Document, tot int) ([]*Recipe, error) {
 	recipes := make([]*Recipe, 0, tot)
 	for _, doc := range docs {
 		var recipe Recipe

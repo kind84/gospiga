@@ -94,7 +94,8 @@ func main() {
 
 	r := gin.Default()
 	r.Use(c)
-	r.POST("/search-recipes", service.SearchRecipes) // NOTE: debug endpoint to be removed
+	r.POST("/search-recipes", service.SearchRecipes)
+	r.POST("/search-by-tag", service.SearchByTag)
 	r.POST("/all-recipe-tags", service.AllRecipeTags)
 	go r.Run()
 

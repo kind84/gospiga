@@ -17,6 +17,10 @@ func (a *app) SearchRecipes(query string) ([]*fulltext.Recipe, error) {
 	return a.ft.SearchRecipes(query)
 }
 
+func (a *app) SearchByTag(tags []string) ([]*fulltext.Recipe, error) {
+	return a.ft.SearchByTag(tags)
+}
+
 func (a *app) AllRecipeTags() ([]string, error) {
 	return a.db.Tags("recipes", "tags")
 }

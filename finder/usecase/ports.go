@@ -15,6 +15,7 @@ type FT interface {
 	IndexRecipe(*domain.Recipe) error
 	DeleteRecipe(string) error
 	SearchRecipes(string) ([]*fulltext.Recipe, error)
+	SearchByTag([]string) ([]*fulltext.Recipe, error)
 }
 
 type Streamer interface {
