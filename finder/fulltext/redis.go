@@ -97,7 +97,9 @@ func (r *redisFT) DeleteRecipe(recipeID string) error {
 }
 
 func (r *redisFT) SearchRecipes(query string) ([]*Recipe, error) {
-	docs, tot, err := r.ft.Search(redisearch.NewQuery(query))
+	q := redisearch.NewQuery(query)
+	q.Language = "italian"
+	docs, tot, err := r.ft.Search(q)
 	if err != nil {
 		log.Error(err)
 		return nil, err
