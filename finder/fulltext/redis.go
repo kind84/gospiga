@@ -92,6 +92,7 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 	return nil
 }
 
+// DeleteRecipe from the index.
 func (r *redisFT) DeleteRecipe(recipeID string) error {
 	return r.ft.Delete(recipeID, true)
 }
@@ -107,6 +108,7 @@ func (r *redisFT) SearchRecipes(query string) ([]*Recipe, error) {
 	return mapRecipes(docs, tot)
 }
 
+// SearchByTag recipes in the index.
 func (r *redisFT) SearchByTag(tags []string) ([]*Recipe, error) {
 	t := strings.Join(tags, " | ")
 	query := fmt.Sprintf("@tags:{%s}", t)

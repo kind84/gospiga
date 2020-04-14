@@ -116,6 +116,7 @@ func main() {
 	r.POST("/new-recipe", service.NewRecipe)
 	r.POST("/updated-recipe", service.UpdatedRecipe)
 	r.POST("/deleted-recipe", service.DeletedRecipe)
+	r.POST("/all-tags-images", service.AllTagsImages)
 	go r.Run()
 
 	// wait for shutdown

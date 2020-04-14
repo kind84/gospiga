@@ -15,7 +15,7 @@ type Recipe @dgraph(type: "Recipe") {
     steps: [Step!]! @dgraph(pred: "steps")
     conclusion: String @dgraph(pred: "conclusion")
     finalImage: Image @dgraph(pred: "finalImage")
-    tags: [Tag!]! @dgraph(pred: "tags")
+    tags: [Tag!]! @hasInverse(field: recipes) @dgraph(pred: "tags")
     createdAt: DateTime! @search @dgraph(pred: "createdAt")
     modifiedAt: DateTime! @search @dgraph(pred: "modifiedAt")
 }
@@ -39,6 +39,7 @@ type Step @dgraph(type: "Step") {
 }
 
 type Tag @dgraph(type: "Tag") {
-    tag: String! @search(by: [term]) @dgraph(pred: "tag")
+    tagName: String! @search(by: [term]) @dgraph(pred: "tagName")
+    recipes: [Recipe]! @dgraph(pred: "recipes")
 }
 

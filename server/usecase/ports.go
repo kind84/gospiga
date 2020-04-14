@@ -8,6 +8,7 @@ import (
 )
 
 type DB interface {
+	AllTagsImages(context.Context) ([]*domain.Tag, error)
 }
 
 type Service interface {
