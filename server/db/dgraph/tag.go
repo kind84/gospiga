@@ -17,7 +17,7 @@ func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 		query Tags {
 			tags(func: has(tagName)) {
 				tagName
-				recipe: ~tags {
+				recipe: ~tags (orderdesc: likes, first: 1)){
 					uid
 					xid
 					mainImage {
