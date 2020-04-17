@@ -63,3 +63,12 @@ func (s *GospigaService) DeletedRecipe(c *gin.Context) {
 		c.Error(err)
 	}
 }
+
+// LoadRecipes initializes the platform loading all the recipes. It is safe to
+// be called multiple times.
+func (s *GospigaService) LoadRecipes(c *gin.Context) {
+	err := s.app.LoadRecipes(c.Copy().Request.Context())
+	if err != nil {
+		c.Error(err)
+	}
+}

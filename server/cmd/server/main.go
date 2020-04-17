@@ -17,6 +17,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/kind84/gospiga/pkg/provider"
 	"github.com/kind84/gospiga/pkg/redis"
 	"github.com/kind84/gospiga/pkg/streamer"
 	pb "github.com/kind84/gospiga/proto"
@@ -24,7 +25,6 @@ import (
 	"github.com/kind84/gospiga/server/db/dgraph"
 	"github.com/kind84/gospiga/server/domain"
 	gogrpc "github.com/kind84/gospiga/server/grpc"
-	"github.com/kind84/gospiga/server/provider"
 	"github.com/kind84/gospiga/server/usecase"
 )
 
@@ -117,6 +117,7 @@ func main() {
 	r.POST("/updated-recipe", service.UpdatedRecipe)
 	r.POST("/deleted-recipe", service.DeletedRecipe)
 	r.POST("/all-tags-images", service.AllTagsImages)
+	r.POST("/load-recipes", service.LoadRecipes)
 	go r.Run()
 
 	// wait for shutdown

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kind84/gospiga/pkg/streamer"
+	"github.com/kind84/gospiga/pkg/types"
 	"github.com/kind84/gospiga/server/domain"
 )
 
@@ -27,7 +28,8 @@ type Streamer interface {
 }
 
 type Provider interface {
-	GetRecipe(context.Context, string) (*domain.Recipe, error)
+	GetRecipe(ctx context.Context, recipeID string) (*types.Recipe, error)
+	GetAllRecipeIDs(context.Context) ([]string, error)
 }
 
 type Stub interface {

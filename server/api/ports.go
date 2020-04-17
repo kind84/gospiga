@@ -12,4 +12,5 @@ type App interface {
 	UpdatedRecipe(context.Context, string) error
 	DeletedRecipe(context.Context, string) error
 	AllTagsImages(context.Context) ([]*types.Tag, error)
+	LoadRecipes(ctx context.Context) error
 }

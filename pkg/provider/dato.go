@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/jaylane/graphql"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kind84/gospiga/pkg/types"
-	"github.com/kind84/gospiga/server/domain"
 )
 
 type provider struct {
@@ -23,8 +23,8 @@ func NewDatoProvider(token string) (*provider, error) {
 	}, nil
 }
 
-func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*domain.Recipe, error) {
-	fmt.Printf("Asking dato for recipe ID %s\n", recipeID)
+func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recipe, error) {
+	log.Infof("Asking dato for recipe ID %s\n", recipeID)
 	req := graphql.NewRequest(`
 		query MyQuery($key: ItemId!) {
 			recipe (filter: {id: {eq: $key}}) {
@@ -73,6 +73,34 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*domain.Reci
 		return nil, err
 	}
 
-	// map to the domain recipe.
-	return domain.FromType(&r.Recipe.Recipe), nil
+	return &r.Recipe.Recipe, nil
+}
+
+func (p *provider) GetAllRecipeIDs(ctx context.Context) ([]string, error) {
+	log.Info("Asking dato for all recipe IDs")
+	req := graphql.NewRequest(`
+		query MyQuery {
+			recipes: allRecipes {
+				id
+			}
+		}
+	`)
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.token))
+
+	var r struct {
+		Recipes []struct {
+			ID string
+		}
+	}
+	err := p.client.Run(ctx, req, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(r.Recipes))
+	for _, r := range r.Recipes {
+		ids = append(ids, r.ID)
+	}
+	return ids, nil
 }

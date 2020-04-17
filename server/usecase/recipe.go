@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/kind84/gospiga/server/domain"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kind84/gospiga/pkg/streamer"
@@ -16,17 +17,17 @@ const (
 	group               = "server-usecase"
 )
 
-// NewRecipe inform of a new recipe ID sending it over the stream.
+// NewRecipe informs of a new recipe ID sending it over the stream.
 func (a *app) NewRecipe(ctx context.Context, recipeID string) error {
 	return a.streamer.Add(newRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
-// UpdatedRecipe inform of an updated recipe ID sending it over the stream.
+// UpdatedRecipe informs of an updated recipe ID sending it over the stream.
 func (a *app) UpdatedRecipe(ctx context.Context, recipeID string) error {
 	return a.streamer.Add(updatedRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
-// DeletedRecipe inform of an deleted recipe ID sending it over the stream.
+// DeletedRecipe informs of an deleted recipe ID sending it over the stream.
 func (a *app) DeletedRecipe(ctx context.Context, recipeID string) error {
 	return a.streamer.Add(deletedRecipeStream, &streamer.Message{Payload: recipeID})
 }
@@ -39,6 +40,24 @@ func (a *app) RecipeTags(ctx context.Context) ([]string, error) {
 	}
 
 	return tags, nil
+}
+
+// LoadRecipes in the platform by injecting all the recipe IDs retrieved from
+// the provider.
+func (a *app) LoadRecipes(ctx context.Context) error {
+	rids, err := a.provider.GetAllRecipeIDs(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, id := range rids {
+		err := a.streamer.Add(newRecipeStream, &streamer.Message{Payload: id})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (a *app) readRecipes() {
@@ -114,7 +133,8 @@ func (a *app) readRecipes() {
 
 func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
 	// call provider to get the full recipe
-	r, err := a.provider.GetRecipe(ctx, recipeID)
+	rt, err := a.provider.GetRecipe(ctx, recipeID)
+	r := domain.FromType(rt)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack?? new stream??

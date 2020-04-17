@@ -31,7 +31,7 @@ type StreamArgs struct {
 
 // NewRedisStreamer returns an instance of redisStreamer.
 func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
-	file, err := os.Open("/scripts/ackAndAdd.lua")
+	file, err := os.Open("/scripts/lua/ackAndAdd.lua")
 	if err != nil {
 		return nil, err
 	}
