@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/kind84/gospiga/server/domain"
 	log "github.com/sirupsen/logrus"
 
+	errs "github.com/kind84/gospiga/pkg/errors"
 	"github.com/kind84/gospiga/pkg/streamer"
 )
 
@@ -97,7 +99,7 @@ func (a *app) readRecipes() {
 				}
 				log.Debugf("Got message for a new recipe ID %q", recipeID)
 
-				a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+				a.saveRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
 
 			case updatedRecipeStream:
 				recipeID, ok := msg.Payload.(string)
@@ -131,7 +133,7 @@ func (a *app) readRecipes() {
 	}
 }
 
-func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
+func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
 	r := domain.FromType(rt)
@@ -144,6 +146,49 @@ func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID 
 
 	// save recipe
 	err = a.service.SaveRecipe(ctx, r)
+	var errdup errs.ErrDuplicateID
+	if errors.As(err, &errdup) {
+		log.Infof("recipe ID %q already saved", r.ExternalID)
+		err = a.streamer.Ack(fromStream, group, messageID)
+		if err != nil {
+			log.Errorf("error on Ack for msg ID %q", messageID)
+		}
+		wg.Done()
+		return
+	}
+	if err != nil {
+		log.Error(err)
+		// TODO: ack ??
+		wg.Done()
+		return
+	}
+
+	// ack message and relay
+	rMsg := &streamer.Message{
+		Payload: r.ToType(),
+	}
+	err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
+	if err != nil {
+		log.Errorf("error on AckAndAdd for msg ID %q", messageID)
+	}
+
+	// unleash the streamer
+	wg.Done()
+}
+
+func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
+	// call provider to get the full recipe
+	rt, err := a.provider.GetRecipe(ctx, recipeID)
+	r := domain.FromType(rt)
+	if err != nil {
+		log.Error(err)
+		// TODO: ack?? new stream??
+		wg.Done()
+		return
+	}
+
+	// save recipe
+	err = a.service.UpsertRecipe(ctx, r)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??

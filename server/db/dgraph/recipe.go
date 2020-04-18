@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgraph-io/dgo/v2/protos/api"
 
+	"github.com/kind84/gospiga/pkg/errors"
 	"github.com/kind84/gospiga/server/domain"
 )
 
@@ -50,7 +51,7 @@ func newRecipe(r *domain.Recipe) *recipe {
 	// 	ings = append(ings, ingredient{*i, []string{}})
 	// }
 	now := time.Now()
-	return &recipe{*r, []string{}, &now, &now}
+	return &recipe{*r, []string{"Recipe"}, &now, &now}
 }
 
 // CountRecipes total number.
@@ -58,9 +59,49 @@ func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 	return db.count(ctx, "Recipe")
 }
 
-// SaveRecipe on disk with upsert. If a recipe with the same external ID is
-// already present it gets replaced with the given recipe.
-func (db *DB) SaveRecipe(ctx context.Context, recipe *domain.Recipe) error {
+// SaveRecipe if a recipe with the same external ID has not been saved yet.
+func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
+	req := &api.Request{CommitNow: true}
+	req.Vars = map[string]string{"$xid": r.ExternalID}
+	req.Query = `
+		query RecipeUID($xid: string){
+			recipeUID(func: eq(xid, $xid)) {
+				v as uid
+			}
+		}
+	`
+	dRecipe := newRecipe(r)
+	dRecipe.ID = "_:recipe"
+
+	rb, err := json.Marshal(dRecipe)
+	if err != nil {
+		return err
+	}
+
+	// mu := &api.Mutation{SetJson: mb}
+	mu := &api.Mutation{
+		SetJson: rb,
+		Cond:    "@if(eq(len(v), 0))",
+	}
+
+	req.Mutations = []*api.Mutation{mu}
+
+	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	if ruid, created := res.Uids["recipe"]; created {
+		r.ID = ruid
+	} else {
+		return &errors.ErrDuplicateID{ID: r.ExternalID}
+	}
+	return nil
+}
+
+// UpsertRecipe, if a recipe with the same external ID is already present it
+// gets replaced with the given recipe.
+func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
 	req := &api.Request{CommitNow: true}
 	req.Vars = map[string]string{"$xid": recipe.ExternalID}
 	req.Query = `
@@ -255,7 +296,7 @@ func (db *DB) IDSaved(ctx context.Context, id string) (bool, error) {
 	vars := map[string]string{"$id": id}
 	q := `
 		query IDSaved($id: string){
-			recipes(func: eq(id, $id)) {
+			recipes(func: eq(xid, $id)) {
 				uid
 			}
 		}
