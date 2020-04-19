@@ -18,6 +18,7 @@ type Recipe struct {
 	Steps       []*Step          `json:"steps,omitempty"`
 	Tags        string           `json:"tags,omitempty"`
 	Conclusion  string           `json:"conclusion,omitempty"`
+	Slug        string           `json:"slug,omitempty"`
 }
 
 type RecipeDifficulty string

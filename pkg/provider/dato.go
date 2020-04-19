@@ -56,6 +56,7 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recip
 				}
 				tags
 				conclusion
+				slug
 			}
 		}
 	`)

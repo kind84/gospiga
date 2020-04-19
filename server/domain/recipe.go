@@ -24,6 +24,7 @@ type Recipe struct {
 	Steps       []*Step          `json:"steps,omitempty"`
 	Tags        []*Tag           `json:"tags,omitempty"`
 	Conclusion  string           `json:"conclusion,omitempty"`
+	Slug        string           `json:"slug,omitempty"`
 }
 
 type RecipeDifficulty string
@@ -80,6 +81,7 @@ func (r *Recipe) ToType() *types.Recipe {
 	rt.CookTime = r.CookTime
 	rt.Servings = r.Servings
 	rt.ExtraNotes = r.ExtraNotes
+	rt.Slug = r.Slug
 
 	for _, ingr := range r.Ingredients {
 		rt.Ingredients = append(rt.Ingredients, &types.Ingredient{
@@ -126,6 +128,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	r.CookTime = rt.CookTime
 	r.Servings = rt.Servings
 	r.ExtraNotes = rt.ExtraNotes
+	r.Slug = rt.Slug
 
 	for _, ingr := range rt.Ingredients {
 		r.Ingredients = append(r.Ingredients, &Ingredient{

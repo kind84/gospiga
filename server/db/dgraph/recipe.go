@@ -264,6 +264,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 					tagName
 				}
 				conclusion
+				slug
 			}
 		}
 	`
@@ -338,6 +339,7 @@ func loadRecipeSchema() *api.Operation {
 			conclusion
 			tags
 			finalImage
+			slug
 			createdAt
 			modifiedAt
 		}
@@ -391,6 +393,7 @@ func loadRecipeSchema() *api.Operation {
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
 		tagName: string @index(term) .
+		slug: string .
 	`
 	return op
 }

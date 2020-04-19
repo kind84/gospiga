@@ -25,6 +25,7 @@ type Recipe struct {
 	Steps        []string         `json:"steps,omitempty"`
 	Tags         string           `json:"tags,omitempty"`
 	Conclusion   string           `json:"conclusion,omitempty"`
+	Slug         string           `json:"slug,omitempty"`
 }
 
 type RecipeDifficulty string
@@ -61,6 +62,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	r.Servings = rt.Servings
 	r.ExtraNotes = rt.ExtraNotes
 	r.Tags = rt.Tags
+	r.Slug = rt.Slug
 
 	for _, ingr := range rt.Ingredients {
 		var qty string

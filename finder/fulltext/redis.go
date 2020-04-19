@@ -48,7 +48,8 @@ func NewRedisFT(addr string) (*redisFT, error) {
 		AddField(redisearch.NewTextFieldOptions("ingredients", redisearch.TextFieldOptions{Weight: 4.0})).
 		AddField(redisearch.NewTextField("steps")).
 		AddField(redisearch.NewTextField("conclusion")).
-		AddField(redisearch.NewTagField("tags"))
+		AddField(redisearch.NewTagField("tags")).
+		AddField(redisearch.NewTextFieldOptions("slug", redisearch.TextFieldOptions{NoIndex: true}))
 
 	sc.Options = opts // needed until issue is fixed (https://github.com/RediSearch/redisearch-go/issues/56)
 
@@ -80,7 +81,8 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 		Set("ingredients", recipe.Ingredients).
 		Set("steps", recipe.Steps).
 		Set("conclusion", recipe.Conclusion).
-		Set("tags", recipe.Tags)
+		Set("tags", recipe.Tags).
+		Set("slug", recipe.Slug)
 
 	// Index the document. The API accepts multiple documents at a time,
 	opts := redisearch.DefaultIndexingOptions
