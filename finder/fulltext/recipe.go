@@ -18,6 +18,7 @@ type Recipe struct {
 	Steps       string `json:"steps,omitempty"`
 	Tags        string `json:"tags,omitempty"`
 	Conclusion  string `json:"conclusion,omitempty"`
+	Slug        string `json:"slug,omitempty"`
 	// Likes        int              `json:"likes,omitempty"`
 	// Difficulty   RecipeDifficulty `json:"difficulty,omitempty"`
 	// Cost         RecipeCost       `json:"cost,omitempty"`
@@ -45,6 +46,7 @@ func (r *Recipe) UnmarshalJSON(b []byte) error {
 		Steps       string `json:"steps,omitempty"`
 		Tags        string `json:"tags,omitempty"`
 		Conclusion  string `json:"conclusion,omitempty"`
+		Slug        string `json:"slug,omitempty"`
 		// Likes        int              `json:"likes,omitempty"`
 		// Difficulty   RecipeDifficulty `json:"difficulty,omitempty"`
 		// Cost         RecipeCost       `json:"cost,omitempty"`
@@ -81,6 +83,7 @@ func (r *Recipe) UnmarshalJSON(b []byte) error {
 	r.Steps = rcp.Steps
 	r.Tags = rcp.Tags
 	r.Conclusion = rcp.Conclusion
+	r.Slug = rcp.Slug
 
 	return nil
 }

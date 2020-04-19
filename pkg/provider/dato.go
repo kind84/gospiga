@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jaylane/graphql"
 	log "github.com/sirupsen/logrus"
@@ -73,6 +74,9 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recip
 	if err != nil {
 		return nil, err
 	}
+
+	// normalize tag names
+	r.Recipe.Recipe.Tags = strings.ToLower(r.Recipe.Recipe.Tags)
 
 	return &r.Recipe.Recipe, nil
 }
