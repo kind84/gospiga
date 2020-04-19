@@ -94,7 +94,7 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 	if ruid, created := res.Uids["recipe"]; created {
 		r.ID = ruid
 	} else {
-		return &errors.ErrDuplicateID{ID: r.ExternalID}
+		return errors.ErrDuplicateID{ID: r.ExternalID}
 	}
 	return nil
 }
