@@ -3,7 +3,6 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -96,6 +95,7 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 	} else {
 		return errors.ErrDuplicateID{ID: r.ExternalID}
 	}
+
 	return nil
 }
 
@@ -107,53 +107,51 @@ func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
 	req.Query = `
 		query RecipeUID($xid: string){
 			recipeUID(func: eq(xid, $xid)) {
-				...fragmentA
+				v as uid
+				c as createdAt
 			}
 		}
-
-		fragment fragmentA {
-			v as uid
-			c as createdAt
-		}
 	`
-	now := time.Now()
 	dRecipe := newRecipe(recipe)
-	dRecipe.ID = "uid(v)"
+	dRecipe.ID = "_:recipe"
 
-	pb, err := json.Marshal(dRecipe)
+	rb, err := json.Marshal(dRecipe)
+	if err != nil {
+		return err
+	}
+	var m map[string]interface{}
+	err = json.Unmarshal(rb, &m)
+	if err != nil {
+		return err
+	}
+	m["createdAt"] = "val(c)"
+	rb, err = json.Marshal(m)
 	if err != nil {
 		return err
 	}
 
+	del := map[string]string{"uid": "uid(v)"}
+	delb, err := json.Marshal(del)
+	if err != nil {
+		return err
+	}
 	mu := &api.Mutation{
-		SetJson: pb,
+		SetJson:    rb,
+		DeleteJson: delb,
+		Cond:       "@if(gt(len(v), 0))",
 	}
 
-	mm := map[string]interface{}{
-		"cond": fmt.Sprintf("@if(NOT(lt(val(c), %s)))", now.Format(time.RFC3339Nano)),
-		"set": map[string]interface{}{
-			"uid":       "uid(v)",
-			"createdAt": "val(c)",
-		},
-	}
-	pb2, err := json.Marshal(mm)
-	if err != nil {
-		return err
-	}
-	mu2 := &api.Mutation{
-		SetJson: pb2,
-	}
-
-	req.Mutations = []*api.Mutation{mu, mu2}
+	req.Mutations = []*api.Mutation{mu}
 
 	res, err := db.Dgraph.NewTxn().Do(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	if ruid, created := res.Uids["uid(v)"]; created && recipe.ID == "" {
+	if ruid, created := res.Uids["recipe"]; created {
 		recipe.ID = ruid
 	}
+
 	return nil
 }
 

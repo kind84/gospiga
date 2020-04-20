@@ -75,36 +75,66 @@ func TestDgraphUpsertRecipe(t *testing.T) {
 	recipe2.Title = "upsert"
 
 	tests := []struct {
-		name   string
-		recipe *domain.Recipe
+		name    string
+		recipe  *domain.Recipe
+		setup   func(ctx context.Context, db *DB) error
+		assert  func(ctx context.Context, db *DB, t *testing.T)
+		cleanup func(ctx context.Context, db *DB) error
 	}{
 		{
-			name:   "save new recipe",
-			recipe: &recipe,
+			name:   "recipe not found not added",
+			recipe: &recipe2,
+			assert: func(ctx context.Context, db *DB, t *testing.T) {
+				require := require.New(t)
+				assert := assert.New(t)
+				n, err := db.CountRecipes(ctx)
+				require.NoError(err)
+				assert.Equal(0, n)
+			},
 		},
 		{
-			name:   "update recipe",
+			name:   "recipe found gets updated",
 			recipe: &recipe2,
+			setup: func(ctx context.Context, db *DB) error {
+				return db.SaveRecipe(ctx, &recipe)
+			},
+			assert: func(ctx context.Context, db *DB, t *testing.T) {
+				require := require.New(t)
+				assert := assert.New(t)
+				r, err := db.GetRecipeByID(ctx, recipe2.ExternalID)
+				require.NoError(err)
+				require.NotNil(r)
+				n, err := db.CountRecipes(ctx)
+				require.NoError(err)
+				assert.Equal(r.ExternalID, recipe2.ExternalID)
+				assert.Equal(r.Title, recipe2.Title)
+				assert.Equal(1, n)
+			},
+			cleanup: func(ctx context.Context, db *DB) error {
+				return db.DeleteRecipe(ctx, recipe2.ExternalID)
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			require := require.New(t)
+			if tt.setup != nil {
+				err := tt.setup(ctx, db)
+				require.NoError(err)
+			}
 
-			err := db.UpsertRecipe(context.Background(), tt.recipe)
+			err := db.UpsertRecipe(ctx, tt.recipe)
 
 			require.NoError(err)
-			r, err := db.GetRecipeByID(context.Background(), tt.recipe.ExternalID)
-			require.NoError(err)
-			require.NotNil(r)
-			n, err := db.CountRecipes(context.Background())
-			require.NoError(err)
-			assert.Equal(t, r.ExternalID, tt.recipe.ExternalID)
-			assert.Equal(t, r.Title, tt.recipe.Title)
-			assert.Equal(t, n, 1)
-			err = db.DeleteRecipe(context.Background(), tt.recipe.ExternalID)
-			require.NoError(err)
+			if tt.assert != nil {
+				tt.assert(ctx, db, t)
+			}
+			if tt.cleanup != nil {
+				err := tt.cleanup(ctx, db)
+				require.NoError(err)
+			}
 		})
 	}
 }
@@ -112,7 +142,7 @@ func TestDgraphUpsertRecipe(t *testing.T) {
 func TestDgraphDeleteRecipe(t *testing.T) {
 	recipe := getTestRecipe()
 
-	err := db.UpsertRecipe(context.Background(), &recipe)
+	err := db.SaveRecipe(context.Background(), &recipe)
 	require.NoError(t, err)
 
 	err = db.DeleteRecipe(context.Background(), recipe.ExternalID)
@@ -154,5 +184,6 @@ func getTestRecipe() domain.Recipe {
 				},
 			},
 		},
+		Slug: "test-recipe",
 	}
 }
