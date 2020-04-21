@@ -3,7 +3,6 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -85,10 +84,14 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	}
 	steps := make([]*domain.Step, 0, len(r.Steps))
 	for _, s := range r.Steps {
+		var i *domain.Image
+		if &s.Image.Image != nil {
+			i = &s.Image.Image
+		}
 		steps = append(steps, &domain.Step{
 			Heading: s.Heading,
 			Body:    s.Body,
-			Image:   &s.Image.Image,
+			Image:   i,
 		})
 	}
 	tags := make([]*domain.Tag, 0, len(r.Tags))
@@ -128,14 +131,18 @@ func FromDomain(r *domain.Recipe) *Recipe {
 	}
 	steps := make([]*Step, 0, len(r.Steps))
 	for _, s := range r.Steps {
+		var i *Image
+		if s.Image != nil {
+			i = &Image{
+				Image: *s.Image,
+				DType: []string{"Image"},
+			}
+		}
 		steps = append(steps, &Step{
 			Heading: s.Heading,
 			Body:    s.Body,
-			Image: &Image{
-				Image: *s.Image,
-				DType: []string{"Image"},
-			},
-			DType: []string{"Step"},
+			Image:   i,
+			DType:   []string{"Step"},
 		})
 	}
 	tags := make([]*Tag, 0, len(r.Tags))
@@ -194,7 +201,6 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 	`
 	dRecipe := FromDomain(r)
 	dRecipe.ID = "_:recipe"
-	fmt.Printf("%+v\n", dRecipe)
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
