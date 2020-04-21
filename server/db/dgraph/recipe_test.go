@@ -40,11 +40,11 @@ func TestDgraphSaveRecipe(t *testing.T) {
 	}{
 		{
 			name:   "save new recipe",
-			recipe: &recipe,
+			recipe: recipe,
 		},
 		{
 			name:   "don't save same xid again",
-			recipe: &recipe,
+			recipe: recipe,
 		},
 	}
 
@@ -83,7 +83,7 @@ func TestDgraphUpsertRecipe(t *testing.T) {
 	}{
 		{
 			name:   "recipe not found not added",
-			recipe: &recipe2,
+			recipe: recipe2,
 			assert: func(ctx context.Context, db *DB, t *testing.T) {
 				require := require.New(t)
 				assert := assert.New(t)
@@ -94,9 +94,9 @@ func TestDgraphUpsertRecipe(t *testing.T) {
 		},
 		{
 			name:   "recipe found gets updated",
-			recipe: &recipe2,
+			recipe: recipe2,
 			setup: func(ctx context.Context, db *DB) error {
-				return db.SaveRecipe(ctx, &recipe)
+				return db.SaveRecipe(ctx, recipe)
 			},
 			assert: func(ctx context.Context, db *DB, t *testing.T) {
 				require := require.New(t)
@@ -142,19 +142,19 @@ func TestDgraphUpsertRecipe(t *testing.T) {
 func TestDgraphDeleteRecipe(t *testing.T) {
 	recipe := getTestRecipe()
 
-	err := db.SaveRecipe(context.Background(), &recipe)
+	err := db.SaveRecipe(context.Background(), recipe)
 	require.NoError(t, err)
 
 	err = db.DeleteRecipe(context.Background(), recipe.ExternalID)
 
 	require.NoError(t, err)
-	r, err := db.GetRecipeByID(context.Background(), recipe.ExternalID)
+	recipe, err = db.GetRecipeByID(context.Background(), recipe.ExternalID)
 	require.NoError(t, err)
-	require.Nil(t, r)
+	require.Nil(t, recipe)
 }
 
-func getTestRecipe() domain.Recipe {
-	return domain.Recipe{
+func getTestRecipe() *domain.Recipe {
+	return &domain.Recipe{
 		ExternalID:  "externalID",
 		Title:       "title",
 		Subtitle:    "subtitle",
@@ -177,8 +177,8 @@ func getTestRecipe() domain.Recipe {
 		},
 		Steps: []*domain.Step{
 			{
-				Title:       "title",
-				Description: "description",
+				Heading: "heading",
+				Body:    "body",
 				Image: &domain.Image{
 					URL: "url",
 				},

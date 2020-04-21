@@ -7,9 +7,19 @@ import (
 	"github.com/kind84/gospiga/server/domain"
 )
 
-type TagImage struct {
-	TagName string   `json:"tagName,omitempty"`
-	Recipes []recipe `json:"recipe,omitempty"`
+// tag represents repository version of the domain tag.
+type Tag struct {
+	domain.Tag
+	Recipes []Recipe `json:"recipe,omitempty"`
+	DType   []string `json:"dgraph.type,omitempty"`
+}
+
+func (t Tag) MarshalJSON() ([]byte, error) {
+	type Alias Tag
+	if len(t.DType) == 0 {
+		t.DType = []string{"Tag"}
+	}
+	return json.Marshal((Alias)(t))
 }
 
 func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
@@ -34,7 +44,7 @@ func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 	}
 
 	var root struct {
-		Tags []TagImage `json:"tags"`
+		Tags []Tag `json:"tags"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
@@ -48,7 +58,7 @@ func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 	for _, t := range root.Tags {
 		recipes := make([]*domain.Recipe, 0, len(t.Recipes))
 		for _, r := range t.Recipes {
-			recipes = append(recipes, &r.Recipe)
+			recipes = append(recipes, r.ToDomain())
 		}
 
 		tags = append(tags, &domain.Tag{

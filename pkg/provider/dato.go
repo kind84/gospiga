@@ -49,8 +49,8 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recip
 					unitOfMeasure
 				}
 				steps {
-					title
-					description
+					heading: title
+					body: description
 					image {
 						url
 					}

@@ -75,7 +75,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	}
 
 	for _, step := range rt.Steps {
-		r.Steps = append(r.Steps, fmt.Sprintf("%s %s", step.Title, step.Description))
+		r.Steps = append(r.Steps, fmt.Sprintf("%s %s", step.Heading, step.Body))
 	}
 
 	return &r

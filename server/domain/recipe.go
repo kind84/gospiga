@@ -50,9 +50,9 @@ type Ingredient struct {
 }
 
 type Step struct {
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Image       *Image `json:"image,omitempty"`
+	Heading string `json:"heading,omitempty"`
+	Body    string `json:"body,omitempty"`
+	Image   *Image `json:"image,omitempty"`
 }
 
 type Image struct {
@@ -97,9 +97,9 @@ func (r *Recipe) ToType() *types.Recipe {
 			img = &types.Image{URL: step.Image.URL}
 		}
 		rt.Steps = append(rt.Steps, &types.Step{
-			Title:       step.Title,
-			Description: step.Description,
-			Image:       img,
+			Heading: step.Heading,
+			Body:    step.Body,
+			Image:   img,
 		})
 	}
 
@@ -144,9 +144,9 @@ func FromType(rt *types.Recipe) *Recipe {
 			img = &Image{URL: step.Image.URL}
 		}
 		r.Steps = append(r.Steps, &Step{
-			Title:       step.Title,
-			Description: step.Description,
-			Image:       img,
+			Heading: step.Heading,
+			Body:    step.Body,
+			Image:   img,
 		})
 	}
 

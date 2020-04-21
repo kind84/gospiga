@@ -3,6 +3,7 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -15,42 +16,164 @@ import (
 // TODO: add dgraph type on ingredients and steps.
 
 // recipe represents repository version of the domain recipe.
-type recipe struct {
-	domain.Recipe
-	DType      []string   `json:"dgraph.type,omitempty"`
-	CretedAt   *time.Time `json:"createdAt,omitempty"`
-	ModifiedAt *time.Time `json:"modifiedAt,omitempty"`
+type Recipe struct {
+	ID          string                  `json:"uid,omitempty"`
+	ExternalID  string                  `json:"xid,omitempty"`
+	Title       string                  `json:"title,omitempty"`
+	Subtitle    string                  `json:"subtitle,omitempty"`
+	MainImage   *Image                  `json:"mainImage,omitempty"`
+	Likes       int                     `json:"likes,omitempty"`
+	Difficulty  domain.RecipeDifficulty `json:"difficulty,omitempty"`
+	Cost        domain.RecipeCost       `json:"cost,omitempty"`
+	PrepTime    int                     `json:"prepTime,omitempty"`
+	CookTime    int                     `json:"cookTime,omitempty"`
+	Servings    int                     `json:"servings,omitempty"`
+	ExtraNotes  string                  `json:"extraNotes,omitempty"`
+	Description string                  `json:"description,omitempty"`
+	Ingredients []*Ingredient           `json:"ingredients,omitempty"`
+	Steps       []*Step                 `json:"steps,omitempty"`
+	Tags        []*Tag                  `json:"tags,omitempty"`
+	Conclusion  string                  `json:"conclusion,omitempty"`
+	Slug        string                  `json:"slug,omitempty"`
+	DType       []string                `json:"dgraph.type,omitempty"`
+	CretedAt    *time.Time              `json:"createdAt,omitempty"`
+	ModifiedAt  *time.Time              `json:"modifiedAt,omitempty"`
 }
 
-func (r recipe) MarshalJSON() ([]byte, error) {
-	type Alias recipe
+func (r Recipe) MarshalJSON() ([]byte, error) {
+	type Alias Recipe
 	if len(r.DType) == 0 {
 		r.DType = []string{"Recipe"}
 	}
 	return json.Marshal((Alias)(r))
 }
 
-// Ingredient represents repository verison of the domain ingredient.
-type ingredient struct {
-	domain.Ingredient
+// step represents repository version of the domain step.
+type Step struct {
+	Heading string   `json:"heading,omitempty"`
+	Body    string   `json:"body,omitempty"`
+	Image   *Image   `json:"image,omitempty"`
+	DType   []string `json:"dgraph.type,omitempty"`
+}
+
+func (s Step) MarshalJSON() ([]byte, error) {
+	type Alias Step
+	if len(s.DType) == 0 {
+		s.DType = []string{"Step"}
+	}
+	return json.Marshal((Alias)(s))
+}
+
+// image represents repository version of the domain image.
+type Image struct {
+	domain.Image
 	DType []string `json:"dgraph.type,omitempty"`
 }
 
-func (i ingredient) MarshalJSON() ([]byte, error) {
-	type Alias ingredient
+func (i Image) MarshalJSON() ([]byte, error) {
+	type Alias Image
 	if len(i.DType) == 0 {
-		i.DType = []string{"Ingredient"}
+		i.DType = []string{"Image"}
 	}
 	return json.Marshal((Alias)(i))
 }
 
-func newRecipe(r *domain.Recipe) *recipe {
-	// ings := make([]ingredient, 0, len(r.Ingredients))
-	// for _, i := range r.Ingredients {
-	// 	ings = append(ings, ingredient{*i, []string{}})
-	// }
+func (r *Recipe) ToDomain() *domain.Recipe {
+	ings := make([]*domain.Ingredient, 0, len(r.Ingredients))
+	for _, i := range r.Ingredients {
+		ings = append(ings, &i.Ingredient)
+	}
+	steps := make([]*domain.Step, 0, len(r.Steps))
+	for _, s := range r.Steps {
+		steps = append(steps, &domain.Step{
+			Heading: s.Heading,
+			Body:    s.Body,
+			Image:   &s.Image.Image,
+		})
+	}
+	tags := make([]*domain.Tag, 0, len(r.Tags))
+	for _, t := range r.Tags {
+		tags = append(tags, &t.Tag)
+	}
+
+	return &domain.Recipe{
+		ID:          r.ID,
+		ExternalID:  r.ExternalID,
+		Title:       r.Title,
+		Subtitle:    r.Subtitle,
+		MainImage:   &r.MainImage.Image,
+		Likes:       r.Likes,
+		Difficulty:  r.Difficulty,
+		Cost:        r.Cost,
+		PrepTime:    r.PrepTime,
+		CookTime:    r.CookTime,
+		Servings:    r.Servings,
+		ExtraNotes:  r.ExtraNotes,
+		Description: r.Description,
+		Ingredients: ings,
+		Steps:       steps,
+		Conclusion:  r.Conclusion,
+		Tags:        tags,
+		Slug:        r.Slug,
+	}
+}
+
+func FromDomain(r *domain.Recipe) *Recipe {
+	ings := make([]*Ingredient, 0, len(r.Ingredients))
+	for _, i := range r.Ingredients {
+		ings = append(ings, &Ingredient{
+			Ingredient: *i,
+			DType:      []string{"Ingredient"},
+		})
+	}
+	steps := make([]*Step, 0, len(r.Steps))
+	for _, s := range r.Steps {
+		steps = append(steps, &Step{
+			Heading: s.Heading,
+			Body:    s.Body,
+			Image: &Image{
+				Image: *s.Image,
+				DType: []string{"Image"},
+			},
+			DType: []string{"Step"},
+		})
+	}
+	tags := make([]*Tag, 0, len(r.Tags))
+	for _, t := range r.Tags {
+		tags = append(tags, &Tag{
+			Tag:   *t,
+			DType: []string{"Tag"},
+		})
+	}
+
 	now := time.Now()
-	return &recipe{*r, []string{"Recipe"}, &now, &now}
+	dr := &Recipe{
+		ExternalID: r.ExternalID,
+		Title:      r.Title,
+		Subtitle:   r.Subtitle,
+		MainImage: &Image{
+			Image: *r.MainImage,
+			DType: []string{"Image"},
+		},
+		Likes:       r.Likes,
+		Difficulty:  r.Difficulty,
+		Cost:        r.Cost,
+		PrepTime:    r.PrepTime,
+		CookTime:    r.CookTime,
+		Servings:    r.Servings,
+		ExtraNotes:  r.ExtraNotes,
+		Description: r.Description,
+		Ingredients: ings,
+		Steps:       steps,
+		Conclusion:  r.Conclusion,
+		Tags:        tags,
+		Slug:        r.Slug,
+		DType:       []string{"Recipe"},
+		CretedAt:    &now,
+		ModifiedAt:  &now,
+	}
+
+	return dr
 }
 
 // CountRecipes total number.
@@ -69,15 +192,15 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 			}
 		}
 	`
-	dRecipe := newRecipe(r)
+	dRecipe := FromDomain(r)
 	dRecipe.ID = "_:recipe"
+	fmt.Printf("%+v\n", dRecipe)
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
 		return err
 	}
 
-	// mu := &api.Mutation{SetJson: mb}
 	mu := &api.Mutation{
 		SetJson: rb,
 		Cond:    "@if(eq(len(v), 0))",
@@ -112,7 +235,7 @@ func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
 			}
 		}
 	`
-	dRecipe := newRecipe(recipe)
+	dRecipe := FromDomain(recipe)
 	dRecipe.ID = "_:recipe"
 
 	rb, err := json.Marshal(dRecipe)
@@ -162,12 +285,8 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	req.Query = `
 		query RecipeUID($xid: string){
 			recipeUID(func: eq(xid, $xid)) {
-				...fragmentA
+				v as uid
 			}
-		}
-
-		fragment fragmentA {
-			v as uid
 		}
 	`
 	del := map[string]string{"uid": "uid(v)"}
@@ -187,17 +306,31 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 
 // GetRecipeByID and return the domain recipe matching the external ID.
 func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, error) {
-	dRecipe, err := db.getRecipeByID(ctx, id)
+	r, err := db.getRecipeByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if dRecipe == nil {
+	if r == nil {
 		return nil, nil
 	}
-	return &dRecipe.Recipe, nil
+
+	ings := make([]*domain.Ingredient, 0, len(r.Ingredients))
+	for _, i := range r.Ingredients {
+		ings = append(ings, &i.Ingredient)
+	}
+	steps := make([]*domain.Step, 0, len(r.Steps))
+	for _, s := range r.Steps {
+		steps = append(steps, &domain.Step{
+			Heading: s.Heading,
+			Body:    s.Body,
+			Image:   &s.Image.Image,
+		})
+	}
+
+	return r.ToDomain(), nil
 }
 
-func (db *DB) getRecipeByID(ctx context.Context, id string) (*recipe, error) {
+func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	vars := map[string]string{"$xid": id}
 	q := `
 		query Recipes($xid: string){
@@ -213,7 +346,7 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*recipe, error) {
 	}
 
 	var root struct {
-		Recipes []recipe `json:"recipes"`
+		Recipes []Recipe `json:"recipes"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
@@ -273,7 +406,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 	}
 
 	var root struct {
-		Recipes []recipe `json:"recipes"`
+		Recipes []Recipe `json:"recipes"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
@@ -284,8 +417,8 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 	}
 
 	recipes := make([]*domain.Recipe, 0, len(root.Recipes))
-	for _, recipe := range root.Recipes {
-		recipes = append(recipes, &recipe.Recipe)
+	for _, r := range root.Recipes {
+		recipes = append(recipes, r.ToDomain())
 	}
 	return recipes, nil
 }
@@ -307,7 +440,7 @@ func (db *DB) IDSaved(ctx context.Context, id string) (bool, error) {
 	}
 
 	var root struct {
-		Recipes []recipe `json:"recipes"`
+		Recipes []Recipe `json:"recipes"`
 	}
 	err = json.Unmarshal(resp.Json, &root)
 	if err != nil {
@@ -351,8 +484,8 @@ func loadRecipeSchema() *api.Operation {
 
 		type Step {
 			index
-			title
-			description
+			heading
+			body
 			image
 		}
 
@@ -379,6 +512,8 @@ func loadRecipeSchema() *api.Operation {
 		description: string @lang @index(fulltext) .
 		ingredients: [uid] @count @reverse .
 		steps: [uid] @count .
+		heading: string @lang @index(fulltext) .
+		body: string @lang @index(fulltext) .
 		conclusion: string .
 		finalImage: uid .
 		tags: [uid] @reverse .

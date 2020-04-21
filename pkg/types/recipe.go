@@ -44,9 +44,9 @@ type Ingredient struct {
 }
 
 type Step struct {
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Image       *Image `json:"image,omitempty"`
+	Heading string `json:"heading,omitempty"`
+	Body    string `json:"body,omitempty"`
+	Image   *Image `json:"image,omitempty"`
 }
 
 type Image struct {
