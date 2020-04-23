@@ -10,7 +10,7 @@ import (
 // tag represents repository version of the domain tag.
 type Tag struct {
 	domain.Tag
-	Recipes []Recipe `json:"recipe,omitempty"`
+	Recipes []Recipe `json:"recipes,omitempty"`
 	DType   []string `json:"dgraph.type,omitempty"`
 }
 
@@ -22,12 +22,13 @@ func (t Tag) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(t))
 }
 
+// AllTagsImages returns one recipe image for each tag stored on db.
 func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 	q := `
 		query Tags {
 			tags(func: has(tagName)) {
 				tagName
-				recipe: ~tags (first: 1){
+				recipes: ~tags (first: 1){
 					uid
 					xid
 					mainImage {
@@ -56,14 +57,9 @@ func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 
 	tags := make([]*domain.Tag, 0, len(root.Tags))
 	for _, t := range root.Tags {
-		recipes := make([]*domain.Recipe, 0, len(t.Recipes))
-		for _, r := range t.Recipes {
-			recipes = append(recipes, r.ToDomain())
-		}
-
 		tags = append(tags, &domain.Tag{
 			TagName: t.TagName,
-			Recipes: recipes,
+			Recipes: []*domain.Recipe{t.Recipes[0].ToDomain()},
 		})
 	}
 	return tags, nil

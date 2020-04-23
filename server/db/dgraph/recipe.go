@@ -9,6 +9,7 @@ import (
 	"github.com/dgraph-io/dgo/v2/protos/api"
 
 	"github.com/kind84/gospiga/pkg/errors"
+	"github.com/kind84/gospiga/pkg/stemmer"
 	"github.com/kind84/gospiga/server/domain"
 )
 
@@ -121,12 +122,21 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	}
 }
 
-func FromDomain(r *domain.Recipe) *Recipe {
+func FromDomain(r *domain.Recipe) (*Recipe, error) {
 	ings := make([]*Ingredient, 0, len(r.Ingredients))
 	for _, i := range r.Ingredients {
+		s, err := stemmer.Stem(i.Name, "italian")
+		if err != nil {
+			return nil, err
+		}
 		ings = append(ings, &Ingredient{
 			Ingredient: *i,
-			DType:      []string{"Ingredient"},
+			Food: &Food{
+				Term:  i.Name,
+				Stem:  s,
+				DType: []string{"Food"},
+			},
+			DType: []string{"Ingredient"},
 		})
 	}
 	steps := make([]*Step, 0, len(r.Steps))
@@ -180,7 +190,7 @@ func FromDomain(r *domain.Recipe) *Recipe {
 		ModifiedAt:  &now,
 	}
 
-	return dr
+	return dr, nil
 }
 
 // CountRecipes total number.
@@ -199,7 +209,10 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 			}
 		}
 	`
-	dRecipe := FromDomain(r)
+	dRecipe, err := FromDomain(r)
+	if err != nil {
+		return err
+	}
 	dRecipe.ID = "_:recipe"
 
 	rb, err := json.Marshal(dRecipe)
@@ -241,8 +254,11 @@ func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
 			}
 		}
 	`
-	dRecipe := FromDomain(recipe)
-	dRecipe.ID = "_:recipe"
+	dRecipe, err := FromDomain(recipe)
+	if err != nil {
+		return err
+	}
+	dRecipe.ID = "uid:uid(v)"
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
@@ -485,7 +501,14 @@ func loadRecipeSchema() *api.Operation {
 			name
 			quantity
 			unitOfMeasure
+			food
 			<~ingredients>
+		}
+
+		type Food {
+			term
+			stem
+			<~food>
 		}
 
 		type Step {
@@ -526,6 +549,9 @@ func loadRecipeSchema() *api.Operation {
 		name: string @lang @index(term) .
 		quantity: string .
 		unitOfMeasure: string .
+		food: uid @reverse .
+		term: string @index(term) .
+		stem: string .
 		index: int @index(int) .
 		image: uid .
 		url: string .

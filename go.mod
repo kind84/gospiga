@@ -15,15 +15,14 @@ require (
 	github.com/jaylane/graphql v0.2.2
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.5.1
+	github.com/tebeka/snowball v0.4.2
+	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20191207000613-e7e4b65ae663 // indirect
 	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f // indirect
 	google.golang.org/grpc v1.28.1
-	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
-	gopkg.in/go-playground/validator.v9 v9.29.1 // indirect
 )
