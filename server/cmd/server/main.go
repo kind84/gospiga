@@ -12,11 +12,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
 	"google.golang.org/grpc"
 
+	"github.com/kind84/gospiga/pkg/log"
 	"github.com/kind84/gospiga/pkg/provider"
 	"github.com/kind84/gospiga/pkg/redis"
 	"github.com/kind84/gospiga/pkg/streamer"
@@ -31,9 +31,7 @@ import (
 const defaultFinderPort = "50051"
 
 func init() {
-	log.SetLevel(log.DebugLevel)
-
-	log.Info("Setting up configuration...")
+	log.Infof("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	// viper.SetEnvPrefix("gospiga")
