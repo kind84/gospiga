@@ -3,7 +3,9 @@ package dgraph
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/dgraph-io/dgo/v2/protos/api"
@@ -163,7 +165,6 @@ func FromDomain(r *domain.Recipe) (*Recipe, error) {
 		})
 	}
 
-	now := time.Now()
 	dr := &Recipe{
 		ExternalID: r.ExternalID,
 		Title:      r.Title,
@@ -186,8 +187,6 @@ func FromDomain(r *domain.Recipe) (*Recipe, error) {
 		Tags:        tags,
 		Slug:        r.Slug,
 		DType:       []string{"Recipe"},
-		CretedAt:    &now,
-		ModifiedAt:  &now,
 	}
 
 	return dr, nil
@@ -213,7 +212,10 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 	if err != nil {
 		return err
 	}
+	now := time.Now()
 	dRecipe.ID = "_:recipe"
+	dRecipe.CretedAt = &now
+	dRecipe.ModifiedAt = &now
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
@@ -244,21 +246,44 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 // UpsertRecipe, if a recipe with the same external ID is already present it
 // gets replaced with the given recipe.
 func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
-	req := &api.Request{CommitNow: true}
-	req.Vars = map[string]string{"$xid": recipe.ExternalID}
-	req.Query = `
-		query RecipeUID($xid: string){
-			recipeUID(func: eq(xid, $xid)) {
-				v as uid
-				c as createdAt
-			}
-		}
-	`
 	dRecipe, err := FromDomain(recipe)
 	if err != nil {
 		return err
 	}
-	dRecipe.ID = "uid:uid(v)"
+
+	var sb strings.Builder
+	t := template.Must(template.New("update").ParseFiles("./update.tmpl"))
+	err = t.Execute(&sb, recipe)
+	if err != nil {
+		return err
+	}
+
+	req := &api.Request{CommitNow: true}
+	req.Vars = map[string]string{"$xid": recipe.ExternalID}
+	req.Query = sb.String()
+
+	mutations := []*api.Mutation{}
+
+	for i := range recipe.Ingredients {
+		// both ingredient and stem found
+		mu0 := &api.Mutation{
+			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 1) AND eq(len(f%d), 1))", i, i),
+		}
+
+		// stem found, ingredient missing
+		mu1 := &api.Mutation{
+			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 1))", i, i),
+		}
+
+		// both ingredient and stem missing
+		mu2 := &api.Mutation{
+			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 0))", i, i),
+		}
+
+		mutations = append(mutations, mu0, mu1, mu2)
+	}
+
+	dRecipe.ID = "uid:uid(r)"
 
 	rb, err := json.Marshal(dRecipe)
 	if err != nil {
@@ -275,18 +300,7 @@ func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
 		return err
 	}
 
-	del := map[string]string{"uid": "uid(v)"}
-	delb, err := json.Marshal(del)
-	if err != nil {
-		return err
-	}
-	mu := &api.Mutation{
-		SetJson:    rb,
-		DeleteJson: delb,
-		Cond:       "@if(gt(len(v), 0))",
-	}
-
-	req.Mutations = []*api.Mutation{mu}
+	req.Mutations = mutations
 
 	res, err := db.Dgraph.NewTxn().Do(ctx, req)
 	if err != nil {
