@@ -188,7 +188,7 @@ func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	}
 
 	// save recipe
-	err = a.service.UpsertRecipe(ctx, r)
+	err = a.service.UpdateRecipe(ctx, r)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??

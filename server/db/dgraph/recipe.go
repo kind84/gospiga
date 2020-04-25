@@ -11,13 +11,10 @@ import (
 	"github.com/dgraph-io/dgo/v2/protos/api"
 
 	"github.com/kind84/gospiga/pkg/errors"
-	"github.com/kind84/gospiga/pkg/stemmer"
 	"github.com/kind84/gospiga/server/domain"
 )
 
-// TODO: add dgraph type on ingredients and steps.
-
-// recipe represents repository version of the domain recipe.
+// Recipe represents repository version of the domain recipe.
 type Recipe struct {
 	ID          string                  `json:"uid,omitempty"`
 	ExternalID  string                  `json:"xid,omitempty"`
@@ -50,8 +47,9 @@ func (r Recipe) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(r))
 }
 
-// step represents repository version of the domain step.
+// Step represents repository version of the domain step.
 type Step struct {
+	ID      string   `json:"uid,omitempty"`
 	Heading string   `json:"heading,omitempty"`
 	Body    string   `json:"body,omitempty"`
 	Image   *Image   `json:"image,omitempty"`
@@ -66,9 +64,10 @@ func (s Step) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(s))
 }
 
-// image represents repository version of the domain image.
+// Image represents repository version of the domain image.
 type Image struct {
-	domain.Image
+	ID    string   `json:"uid,omitempty"`
+	URL   string   `json:"url,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
 }
 
@@ -80,21 +79,22 @@ func (i Image) MarshalJSON() ([]byte, error) {
 	return json.Marshal((Alias)(i))
 }
 
+// ToDomain converts a dgraph recipe into a domain recipe.
 func (r *Recipe) ToDomain() *domain.Recipe {
 	ings := make([]*domain.Ingredient, 0, len(r.Ingredients))
 	for _, i := range r.Ingredients {
-		ings = append(ings, &i.Ingredient)
+		ings = append(ings, i.ToDomain())
 	}
 	steps := make([]*domain.Step, 0, len(r.Steps))
 	for _, s := range r.Steps {
-		var i *domain.Image
-		if &s.Image.Image != nil {
-			i = &s.Image.Image
+		var i domain.Image
+		if s.Image != nil {
+			i.URL = s.Image.URL
 		}
 		steps = append(steps, &domain.Step{
 			Heading: s.Heading,
 			Body:    s.Body,
-			Image:   i,
+			Image:   &i,
 		})
 	}
 	tags := make([]*domain.Tag, 0, len(r.Tags))
@@ -102,12 +102,11 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 		tags = append(tags, &t.Tag)
 	}
 
-	return &domain.Recipe{
+	dr := &domain.Recipe{
 		ID:          r.ID,
 		ExternalID:  r.ExternalID,
 		Title:       r.Title,
 		Subtitle:    r.Subtitle,
-		MainImage:   &r.MainImage.Image,
 		Likes:       r.Likes,
 		Difficulty:  r.Difficulty,
 		Cost:        r.Cost,
@@ -122,74 +121,75 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 		Tags:        tags,
 		Slug:        r.Slug,
 	}
+
+	var mi domain.Image
+	if r.MainImage != nil {
+		mi.URL = r.MainImage.URL
+	}
+
+	return dr
 }
 
-func FromDomain(r *domain.Recipe) (*Recipe, error) {
-	ings := make([]*Ingredient, 0, len(r.Ingredients))
-	for _, i := range r.Ingredients {
-		s, err := stemmer.Stem(i.Name, "italian")
+// FromDomain converts a domain recipe into a dgraph recipe.
+func (r *Recipe) FromDomain(dr *domain.Recipe) error {
+	ings := make([]*Ingredient, 0, len(dr.Ingredients))
+	for _, di := range dr.Ingredients {
+		var i Ingredient
+		err := i.FromDomain(di)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		ings = append(ings, &Ingredient{
-			Ingredient: *i,
-			Food: &Food{
-				Term:  i.Name,
-				Stem:  s,
-				DType: []string{"Food"},
-			},
-			DType: []string{"Ingredient"},
-		})
+		ings = append(ings, &i)
 	}
-	steps := make([]*Step, 0, len(r.Steps))
-	for _, s := range r.Steps {
-		var i *Image
+	steps := make([]*Step, 0, len(dr.Steps))
+	for _, s := range dr.Steps {
+		var i Image
 		if s.Image != nil {
-			i = &Image{
-				Image: *s.Image,
+			i = Image{
+				URL:   s.Image.URL,
 				DType: []string{"Image"},
 			}
 		}
 		steps = append(steps, &Step{
 			Heading: s.Heading,
 			Body:    s.Body,
-			Image:   i,
+			Image:   &i,
 			DType:   []string{"Step"},
 		})
 	}
-	tags := make([]*Tag, 0, len(r.Tags))
-	for _, t := range r.Tags {
+	tags := make([]*Tag, 0, len(dr.Tags))
+	for _, t := range dr.Tags {
 		tags = append(tags, &Tag{
 			Tag:   *t,
 			DType: []string{"Tag"},
 		})
 	}
 
-	dr := &Recipe{
-		ExternalID: r.ExternalID,
-		Title:      r.Title,
-		Subtitle:   r.Subtitle,
-		MainImage: &Image{
-			Image: *r.MainImage,
+	r.ExternalID = dr.ExternalID
+	r.Title = dr.Title
+	r.Subtitle = dr.Subtitle
+	if dr.MainImage != nil {
+		r.MainImage = &Image{
+			URL:   dr.MainImage.URL,
 			DType: []string{"Image"},
-		},
-		Likes:       r.Likes,
-		Difficulty:  r.Difficulty,
-		Cost:        r.Cost,
-		PrepTime:    r.PrepTime,
-		CookTime:    r.CookTime,
-		Servings:    r.Servings,
-		ExtraNotes:  r.ExtraNotes,
-		Description: r.Description,
-		Ingredients: ings,
-		Steps:       steps,
-		Conclusion:  r.Conclusion,
-		Tags:        tags,
-		Slug:        r.Slug,
-		DType:       []string{"Recipe"},
+		}
 	}
+	r.Likes = dr.Likes
+	r.Difficulty = dr.Difficulty
+	r.Cost = dr.Cost
+	r.PrepTime = dr.PrepTime
+	r.CookTime = dr.CookTime
+	r.Servings = dr.Servings
+	r.ExtraNotes = dr.ExtraNotes
+	r.Description = dr.Description
+	r.Ingredients = ings
+	r.Steps = steps
+	r.Conclusion = dr.Conclusion
+	r.Tags = tags
+	r.Slug = dr.Slug
+	r.DType = []string{"Recipe"}
 
-	return dr, nil
+	return nil
 }
 
 // CountRecipes total number.
@@ -198,9 +198,9 @@ func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 }
 
 // SaveRecipe if a recipe with the same external ID has not been saved yet.
-func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
+func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 	req := &api.Request{CommitNow: true}
-	req.Vars = map[string]string{"$xid": r.ExternalID}
+	req.Vars = map[string]string{"$xid": dr.ExternalID}
 	req.Query = `
 		query RecipeUID($xid: string){
 			recipeUID(func: eq(xid, $xid)) {
@@ -208,16 +208,17 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 			}
 		}
 	`
-	dRecipe, err := FromDomain(r)
+	var r Recipe
+	err := r.FromDomain(dr)
 	if err != nil {
 		return err
 	}
 	now := time.Now()
-	dRecipe.ID = "_:recipe"
-	dRecipe.CretedAt = &now
-	dRecipe.ModifiedAt = &now
+	r.ID = "_:recipe"
+	r.CretedAt = &now
+	r.ModifiedAt = &now
 
-	rb, err := json.Marshal(dRecipe)
+	rb, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
@@ -235,80 +236,117 @@ func (db *DB) SaveRecipe(ctx context.Context, r *domain.Recipe) error {
 	}
 
 	if ruid, created := res.Uids["recipe"]; created {
-		r.ID = ruid
+		dr.ID = ruid
 	} else {
-		return errors.ErrDuplicateID{ID: r.ExternalID}
+		return errors.ErrDuplicateID{ID: dr.ExternalID}
 	}
 
 	return nil
 }
 
-// UpsertRecipe, if a recipe with the same external ID is already present it
-// gets replaced with the given recipe.
-func (db *DB) UpsertRecipe(ctx context.Context, recipe *domain.Recipe) error {
-	dRecipe, err := FromDomain(recipe)
+// UpdateRecipe if already stored on db.
+func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
+	var r Recipe
+	err := r.FromDomain(dr)
 	if err != nil {
 		return err
 	}
 
 	var sb strings.Builder
-	t := template.Must(template.New("update").ParseFiles("./update.tmpl"))
-	err = t.Execute(&sb, recipe)
+	t := template.Must(template.New("update.tmpl").ParseFiles("./update.tmpl"))
+	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
 	}
 
 	req := &api.Request{CommitNow: true}
-	req.Vars = map[string]string{"$xid": recipe.ExternalID}
+	req.Vars = map[string]string{"$xid": dr.ExternalID}
 	req.Query = sb.String()
 
 	mutations := []*api.Mutation{}
 
-	for i := range recipe.Ingredients {
+	for i, ingr := range dr.Ingredients {
+		var i0, i1, i2 Ingredient
+
+		// fresh ingredients
+		err := i0.FromDomain(ingr)
+		if err != nil {
+			return err
+		}
+		err = i1.FromDomain(ingr)
+		if err != nil {
+			return err
+		}
+		err = i2.FromDomain(ingr)
+		if err != nil {
+			return err
+		}
+
 		// both ingredient and stem found
+		i0.ID = fmt.Sprintf("uid(i%d)", i)
+		ji0, err := json.Marshal(i0)
+		if err != nil {
+			return err
+		}
+
 		mu0 := &api.Mutation{
-			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 1) AND eq(len(f%d), 1))", i, i),
+			SetJson: ji0,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 1) AND eq(len(f%d), 1))", i, i),
 		}
 
 		// stem found, ingredient missing
+		i1.ID = fmt.Sprintf("_:ingr%d)", i)
+		i1.Food.ID = fmt.Sprintf("uid(f%d)", i)
+		ji1, err := json.Marshal(i1)
+		if err != nil {
+			return err
+		}
+
 		mu1 := &api.Mutation{
-			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 1))", i, i),
+			SetJson: ji1,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 1))", i, i),
 		}
 
 		// both ingredient and stem missing
+		i2.ID = fmt.Sprintf("_:ingr%d)", i)
+		i2.Food.ID = fmt.Sprintf("_:food%d)", i)
+		ji2, err := json.Marshal(i2)
+		if err != nil {
+			return err
+		}
 		mu2 := &api.Mutation{
-			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 0))", i, i),
+			SetJson: ji2,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 0))", i, i),
 		}
 
 		mutations = append(mutations, mu0, mu1, mu2)
 	}
 
-	dRecipe.ID = "uid:uid(r)"
+	// update recipe scalar fields: remove edges to other nodes, they'll be omitted in json
+	now := time.Now()
+	r.ID = "uid(r)"
+	r.ModifiedAt = &now
+	r.MainImage = nil
+	r.Ingredients = nil
+	r.Steps = nil
+	r.Tags = nil
 
-	rb, err := json.Marshal(dRecipe)
+	jr, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
-	var m map[string]interface{}
-	err = json.Unmarshal(rb, &m)
-	if err != nil {
-		return err
+
+	mu := &api.Mutation{
+		SetJson: jr,
+		Cond:    "@if(eq(len(r), 1))",
 	}
-	m["createdAt"] = "val(c)"
-	rb, err = json.Marshal(m)
-	if err != nil {
-		return err
-	}
+	mutations = append(mutations, mu)
 
 	req.Mutations = mutations
 
-	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	_, err = db.Dgraph.NewTxn().Do(ctx, req)
 	if err != nil {
 		return err
-	}
-
-	if ruid, created := res.Uids["recipe"]; created {
-		recipe.ID = ruid
 	}
 
 	return nil
@@ -348,19 +386,6 @@ func (db *DB) GetRecipeByID(ctx context.Context, id string) (*domain.Recipe, err
 	}
 	if r == nil {
 		return nil, nil
-	}
-
-	ings := make([]*domain.Ingredient, 0, len(r.Ingredients))
-	for _, i := range r.Ingredients {
-		ings = append(ings, &i.Ingredient)
-	}
-	steps := make([]*domain.Step, 0, len(r.Steps))
-	for _, s := range r.Steps {
-		steps = append(steps, &domain.Step{
-			Heading: s.Heading,
-			Body:    s.Body,
-			Image:   &s.Image.Image,
-		})
 	}
 
 	return r.ToDomain(), nil

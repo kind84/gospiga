@@ -69,10 +69,10 @@ func TestDgraphSaveRecipe(t *testing.T) {
 	}
 }
 
-func TestDgraphUpsertRecipe(t *testing.T) {
+func TestDgraphUpdateRecipe(t *testing.T) {
 	recipe := getTestRecipe()
-	recipe2 := recipe
-	recipe2.Title = "upsert"
+	recipe2 := getTestRecipe()
+	recipe2.Title = "update"
 
 	tests := []struct {
 		name    string
@@ -125,7 +125,7 @@ func TestDgraphUpsertRecipe(t *testing.T) {
 				require.NoError(err)
 			}
 
-			err := db.UpsertRecipe(ctx, tt.recipe)
+			err := db.UpdateRecipe(ctx, tt.recipe)
 
 			require.NoError(err)
 			if tt.assert != nil {

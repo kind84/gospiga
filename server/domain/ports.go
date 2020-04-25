@@ -7,7 +7,7 @@ import (
 // DB defines the domain database capabilities.
 type DB interface {
 	SaveRecipe(context.Context, *Recipe) error
-	UpsertRecipe(context.Context, *Recipe) error
+	UpdateRecipe(context.Context, *Recipe) error
 	DeleteRecipe(context.Context, string) error
 	GetRecipeByID(context.Context, string) (*Recipe, error)
 	GetRecipesByUIDs(context.Context, []string) ([]*Recipe, error)
