@@ -396,7 +396,46 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 	q := `
 		query Recipes($xid: string){
 			recipes(func: eq(xid, $xid)) {
-				expand(_all_)
+				uid
+				xid
+				title
+				subtitle
+				mainImage {
+					url
+				}
+				likes
+				difficulty
+				cost
+				prepTime
+				cookTime
+				servings
+				extraNotes
+				description
+				ingredients {
+					uid
+					name
+					quantity
+					unitOfMeasure
+					food {
+						uid
+						term
+						stem
+					}
+				}
+				steps {
+					uid
+					title
+					description
+					image {
+						url
+					}
+				}
+				tags {
+					uid
+					tagName
+				}
+				conclusion
+				slug
 			}
 		}
 	`
@@ -426,7 +465,8 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 	q := `
 		query Recipes($uids: string){
 			recipes(func: uid($uids)) {
-				id
+				uid
+				xid
 				title
 				subtitle
 				mainImage {
@@ -441,11 +481,18 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 				extraNotes
 				description
 				ingredients {
+					uid
 					name
 					quantity
 					unitOfMeasure
+					food {
+						uid
+						term
+						stem
+					}
 				}
 				steps {
+					uid
 					title
 					description
 					image {
@@ -453,6 +500,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 					}
 				}
 				tags {
+					uid
 					tagName
 				}
 				conclusion

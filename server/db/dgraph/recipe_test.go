@@ -5,6 +5,7 @@ package dgraph
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/dgraph-io/dgo/v2"
@@ -72,7 +73,9 @@ func TestDgraphSaveRecipe(t *testing.T) {
 func TestDgraphUpdateRecipe(t *testing.T) {
 	recipe := getTestRecipe()
 	recipe2 := getTestRecipe()
+	recipe3 := getTestRecipe()
 	recipe2.Title = "update"
+	recipe3.Ingredients[0].Quantity = 10
 
 	tests := []struct {
 		name    string
@@ -82,7 +85,7 @@ func TestDgraphUpdateRecipe(t *testing.T) {
 		cleanup func(ctx context.Context, db *DB) error
 	}{
 		{
-			name:   "recipe not found not added",
+			name:   "recipe not found not updated",
 			recipe: recipe2,
 			assert: func(ctx context.Context, db *DB, t *testing.T) {
 				require := require.New(t)
@@ -93,7 +96,7 @@ func TestDgraphUpdateRecipe(t *testing.T) {
 			},
 		},
 		{
-			name:   "recipe found gets updated",
+			name:   "recipe found scalar field updated",
 			recipe: recipe2,
 			setup: func(ctx context.Context, db *DB) error {
 				return db.SaveRecipe(ctx, recipe)
@@ -112,6 +115,35 @@ func TestDgraphUpdateRecipe(t *testing.T) {
 			},
 			cleanup: func(ctx context.Context, db *DB) error {
 				return db.DeleteRecipe(ctx, recipe2.ExternalID)
+			},
+		},
+		{
+			name:   "recipe found ingredient found field updated",
+			recipe: recipe3,
+			setup: func(ctx context.Context, db *DB) error {
+				return db.SaveRecipe(ctx, recipe)
+			},
+			assert: func(ctx context.Context, db *DB, t *testing.T) {
+				require := require.New(t)
+				assert := assert.New(t)
+				r, err := db.GetRecipeByID(ctx, recipe3.ExternalID)
+				require.NoError(err)
+				require.NotNil(r)
+				n, err := db.CountRecipes(ctx)
+				require.NoError(err)
+				assert.Equal(recipe3.ExternalID, r.ExternalID)
+				if qs, ok := r.Ingredients[0].Quantity.(string); assert.True(ok) {
+					q, err := strconv.Atoi(qs)
+					assert.NoError(err)
+					assert.Equal(recipe3.Ingredients[0].Quantity, q)
+				}
+				assert.Equal(recipe3.Ingredients[0].Name, r.Ingredients[0].Name)
+				assert.Equal(recipe3.Ingredients[0].UnitOfMeasure, r.Ingredients[0].UnitOfMeasure)
+				assert.Equal(1, len(r.Ingredients))
+				assert.Equal(1, n)
+			},
+			cleanup: func(ctx context.Context, db *DB) error {
+				return db.DeleteRecipe(ctx, recipe3.ExternalID)
 			},
 		},
 	}
