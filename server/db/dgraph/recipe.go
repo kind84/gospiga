@@ -11,6 +11,7 @@ import (
 	"github.com/dgraph-io/dgo/v2/protos/api"
 
 	"github.com/kind84/gospiga/pkg/errors"
+	"github.com/kind84/gospiga/pkg/stemmer"
 	"github.com/kind84/gospiga/server/domain"
 )
 
@@ -252,8 +253,15 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		return err
 	}
 
+	fm := template.FuncMap{
+		"StemFood": func(term string) string {
+			s, _ := stemmer.Stem(term, "italian")
+			return s
+		},
+	}
+
 	var sb strings.Builder
-	t := template.Must(template.New("update.tmpl").ParseFiles("./update.tmpl"))
+	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("./update.tmpl"))
 	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
@@ -284,6 +292,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 		// both ingredient and stem found
 		i0.ID = fmt.Sprintf("uid(i%d)", i)
+		i0.Food.ID = fmt.Sprintf("uid(f%d)", i)
 		ji0, err := json.Marshal(i0)
 		if err != nil {
 			return err
@@ -638,7 +647,7 @@ func loadRecipeSchema() *api.Operation {
 		unitOfMeasure: string .
 		food: uid @reverse .
 		term: string @index(term) .
-		stem: string .
+		stem: string @index(exact) .
 		index: int @index(int) .
 		image: uid .
 		url: string .

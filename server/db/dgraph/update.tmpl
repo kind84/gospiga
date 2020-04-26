@@ -4,10 +4,13 @@ query RecipeUID($xid: string){
 		{{ range $i, $ingr := .Ingredients }}
 			ingredients @filter(eq(name, {{ $ingr.Name }})) {
 				i{{ $i }} as uid
-				food {
-					f{{ $i }} as uid
-				}
 			}
 		{{ end }}
 	}
+
+	{{ range $i, $ingr := .Ingredients }}
+		foodUID(func: eq(stem, {{ StemFood $ingr.Name }})) {
+			f{{ $i }} as uid
+		}
+	{{ end }}
 }
