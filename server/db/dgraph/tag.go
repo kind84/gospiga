@@ -9,7 +9,8 @@ import (
 
 // tag represents repository version of the domain tag.
 type Tag struct {
-	domain.Tag
+	ID      string   `json:"uid"`
+	TagName string   `json:"tagName,omitempty"`
 	Recipes []Recipe `json:"recipes,omitempty"`
 	DType   []string `json:"dgraph.type,omitempty"`
 }

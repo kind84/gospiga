@@ -37,13 +37,13 @@ func (i Ingredient) MarshalJSON() ([]byte, error) {
 
 // FromDomain convert a domain ingredient into dgraph ingredient.
 func (i *Ingredient) FromDomain(di *domain.Ingredient) error {
-	s, err := stemmer.Stem(i.Name, "italian")
-	if err != nil {
-		return err
-	}
 	i.Name = di.Name
 	i.Quantity = di.Quantity
 	i.UnitOfMeasure = di.UnitOfMeasure
+	s, err := stemmer.Stem(i.Name, "english")
+	if err != nil {
+		return err
+	}
 	i.Food = &Food{
 		Term:  i.Name,
 		Stem:  s,

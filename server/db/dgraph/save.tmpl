@@ -1,11 +1,6 @@
 query RecipeUID($xid: string){
 	recipeUID(func: eq(xid, $xid)) {
 		r as uid
-		{{ range $i, $ingr := .Ingredients }}
-		ingredients @filter(eq(name, {{ $ingr.Name }})) {
-			i{{ $i }} as uid
-		}
-		{{ end }}
 	}
 
 	{{ range $i, $ingr := .Ingredients }}

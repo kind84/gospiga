@@ -15,6 +15,13 @@ import (
 	"github.com/kind84/gospiga/server/domain"
 )
 
+var fm = template.FuncMap{
+	"StemFood": func(term string) string {
+		s, _ := stemmer.Stem(term, "italian")
+		return s
+	},
+}
+
 // Recipe represents repository version of the domain recipe.
 type Recipe struct {
 	ID          string                  `json:"uid,omitempty"`
@@ -100,7 +107,12 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	}
 	tags := make([]*domain.Tag, 0, len(r.Tags))
 	for _, t := range r.Tags {
-		tags = append(tags, &t.Tag)
+		dt := &domain.Tag{TagName: t.TagName}
+		dt.Recipes = make([]*domain.Recipe, 0, len(t.Recipes))
+		for _, r := range t.Recipes {
+			dt.Recipes = append(dt.Recipes, r.ToDomain()) // /!\ recursive
+		}
+		tags = append(tags)
 	}
 
 	dr := &domain.Recipe{
@@ -161,8 +173,8 @@ func (r *Recipe) FromDomain(dr *domain.Recipe) error {
 	tags := make([]*Tag, 0, len(dr.Tags))
 	for _, t := range dr.Tags {
 		tags = append(tags, &Tag{
-			Tag:   *t,
-			DType: []string{"Tag"},
+			TagName: t.TagName,
+			DType:   []string{"Tag"},
 		})
 	}
 
@@ -200,36 +212,74 @@ func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 
 // SaveRecipe if a recipe with the same external ID has not been saved yet.
 func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
-	req := &api.Request{CommitNow: true}
-	req.Vars = map[string]string{"$xid": dr.ExternalID}
-	req.Query = `
-		query RecipeUID($xid: string){
-			recipeUID(func: eq(xid, $xid)) {
-				v as uid
-			}
-		}
-	`
 	var r Recipe
 	err := r.FromDomain(dr)
 	if err != nil {
 		return err
 	}
-	now := time.Now()
-	r.ID = "_:recipe"
-	r.CretedAt = &now
-	r.ModifiedAt = &now
 
-	rb, err := json.Marshal(r)
+	var sb strings.Builder
+	t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("./save.tmpl"))
+	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
 	}
 
-	mu := &api.Mutation{
-		SetJson: rb,
-		Cond:    "@if(eq(len(v), 0))",
+	req := &api.Request{CommitNow: true}
+	req.Vars = map[string]string{"$xid": dr.ExternalID}
+	req.Query = sb.String()
+	now := time.Now()
+
+	mutations := make([]*api.Mutation, 0, len(dr.Ingredients)+1)
+
+	for i := range dr.Ingredients {
+		var r0, r1 Recipe
+		err := r0.FromDomain(dr)
+		if err != nil {
+			return err
+		}
+		r0.ID = "_:recipe"
+		r0.CretedAt = &now
+		r0.ModifiedAt = &now
+
+		err = r1.FromDomain(dr)
+		if err != nil {
+			return err
+		}
+		r1.ID = "_:recipe"
+		r1.CretedAt = &now
+		r1.ModifiedAt = &now
+
+		// stem found
+		r0.Ingredients[i].ID = fmt.Sprintf("_:i%d", i)
+		r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
+		jr0, err := json.Marshal(r0)
+		if err != nil {
+			return err
+		}
+
+		mu0 := &api.Mutation{
+			SetJson: jr0,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1))", i),
+		}
+
+		// stem not found
+		r1.Ingredients[i].ID = fmt.Sprintf("_:i%d", i)
+		r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
+		jr1, err := json.Marshal(r1)
+		if err != nil {
+			return err
+		}
+
+		mu1 := &api.Mutation{
+			SetJson: jr1,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0))", i),
+		}
+
+		mutations = append(mutations, mu0, mu1)
 	}
 
-	req.Mutations = []*api.Mutation{mu}
+	req.Mutations = mutations
 
 	res, err := db.Dgraph.NewTxn().Do(ctx, req)
 	if err != nil {
@@ -253,13 +303,6 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		return err
 	}
 
-	fm := template.FuncMap{
-		"StemFood": func(term string) string {
-			s, _ := stemmer.Stem(term, "italian")
-			return s
-		},
-	}
-
 	var sb strings.Builder
 	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("./update.tmpl"))
 	err = t.Execute(&sb, dr)
@@ -281,14 +324,8 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		if err != nil {
 			return err
 		}
-		err = i1.FromDomain(ingr)
-		if err != nil {
-			return err
-		}
-		err = i2.FromDomain(ingr)
-		if err != nil {
-			return err
-		}
+		i1 = i0
+		i2 = i1
 
 		// both ingredient and stem found
 		i0.ID = fmt.Sprintf("uid(i%d)", i)
@@ -363,17 +400,24 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 // DeleteRecipe matching the given external ID.
 func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
+	r, err := db.getRecipeByID(ctx, recipeID)
+	if err != nil {
+		return err
+	}
+
 	req := &api.Request{CommitNow: true}
-	req.Vars = map[string]string{"$xid": recipeID}
-	req.Query = `
-		query RecipeUID($xid: string){
-			recipeUID(func: eq(xid, $xid)) {
-				v as uid
-			}
-		}
-	`
-	del := map[string]string{"uid": "uid(v)"}
-	pb, err := json.Marshal(del)
+
+	d := make([]interface{}, 0, len(r.Ingredients)+len(r.Steps)+1)
+	d = append(d, r)
+	for _, i := range r.Ingredients {
+		i.Food = nil
+		d = append(d, *i)
+	}
+	for _, s := range r.Steps {
+		d = append(d, *s)
+	}
+
+	pb, err := json.Marshal(d)
 	if err != nil {
 		return err
 	}
@@ -410,6 +454,7 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 				title
 				subtitle
 				mainImage {
+					uid
 					url
 				}
 				likes
@@ -433,9 +478,10 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 				}
 				steps {
 					uid
-					title
-					description
+					heading
+					body
 					image {
+						uid
 						url
 					}
 				}
@@ -445,6 +491,8 @@ func (db *DB) getRecipeByID(ctx context.Context, id string) (*Recipe, error) {
 				}
 				conclusion
 				slug
+				createdAt
+				modifiedAt
 			}
 		}
 	`
@@ -479,6 +527,7 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 				title
 				subtitle
 				mainImage {
+					uid
 					url
 				}
 				likes
@@ -502,9 +551,10 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 				}
 				steps {
 					uid
-					title
-					description
+					heading
+					body
 					image {
+						uid
 						url
 					}
 				}
@@ -514,6 +564,8 @@ func (db *DB) GetRecipesByUIDs(ctx context.Context, uids []string) ([]*domain.Re
 				}
 				conclusion
 				slug
+				createdAt
+				modifiedAt
 			}
 		}
 	`
