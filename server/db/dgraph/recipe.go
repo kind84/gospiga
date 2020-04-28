@@ -28,7 +28,7 @@ type Recipe struct {
 	ExternalID  string                  `json:"xid,omitempty"`
 	Title       string                  `json:"title,omitempty"`
 	Subtitle    string                  `json:"subtitle,omitempty"`
-	MainImage   *Image                  `json:"mainImage,omitempty"`
+	MainImage   string                  `json:"mainImage,omitempty"`
 	Likes       int                     `json:"likes,omitempty"`
 	Difficulty  domain.RecipeDifficulty `json:"difficulty,omitempty"`
 	Cost        domain.RecipeCost       `json:"cost,omitempty"`
@@ -60,7 +60,7 @@ type Step struct {
 	ID      string   `json:"uid,omitempty"`
 	Heading string   `json:"heading,omitempty"`
 	Body    string   `json:"body,omitempty"`
-	Image   *Image   `json:"image,omitempty"`
+	Image   string   `json:"image,omitempty"`
 	DType   []string `json:"dgraph.type,omitempty"`
 }
 
@@ -96,8 +96,8 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	steps := make([]*domain.Step, 0, len(r.Steps))
 	for _, s := range r.Steps {
 		var i domain.Image
-		if s.Image != nil {
-			i.URL = s.Image.URL
+		if s.Image != "" {
+			i.URL = s.Image
 		}
 		steps = append(steps, &domain.Step{
 			Heading: s.Heading,
@@ -136,8 +136,8 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	}
 
 	var mi domain.Image
-	if r.MainImage != nil {
-		mi.URL = r.MainImage.URL
+	if r.MainImage != "" {
+		mi.URL = r.MainImage
 	}
 
 	return dr
@@ -156,17 +156,14 @@ func (r *Recipe) FromDomain(dr *domain.Recipe) error {
 	}
 	steps := make([]*Step, 0, len(dr.Steps))
 	for _, s := range dr.Steps {
-		var i Image
+		var i string
 		if s.Image != nil {
-			i = Image{
-				URL:   s.Image.URL,
-				DType: []string{"Image"},
-			}
+			i = s.Image.URL
 		}
 		steps = append(steps, &Step{
 			Heading: s.Heading,
 			Body:    s.Body,
-			Image:   &i,
+			Image:   i,
 			DType:   []string{"Step"},
 		})
 	}
@@ -182,10 +179,7 @@ func (r *Recipe) FromDomain(dr *domain.Recipe) error {
 	r.Title = dr.Title
 	r.Subtitle = dr.Subtitle
 	if dr.MainImage != nil {
-		r.MainImage = &Image{
-			URL:   dr.MainImage.URL,
-			DType: []string{"Image"},
-		}
+		r.MainImage = dr.MainImage.URL
 	}
 	r.Likes = dr.Likes
 	r.Difficulty = dr.Difficulty
@@ -659,10 +653,6 @@ func loadRecipeSchema() *api.Operation {
 			image
 		}
 
-		type Image {
-			url
-		}
-
 		type Tag {
 			tagName
 			<~tags>
@@ -671,7 +661,7 @@ func loadRecipeSchema() *api.Operation {
 		xid: string @index(hash) .
 		title: string @lang @index(fulltext) .
 		subtitle: string @lang @index(fulltext) .
-		mainImage: uid .
+		mainImage: string .
 		likes: int @index(int) .
 		difficulty: string .
 		cost: string .
@@ -694,8 +684,7 @@ func loadRecipeSchema() *api.Operation {
 		term: string @index(term) .
 		stem: string @index(exact) .
 		index: int @index(int) .
-		image: uid .
-		url: string .
+		image: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
 		tagName: string @index(term) .

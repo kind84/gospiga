@@ -2,7 +2,7 @@ type Recipe @dgraph(type: "Recipe") {
     xid: String! @id @dgraph(pred: "xid")
     title: String! @search(by: [fulltext]) @dgraph(pred: "title")
     subtitle: String! @search(by: [fulltext]) @dgraph(pred: "subtitle")
-    mainImage : Image! @dgraph(pred: "mainImage")
+    mainImage : String! @dgraph(pred: "mainImage")
     likes: Int! @search @dgraph(pred: "likes")
     difficulty: String! @dgraph(pred: "difficulty")
     cost: String! @dgraph(pred: "cost")
@@ -14,28 +14,29 @@ type Recipe @dgraph(type: "Recipe") {
     ingredients: [Ingredient!]! @hasInverse(field: recipes) @dgraph(pred: "ingredients")
     steps: [Step!]! @dgraph(pred: "steps")
     conclusion: String @dgraph(pred: "conclusion")
-    finalImage: Image @dgraph(pred: "finalImage")
     tags: [Tag!]! @hasInverse(field: recipes) @dgraph(pred: "tags")
     createdAt: DateTime! @search @dgraph(pred: "createdAt")
     modifiedAt: DateTime! @search @dgraph(pred: "modifiedAt")
-}
-
-type Image @dgraph(type: "Image") {
-    url: String! @dgraph(pred: "url")
 }
 
 type Ingredient @dgraph(type: "Ingredient") {
     name: String! @search(by: [term]) @dgraph(pred: "name")
     quantity: String @dgraph(pred: "quantity")
     unitOfMeasure: String @dgraph(pred: "unitOfMeasure")
+    food: Food! @dgraph(pred: "food")
     recipes: [Recipe]! @dgraph(pred: "recipes")
+}
+
+type Food @dgraph(type: "Food") {
+    term: String! @search(by: [term]) @dgraph(pred: "term")
+    stem: String! @search(by: [exact]) @dgraph(pred: "stem")
 }
 
 type Step @dgraph(type: "Step") {
     index: Int! @search @dgraph(pred: "index")
     title: String! @search(by: [fulltext]) @dgraph(pred: "title")
     description: String! @search(by: [fulltext]) @dgraph(pred: "description")
-    image: Image @dgraph(pred: "image")
+    image: String @dgraph(pred: "image")
 }
 
 type Tag @dgraph(type: "Tag") {
