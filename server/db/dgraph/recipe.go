@@ -251,12 +251,12 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 		r1.ModifiedAt = &now
 
 		// stem found
-		r0.Ingredients[i].ID = fmt.Sprintf("_:i%d", i)
 		r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
 		jr0, err := json.Marshal(r0)
 		if err != nil {
 			return err
 		}
+		fmt.Println(string(jr0))
 
 		mu0 := &api.Mutation{
 			SetJson: jr0,
@@ -264,7 +264,6 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 		}
 
 		// stem not found
-		r1.Ingredients[i].ID = fmt.Sprintf("_:i%d", i)
 		r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
 		jr1, err := json.Marshal(r1)
 		if err != nil {

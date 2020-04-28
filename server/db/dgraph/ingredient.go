@@ -40,7 +40,7 @@ func (i *Ingredient) FromDomain(di *domain.Ingredient) error {
 	i.Name = di.Name
 	i.Quantity = di.Quantity
 	i.UnitOfMeasure = di.UnitOfMeasure
-	s, err := stemmer.Stem(i.Name, "english")
+	s, err := stemmer.Stem(i.Name, "italian")
 	if err != nil {
 		return err
 	}
