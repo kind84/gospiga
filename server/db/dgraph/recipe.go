@@ -234,6 +234,7 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 	for i := range dr.Ingredients {
 		var r0, r1 Recipe
+
 		err := r0.FromDomain(dr)
 		if err != nil {
 			return err
@@ -256,7 +257,6 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(jr0))
 
 		mu0 := &api.Mutation{
 			SetJson: jr0,
@@ -312,80 +312,74 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	req := &api.Request{CommitNow: true}
 	req.Vars = map[string]string{"$xid": dr.ExternalID}
 	req.Query = sb.String()
+	now := time.Now()
 
 	mutations := []*api.Mutation{}
 
-	for i, ingr := range dr.Ingredients {
-		var i0, i1, i2 Ingredient
-
-		// fresh ingredients
-		err := i0.FromDomain(ingr)
+	// replace ingredients
+	for i := range dr.Ingredients {
+		var r0, r1 Recipe
+		err := r0.FromDomain(dr)
 		if err != nil {
 			return err
 		}
-		i1 = i0
-		i2 = i1
+		err = r1.FromDomain(dr)
+		if err != nil {
+			return err
+		}
+		r0.ID = "uid(r)"
+		r1.ID = "uid(r)"
+		r0.ModifiedAt = &now
+		r1.ModifiedAt = &now
 
-		// both ingredient and stem found
-		i0.ID = fmt.Sprintf("uid(i%d)", i)
-		i0.Food.ID = fmt.Sprintf("uid(f%d)", i)
-		ji0, err := json.Marshal(i0)
+		// stem found
+		r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
+		jr0, err := json.Marshal(r0)
 		if err != nil {
 			return err
 		}
 
 		mu0 := &api.Mutation{
-			SetJson: ji0,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 1) AND eq(len(f%d), 1))", i, i),
+			SetJson: jr0,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 1))", i),
 		}
 
-		// stem found, ingredient missing
-		i1.ID = fmt.Sprintf("_:ingr%d)", i)
-		i1.Food.ID = fmt.Sprintf("uid(f%d)", i)
-		ji1, err := json.Marshal(i1)
+		// stem not found
+		r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
+		jr1, err := json.Marshal(r1)
 		if err != nil {
 			return err
 		}
 
 		mu1 := &api.Mutation{
-			SetJson: ji1,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 1))", i, i),
+			SetJson: jr1,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 0))", i),
 		}
 
-		// both ingredient and stem missing
-		i2.ID = fmt.Sprintf("_:ingr%d)", i)
-		i2.Food.ID = fmt.Sprintf("_:food%d)", i)
-		ji2, err := json.Marshal(i2)
-		if err != nil {
-			return err
-		}
-		mu2 := &api.Mutation{
-			SetJson: ji2,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(i%d), 0) AND eq(len(f%d), 0))", i, i),
-		}
-
-		mutations = append(mutations, mu0, mu1, mu2)
+		mutations = append(mutations, mu0, mu1)
 	}
 
-	// update recipe scalar fields: remove edges to other nodes, they'll be omitted in json
-	now := time.Now()
-	r.ID = "uid(r)"
-	r.ModifiedAt = &now
-	r.MainImage = nil
-	r.Ingredients = nil
-	r.Steps = nil
-	r.Tags = nil
-
-	jr, err := json.Marshal(r)
+	// remove old ingredients
+	idel := map[string]interface{}{
+		"uid":           "uid(i)",
+		"name":          nil,
+		"quantity":      nil,
+		"unitOfMeasure": nil,
+		"food":          nil,
+	}
+	rdel := map[string]interface{}{
+		"uid":         "uid(r)",
+		"ingredients": idel,
+	}
+	jdel, err := json.Marshal(rdel)
 	if err != nil {
 		return err
 	}
-
-	mu := &api.Mutation{
-		SetJson: jr,
-		Cond:    "@if(eq(len(r), 1))",
+	mdel := &api.Mutation{
+		DeleteJson: jdel,
+		Cond:       "@if(eq(len(r), 1))",
 	}
-	mutations = append(mutations, mu)
+	mutations = append(mutations, mdel)
 
 	req.Mutations = mutations
 
