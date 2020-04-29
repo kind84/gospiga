@@ -1,0 +1,23 @@
+query RecipeUID($xid: string){
+	recipeUID (func: eq(xid, $xid)) {
+		r as uid
+		ingredients {
+			i as uid
+		}
+		steps {
+			s as uid
+		}
+	}
+
+	{{ range $i, $ingr := .Ingredients }}
+	food{{ $i }}UID (func: eq(stem, {{ StemWord $ingr.Name }})) {
+		f{{ $i }} as uid
+	}
+	{{ end }}
+
+	{{ range $i, $tag := .Tags }}
+	tag{{ $i }}UID (func: eq(tagStem, {{ StemWord $tag.TagName }})) {
+		t{{ $i }} as uid
+	}
+	{{ end }}
+}

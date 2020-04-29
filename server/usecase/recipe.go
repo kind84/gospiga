@@ -136,13 +136,13 @@ func (a *app) readRecipes() {
 func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
-	r := domain.FromType(rt)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack?? new stream??
 		wg.Done()
 		return
 	}
+	r := domain.FromType(rt)
 
 	// save recipe
 	err = a.service.SaveRecipe(ctx, r)

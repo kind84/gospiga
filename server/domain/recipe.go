@@ -132,7 +132,7 @@ func FromType(rt *types.Recipe) *Recipe {
 
 	for _, ingr := range rt.Ingredients {
 		r.Ingredients = append(r.Ingredients, &Ingredient{
-			Name:          ingr.Name,
+			Name:          strings.ToLower(ingr.Name),
 			Quantity:      ingr.Quantity,
 			UnitOfMeasure: ingr.UnitOfMeasure,
 		})
@@ -153,7 +153,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	tags := strings.Split(rt.Tags, ", ")
 
 	for _, tag := range tags {
-		r.Tags = append(r.Tags, &Tag{TagName: tag})
+		r.Tags = append(r.Tags, &Tag{TagName: strings.ToLower(tag)})
 	}
 
 	return &r

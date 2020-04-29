@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kind84/gospiga/pkg/stemmer"
 	"github.com/kind84/gospiga/server/domain"
 )
 
@@ -11,6 +12,7 @@ import (
 type Tag struct {
 	ID      string   `json:"uid,omitempty"`
 	TagName string   `json:"tagName,omitempty"`
+	TagStem string   `json:"tagStem,omitempty"`
 	Recipes []Recipe `json:"recipes,omitempty"`
 	DType   []string `json:"dgraph.type,omitempty"`
 }
@@ -21,6 +23,29 @@ func (t Tag) MarshalJSON() ([]byte, error) {
 		t.DType = []string{"Tag"}
 	}
 	return json.Marshal((Alias)(t))
+}
+
+// ToDomain converts a dgraph tag into a domain tag.
+func (t *Tag) ToDomain() *domain.Tag {
+	dt := &domain.Tag{TagName: t.TagName}
+	dt.Recipes = make([]*domain.Recipe, 0, len(t.Recipes))
+	for _, r := range t.Recipes {
+		dt.Recipes = append(dt.Recipes, r.ToDomain()) // /!\ recursive
+	}
+	return dt
+}
+
+// FromDomain converts a domain tag into a dgraph tag.
+func (t *Tag) FromDomain(dt *domain.Tag) error {
+	t.TagName = dt.TagName
+	s, err := stemmer.Stem(t.TagName, "italian")
+	if err != nil {
+		return err
+	}
+	t.TagStem = s
+	t.DType = []string{"Tag"}
+
+	return nil
 }
 
 // AllTagsImages returns one recipe image for each tag stored on db.

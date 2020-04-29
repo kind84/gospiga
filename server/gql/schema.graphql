@@ -29,7 +29,7 @@ type Ingredient @dgraph(type: "Ingredient") {
 
 type Food @dgraph(type: "Food") {
     term: String! @search(by: [term]) @dgraph(pred: "term")
-    stem: String! @search(by: [exact]) @dgraph(pred: "stem")
+    stem: String! @search(by: [hash]) @dgraph(pred: "stem")
 }
 
 type Step @dgraph(type: "Step") {
@@ -41,6 +41,7 @@ type Step @dgraph(type: "Step") {
 
 type Tag @dgraph(type: "Tag") {
     tagName: String! @search(by: [term]) @dgraph(pred: "tagName")
+    tagStem: String! @search(by: [hash]) @dgraph(pred: "tagStem")
     recipes: [Recipe]! @dgraph(pred: "recipes")
 }
 

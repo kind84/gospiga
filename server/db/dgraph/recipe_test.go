@@ -76,11 +76,14 @@ func TestSaveRecipe(t *testing.T) {
 			r, err := db.GetRecipeByID(ctx, tt.recipe.ExternalID)
 			require.NoError(err)
 			require.NotNil(r)
-			assert.Equal(t, r.ExternalID, tt.recipe.ExternalID)
-			assert.Equal(t, r.Title, tt.recipe.Title)
+			assert.Equal(t, tt.recipe.ExternalID, r.ExternalID)
+			assert.Equal(t, tt.recipe.Title, r.Title)
+			assert.Equal(t, len(tt.recipe.Ingredients), len(r.Ingredients))
+			assert.Equal(t, len(tt.recipe.Steps), len(r.Steps))
+			assert.Equal(t, len(tt.recipe.Tags), len(r.Tags))
 			n, err := db.CountRecipes(ctx)
 			require.NoError(err)
-			assert.Equal(t, n, 1)
+			assert.Equal(t, 1, n)
 			err = db.DeleteRecipe(ctx, tt.recipe.ExternalID)
 			require.NoError(err)
 		})
@@ -127,8 +130,11 @@ func TestUpdateRecipe(t *testing.T) {
 				n, err := db.CountRecipes(ctx)
 				require.NoError(err)
 				assert.Equal(1, n)
-				assert.Equal(r.ExternalID, recipe2.ExternalID)
-				assert.Equal(r.Title, recipe2.Title)
+				assert.Equal(recipe2.ExternalID, r.ExternalID)
+				assert.Equal(recipe2.Title, r.Title)
+				assert.Equal(len(recipe2.Ingredients), len(r.Ingredients))
+				assert.Equal(len(recipe2.Steps), len(r.Steps))
+				assert.Equal(len(recipe2.Tags), len(r.Tags))
 			},
 			cleanup: func(ctx context.Context, db *DB) error {
 				return db.DeleteRecipe(ctx, recipe2.ExternalID)
@@ -150,14 +156,19 @@ func TestUpdateRecipe(t *testing.T) {
 				require.NoError(err)
 				assert.Equal(1, n)
 				assert.Equal(recipe3.ExternalID, r.ExternalID)
-				if qs, ok := r.Ingredients[0].Quantity.(string); assert.True(ok) {
-					q, err := strconv.Atoi(qs)
-					assert.NoError(err)
-					assert.Equal(recipe3.Ingredients[0].Quantity, q)
+				if assert.Equal(len(recipe3.Ingredients), len(r.Ingredients)) {
+					for i, ingr := range r.Ingredients {
+						if qs, ok := ingr.Quantity.(string); assert.True(ok) {
+							q, err := strconv.Atoi(qs)
+							assert.NoError(err)
+							assert.Equal(recipe3.Ingredients[i].Quantity, q)
+						}
+						assert.Equal(recipe3.Ingredients[i].Name, ingr.Name)
+						assert.Equal(recipe3.Ingredients[i].UnitOfMeasure, ingr.UnitOfMeasure)
+					}
 				}
-				assert.Equal(recipe3.Ingredients[0].Name, r.Ingredients[0].Name)
-				assert.Equal(recipe3.Ingredients[0].UnitOfMeasure, r.Ingredients[0].UnitOfMeasure)
-				assert.Equal(1, len(r.Ingredients))
+				assert.Equal(len(recipe3.Steps), len(r.Steps))
+				assert.Equal(len(recipe3.Tags), len(r.Tags))
 			},
 			cleanup: func(ctx context.Context, db *DB) error {
 				return db.DeleteRecipe(ctx, recipe3.ExternalID)
@@ -169,6 +180,12 @@ func TestUpdateRecipe(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 			require := require.New(t)
+			if tt.cleanup != nil {
+				defer func() {
+					err := tt.cleanup(ctx, db)
+					require.NoError(err)
+				}()
+			}
 			if tt.setup != nil {
 				err := tt.setup(ctx, db)
 				require.NoError(err)
@@ -179,10 +196,6 @@ func TestUpdateRecipe(t *testing.T) {
 			require.NoError(err)
 			if tt.assert != nil {
 				tt.assert(ctx, db, t)
-			}
-			if tt.cleanup != nil {
-				err := tt.cleanup(ctx, db)
-				require.NoError(err)
 			}
 		})
 	}
@@ -227,6 +240,11 @@ func TestGetRecipeByID(t *testing.T) {
 		for i := 0; i < len(recipe.Steps); i++ {
 			assert.Equal(t, recipe.Steps[i].Heading, r.Steps[i].Heading)
 			assert.Equal(t, recipe.Steps[i].Body, r.Steps[i].Body)
+		}
+	}
+	if assert.Equal(t, len(recipe.Tags), len(recipe.Tags)) {
+		for i := 0; i < len(recipe.Tags); i++ {
+			assert.Equal(t, recipe.Tags[i].TagName, r.Tags[i].TagName)
 		}
 	}
 	err = db.DeleteRecipe(context.Background(), recipe.ExternalID)

@@ -16,7 +16,7 @@ import (
 )
 
 var fm = template.FuncMap{
-	"StemFood": func(term string) string {
+	"StemWord": func(term string) string {
 		s, _ := stemmer.Stem(term, "italian")
 		return s
 	},
@@ -107,12 +107,7 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	}
 	tags := make([]*domain.Tag, 0, len(r.Tags))
 	for _, t := range r.Tags {
-		dt := &domain.Tag{TagName: t.TagName}
-		dt.Recipes = make([]*domain.Recipe, 0, len(t.Recipes))
-		for _, r := range t.Recipes {
-			dt.Recipes = append(dt.Recipes, r.ToDomain()) // /!\ recursive
-		}
-		tags = append(tags)
+		tags = append(tags, t.ToDomain())
 	}
 
 	dr := &domain.Recipe{
@@ -168,11 +163,13 @@ func (r *Recipe) FromDomain(dr *domain.Recipe) error {
 		})
 	}
 	tags := make([]*Tag, 0, len(dr.Tags))
-	for _, t := range dr.Tags {
-		tags = append(tags, &Tag{
-			TagName: t.TagName,
-			DType:   []string{"Tag"},
-		})
+	for _, dt := range dr.Tags {
+		var t Tag
+		err := t.FromDomain(dt)
+		if err != nil {
+			return err
+		}
+		tags = append(tags, &t)
 	}
 
 	r.ExternalID = dr.ExternalID
@@ -213,7 +210,8 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 	}
 
 	var sb strings.Builder
-	t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("./save.tmpl"))
+	// t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("/templates/dgraph/save.tmpl"))
+	t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("../../../templates/dgraph/save.tmpl"))
 	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
@@ -224,52 +222,95 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 	req.Query = sb.String()
 	now := time.Now()
 
-	mutations := make([]*api.Mutation, 0, len(dr.Ingredients)+1)
+	mutations := make([]*api.Mutation, 0, len(dr.Ingredients)+len(dr.Tags)+1)
 
+	// keep any food and tag
 	for i := range dr.Ingredients {
-		var r0, r1 Recipe
+		for j := range dr.Tags {
+			var r0, r1, r2, r3 Recipe
 
-		err := r0.FromDomain(dr)
-		if err != nil {
-			return err
+			err := r0.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			r0.ID = "_:recipe"
+			r0.CretedAt, r0.ModifiedAt = &now, &now
+
+			err = r1.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			r1.ID = "_:recipe"
+			r1.CretedAt, r1.ModifiedAt = &now, &now
+
+			err = r2.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			r2.ID = "_:recipe"
+			r2.CretedAt, r2.ModifiedAt = &now, &now
+
+			err = r3.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			r3.ID = "_:recipe"
+			r3.CretedAt, r3.ModifiedAt = &now, &now
+
+			// stem found for both ingredient and tag
+			r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
+			r0.Tags[j].ID = fmt.Sprintf("uid(t%d)", j)
+			jr0, err := json.Marshal(r0)
+			if err != nil {
+				return err
+			}
+
+			mu0 := &api.Mutation{
+				SetJson: jr0,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1) AND eq(len(t%d), 1))", i, j),
+			}
+
+			// ingredient stem not found, tag stem found
+			r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
+			r1.Tags[j].ID = fmt.Sprintf("uid(t%d)", j)
+			jr1, err := json.Marshal(r1)
+			if err != nil {
+				return err
+			}
+
+			mu1 := &api.Mutation{
+				SetJson: jr1,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0) AND eq(len(t%d), 1))", i, j),
+			}
+
+			// tag stem not found, ingredient stem found
+			r2.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
+			r2.Tags[j].ID = fmt.Sprintf("_:t%d", j)
+			jr2, err := json.Marshal(r2)
+			if err != nil {
+				return err
+			}
+
+			mu2 := &api.Mutation{
+				SetJson: jr2,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1) AND eq(len(t%d), 0))", i, j),
+			}
+
+			// both ingredienta and tag stem not found
+			r3.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
+			r3.Tags[j].ID = fmt.Sprintf("_:t%d", j)
+			jr3, err := json.Marshal(r3)
+			if err != nil {
+				return err
+			}
+
+			mu3 := &api.Mutation{
+				SetJson: jr3,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0) AND eq(len(t%d), 0))", i, j),
+			}
+
+			mutations = append(mutations, mu0, mu1, mu2, mu3)
 		}
-		r0.ID = "_:recipe"
-		r0.CretedAt = &now
-		r0.ModifiedAt = &now
-
-		err = r1.FromDomain(dr)
-		if err != nil {
-			return err
-		}
-		r1.ID = "_:recipe"
-		r1.CretedAt = &now
-		r1.ModifiedAt = &now
-
-		// stem found
-		r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
-		jr0, err := json.Marshal(r0)
-		if err != nil {
-			return err
-		}
-
-		mu0 := &api.Mutation{
-			SetJson: jr0,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1))", i),
-		}
-
-		// stem not found
-		r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
-		jr1, err := json.Marshal(r1)
-		if err != nil {
-			return err
-		}
-
-		mu1 := &api.Mutation{
-			SetJson: jr1,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0))", i),
-		}
-
-		mutations = append(mutations, mu0, mu1)
 	}
 
 	req.Mutations = mutations
@@ -297,7 +338,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	}
 
 	var sb strings.Builder
-	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("./update.tmpl"))
+	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("../../../templates/dgraph/update.tmpl"))
 	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
@@ -308,52 +349,88 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	req.Query = sb.String()
 	now := time.Now()
 
-	mutations := []*api.Mutation{}
+	mutations := make([]*api.Mutation, 0, len(dr.Ingredients)+len(dr.Tags)+1)
 
-	// replace ingredients
+	// keep any food and tag
 	for i := range dr.Ingredients {
-		var r0, r1 Recipe
-		err := r0.FromDomain(dr)
-		if err != nil {
-			return err
-		}
-		err = r1.FromDomain(dr)
-		if err != nil {
-			return err
-		}
-		r0.ID = "uid(r)"
-		r1.ID = "uid(r)"
-		r0.ModifiedAt = &now
-		r1.ModifiedAt = &now
+		for j := range dr.Tags {
+			var r0, r1, r2, r3 Recipe
+			err := r0.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			err = r1.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			err = r2.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			err = r3.FromDomain(dr)
+			if err != nil {
+				return err
+			}
+			r0.ID, r1.ID, r2.ID, r3.ID = "uid(r)", "uid(r)", "uid(r)", "uid(r)"
+			r0.ModifiedAt, r1.ModifiedAt, r2.ModifiedAt, r3.ModifiedAt = &now, &now, &now, &now
 
-		// stem found
-		r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
-		jr0, err := json.Marshal(r0)
-		if err != nil {
-			return err
-		}
+			// both ingredient and tag stem found
+			r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
+			r0.Tags[j].ID = fmt.Sprintf("uid(t%d)", j)
+			jr0, err := json.Marshal(r0)
+			if err != nil {
+				return err
+			}
 
-		mu0 := &api.Mutation{
-			SetJson: jr0,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 1))", i),
-		}
+			mu0 := &api.Mutation{
+				SetJson: jr0,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 1) AND eq(len(t%d), 1))", i, j),
+			}
 
-		// stem not found
-		r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
-		jr1, err := json.Marshal(r1)
-		if err != nil {
-			return err
-		}
+			// ingredient stem not found, tag stem found
+			r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
+			r1.Tags[j].ID = fmt.Sprintf("uid(t%d)", j)
+			jr1, err := json.Marshal(r1)
+			if err != nil {
+				return err
+			}
 
-		mu1 := &api.Mutation{
-			SetJson: jr1,
-			Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 0))", i),
-		}
+			mu1 := &api.Mutation{
+				SetJson: jr1,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 0) AND eq(len(t%d), 1))", i, j),
+			}
 
-		mutations = append(mutations, mu0, mu1)
+			// tag stem not found, ingredient stem found
+			r2.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
+			r2.Tags[j].ID = fmt.Sprintf("_:t%d", j)
+			jr2, err := json.Marshal(r2)
+			if err != nil {
+				return err
+			}
+
+			mu2 := &api.Mutation{
+				SetJson: jr2,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 1) AND eq(len(t%d), 0))", i, j),
+			}
+
+			// both ingredient and tag stem not found
+			r3.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
+			r3.Tags[j].ID = fmt.Sprintf("_:t%d", j)
+			jr3, err := json.Marshal(r3)
+			if err != nil {
+				return err
+			}
+
+			mu3 := &api.Mutation{
+				SetJson: jr3,
+				Cond:    fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(f%d), 0) AND eq(len(t%d), 0))", i, j),
+			}
+
+			mutations = append(mutations, mu0, mu1, mu2, mu3)
+		}
 	}
 
-	// remove old ingredients
+	// remove old edges
 	idel := map[string]interface{}{
 		"uid":           "uid(i)",
 		"name":          nil,
@@ -361,9 +438,16 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		"unitOfMeasure": nil,
 		"food":          nil,
 	}
+	sdel := map[string]interface{}{
+		"uid":     "uid(s)",
+		"heading": nil,
+		"body":    nil,
+		"image":   nil,
+	}
 	rdel := map[string]interface{}{
 		"uid":         "uid(r)",
 		"ingredients": idel,
+		"steps":       sdel,
 	}
 	jdel, err := json.Marshal(rdel)
 	if err != nil {
@@ -391,8 +475,7 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	if err != nil {
 		return err
 	}
-
-	req := &api.Request{CommitNow: true}
+	r.Tags = nil
 
 	d := make([]interface{}, 0, len(r.Ingredients)+len(r.Steps)+1)
 	d = append(d, r)
@@ -411,6 +494,7 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	mu := &api.Mutation{
 		DeleteJson: pb,
 	}
+	req := &api.Request{CommitNow: true}
 	req.Mutations = []*api.Mutation{mu}
 
 	_, err = db.Dgraph.NewTxn().Do(ctx, req)
@@ -655,6 +739,7 @@ func loadRecipeSchema() *api.Operation {
 
 		type Tag {
 			tagName
+			tagStem
 			<~tags>
 		}
 
@@ -682,12 +767,13 @@ func loadRecipeSchema() *api.Operation {
 		unitOfMeasure: string .
 		food: uid @reverse .
 		term: string @index(term) .
-		stem: string @index(exact) .
+		stem: string @index(hash) .
 		index: int @index(int) .
 		image: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
 		tagName: string @index(term) .
+		tagStem: string @index(hash) .
 		slug: string .
 	`
 	return op
