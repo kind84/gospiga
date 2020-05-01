@@ -208,6 +208,8 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 	if err != nil {
 		return err
 	}
+	now := time.Now()
+	r.CretedAt, r.ModifiedAt = &now, &now
 
 	var sb strings.Builder
 	// t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("/templates/dgraph/save.tmpl"))
@@ -220,98 +222,105 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 	req := &api.Request{CommitNow: true}
 	req.Vars = map[string]string{"$xid": dr.ExternalID}
 	req.Query = sb.String()
-	now := time.Now()
 
 	mutations := make([]*api.Mutation, 0, len(dr.Ingredients)+len(dr.Tags)+1)
 
 	// keep any food and tag
-	for i := range dr.Ingredients {
-		for j := range dr.Tags {
-			var r0, r1, r2, r3 Recipe
-
-			err := r0.FromDomain(dr)
-			if err != nil {
-				return err
-			}
-			r0.ID = "_:recipe"
-			r0.CretedAt, r0.ModifiedAt = &now, &now
-
-			err = r1.FromDomain(dr)
-			if err != nil {
-				return err
-			}
-			r1.ID = "_:recipe"
-			r1.CretedAt, r1.ModifiedAt = &now, &now
-
-			err = r2.FromDomain(dr)
-			if err != nil {
-				return err
-			}
-			r2.ID = "_:recipe"
-			r2.CretedAt, r2.ModifiedAt = &now, &now
-
-			err = r3.FromDomain(dr)
-			if err != nil {
-				return err
-			}
-			r3.ID = "_:recipe"
-			r3.CretedAt, r3.ModifiedAt = &now, &now
-
-			// stem found for both ingredient and tag
-			r0.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
-			r0.Tags[j].ID = fmt.Sprintf("uid(t%d)", j)
-			jr0, err := json.Marshal(r0)
-			if err != nil {
-				return err
-			}
-
-			mu0 := &api.Mutation{
-				SetJson: jr0,
-				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1) AND eq(len(t%d), 1))", i, j),
-			}
-
-			// ingredient stem not found, tag stem found
-			r1.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
-			r1.Tags[j].ID = fmt.Sprintf("uid(t%d)", j)
-			jr1, err := json.Marshal(r1)
-			if err != nil {
-				return err
-			}
-
-			mu1 := &api.Mutation{
-				SetJson: jr1,
-				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0) AND eq(len(t%d), 1))", i, j),
-			}
-
-			// tag stem not found, ingredient stem found
-			r2.Ingredients[i].Food.ID = fmt.Sprintf("uid(f%d)", i)
-			r2.Tags[j].ID = fmt.Sprintf("_:t%d", j)
-			jr2, err := json.Marshal(r2)
-			if err != nil {
-				return err
-			}
-
-			mu2 := &api.Mutation{
-				SetJson: jr2,
-				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1) AND eq(len(t%d), 0))", i, j),
-			}
-
-			// both ingredienta and tag stem not found
-			r3.Ingredients[i].Food.ID = fmt.Sprintf("_:f%d", i)
-			r3.Tags[j].ID = fmt.Sprintf("_:t%d", j)
-			jr3, err := json.Marshal(r3)
-			if err != nil {
-				return err
-			}
-
-			mu3 := &api.Mutation{
-				SetJson: jr3,
-				Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0) AND eq(len(t%d), 0))", i, j),
-			}
-
-			mutations = append(mutations, mu0, mu1, mu2, mu3)
+	for i, di := range dr.Ingredients {
+		var i0, i1 Ingredient
+		err := i0.FromDomain(di)
+		if err != nil {
+			return err
 		}
+		err = i1.FromDomain(di)
+		if err != nil {
+			return err
+		}
+		id := fmt.Sprintf("_:i%d", i)
+		i0.ID, i1.ID = id, id
+		r.Ingredients[i] = &Ingredient{ID: id} // only id, empty fields
+
+		// food stem found
+		i0.Food.ID = fmt.Sprintf("uid(f%d)", i)
+		ji0, err := json.Marshal(i0)
+		if err != nil {
+			return err
+		}
+		mu0 := &api.Mutation{
+			SetJson: ji0,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 1))", i),
+		}
+
+		// food stem not found
+		i1.Food.ID = fmt.Sprintf("_:f%d", i)
+		ji1, err := json.Marshal(i1)
+		if err != nil {
+			return err
+		}
+		mu1 := &api.Mutation{
+			SetJson: ji1,
+			Cond:    fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(f%d), 0))", i),
+		}
+
+		mutations = append(mutations, mu0, mu1)
 	}
+
+	// using nquads to be able to directly link tag to recipe
+	for i := range dr.Tags {
+		// tag stem found
+		nq := &api.NQuad{
+			Subject:   "_:recipe",
+			Predicate: "tags",
+			ObjectId:  fmt.Sprintf("uid(t%d)", i),
+		}
+
+		mu0 := &api.Mutation{
+			Set:  []*api.NQuad{nq},
+			Cond: fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(t%d), 1))", i),
+		}
+
+		// tag stem not found
+		var t Tag
+		err := t.FromDomain(dr.Tags[i])
+		if err != nil {
+			return err
+		}
+		tag := fmt.Sprintf("_:tag%d)", i)
+		nq0 := &api.NQuad{
+			Subject:   "_:recipe",
+			Predicate: "tags",
+			ObjectId:  tag,
+		}
+		nq1 := &api.NQuad{
+			Subject:     tag,
+			Predicate:   "tagName",
+			ObjectValue: &api.Value{Val: &api.Value_StrVal{StrVal: t.TagName}},
+		}
+		nq2 := &api.NQuad{
+			Subject:     tag,
+			Predicate:   "tagStem",
+			ObjectValue: &api.Value{Val: &api.Value_StrVal{StrVal: t.TagStem}},
+		}
+
+		mu1 := &api.Mutation{
+			Set:  []*api.NQuad{nq0, nq1, nq2},
+			Cond: fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(t%d), 0))", i),
+		}
+
+		mutations = append(mutations, mu0, mu1)
+	}
+
+	r.ID = "_:recipe"
+	r.Tags = nil // don't overwrite tags
+	jr, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	mu := &api.Mutation{
+		SetJson: jr,
+		Cond:    "@if(eq(len(r), 0))",
+	}
+	mutations = append(mutations, mu)
 
 	req.Mutations = mutations
 
@@ -474,6 +483,9 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	r, err := db.getRecipeByID(ctx, recipeID)
 	if err != nil {
 		return err
+	}
+	if r == nil {
+		return nil
 	}
 	r.Tags = nil
 

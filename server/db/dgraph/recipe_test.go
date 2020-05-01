@@ -266,7 +266,12 @@ func getTestRecipe() *domain.Recipe {
 		CookTime:    1,
 		Ingredients: []*domain.Ingredient{
 			{
-				Name:          "ingredient",
+				Name:          "zucchine",
+				Quantity:      2,
+				UnitOfMeasure: "unitOfMeasure",
+			},
+			{
+				Name:          "melanzane",
 				Quantity:      1,
 				UnitOfMeasure: "unitOfMeasure",
 			},
