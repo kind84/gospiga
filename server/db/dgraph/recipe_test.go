@@ -96,6 +96,10 @@ func TestUpdateRecipe(t *testing.T) {
 	recipe3 := getTestRecipe()
 	recipe2.Title = "update"
 	recipe3.Ingredients[0].Quantity = 10
+	recipe3.Tags = []*domain.Tag{
+		{TagName: "upTagName1"},
+		{TagName: "upTagName2"},
+	}
 
 	tests := []struct {
 		name    string
@@ -157,14 +161,17 @@ func TestUpdateRecipe(t *testing.T) {
 				assert.Equal(1, n)
 				assert.Equal(recipe3.ExternalID, r.ExternalID)
 				if assert.Equal(len(recipe3.Ingredients), len(r.Ingredients)) {
-					for i, ingr := range r.Ingredients {
-						if qs, ok := ingr.Quantity.(string); assert.True(ok) {
-							q, err := strconv.Atoi(qs)
-							assert.NoError(err)
-							assert.Equal(recipe3.Ingredients[i].Quantity, q)
+					for _, ingr := range r.Ingredients {
+						for _, ri := range recipe3.Ingredients {
+							if ri.Name == ingr.Name {
+								if qs, ok := ingr.Quantity.(string); assert.True(ok) {
+									q, err := strconv.Atoi(qs)
+									assert.NoError(err)
+									assert.Equal(ri.Quantity, q)
+								}
+								assert.Equal(ri.UnitOfMeasure, ingr.UnitOfMeasure)
+							}
 						}
-						assert.Equal(recipe3.Ingredients[i].Name, ingr.Name)
-						assert.Equal(recipe3.Ingredients[i].UnitOfMeasure, ingr.UnitOfMeasure)
 					}
 				}
 				assert.Equal(len(recipe3.Steps), len(r.Steps))
