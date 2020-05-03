@@ -278,7 +278,7 @@ func getTestRecipe() *domain.Recipe {
 				UnitOfMeasure: "unitOfMeasure",
 			},
 			{
-				Name:          "melanzane",
+				Name:          "passata di pomodoro",
 				Quantity:      1,
 				UnitOfMeasure: "unitOfMeasure",
 			},

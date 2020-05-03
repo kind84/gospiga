@@ -110,7 +110,7 @@ func (a *app) readRecipes() {
 				}
 				log.Debugf("Got message for updated recipe ID %q", recipeID)
 
-				a.upsertRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
+				a.updateRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
 
 			case deletedRecipeStream:
 				recipeID, ok := msg.Payload.(string)
@@ -176,7 +176,7 @@ func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID st
 	wg.Done()
 }
 
-func (a *app) upsertRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
+func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
 	r := domain.FromType(rt)

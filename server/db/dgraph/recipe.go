@@ -212,8 +212,8 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 	r.CretedAt, r.ModifiedAt = &now, &now
 
 	var sb strings.Builder
-	// t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("/templates/dgraph/save.tmpl"))
-	t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("../../../templates/dgraph/save.tmpl"))
+	// t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("../../../templates/dgraph/save.tmpl"))
+	t := template.Must(template.New("save.tmpl").Funcs(fm).ParseFiles("/templates/dgraph/save.tmpl"))
 	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
@@ -349,7 +349,8 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	r.ModifiedAt = &now
 
 	var sb strings.Builder
-	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("../../../templates/dgraph/update.tmpl"))
+	// t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("../../../templates/dgraph/update.tmpl"))
+	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("/templates/dgraph/update.tmpl"))
 	err = t.Execute(&sb, dr)
 	if err != nil {
 		return err
@@ -781,17 +782,17 @@ func loadRecipeSchema() *api.Operation {
 		conclusion: string .
 		finalImage: uid .
 		tags: [uid] @reverse .
-		name: string @lang @index(term) .
+		name: string @lang @index(fulltext) .
 		quantity: string .
 		unitOfMeasure: string .
 		food: uid @reverse .
-		term: string @index(term) .
+		term: string @index(fulltext) .
 		stem: string @index(hash) .
 		index: int @index(int) .
 		image: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
-		tagName: string @index(term) .
+		tagName: string @index(fulltext) .
 		tagStem: string @index(hash) .
 		slug: string .
 	`
