@@ -66,12 +66,16 @@ type Tag struct {
 
 func (r *Recipe) ToType() *types.Recipe {
 	var rt types.Recipe
+	var img types.Image
+	if r.MainImage != nil {
+		img.URL = r.MainImage.URL
+	}
 
 	rt.ID = r.ID
 	rt.ExternalID = r.ExternalID
 	rt.Title = r.Title
 	rt.Subtitle = r.Subtitle
-	rt.MainImage = &types.Image{URL: r.MainImage.URL}
+	rt.MainImage = &img
 	rt.Likes = r.Likes
 	rt.Description = r.Description
 	rt.Conclusion = r.Conclusion
@@ -116,8 +120,8 @@ func FromType(rt *types.Recipe) *Recipe {
 	var r Recipe
 
 	r.ExternalID = rt.ExternalID
-	r.Title = rt.Title
-	r.Subtitle = rt.Subtitle
+	r.Title = strings.TrimSpace(rt.Title)
+	r.Subtitle = strings.TrimSpace(rt.Subtitle)
 	r.MainImage = &Image{URL: rt.MainImage.URL}
 	r.Likes = rt.Likes
 	r.Description = rt.Description
@@ -132,9 +136,9 @@ func FromType(rt *types.Recipe) *Recipe {
 
 	for _, ingr := range rt.Ingredients {
 		r.Ingredients = append(r.Ingredients, &Ingredient{
-			Name:          strings.ToLower(ingr.Name),
+			Name:          strings.ToLower(strings.TrimSpace(ingr.Name)),
 			Quantity:      ingr.Quantity,
-			UnitOfMeasure: ingr.UnitOfMeasure,
+			UnitOfMeasure: strings.ToLower(strings.TrimSpace(ingr.UnitOfMeasure)),
 		})
 	}
 
@@ -144,7 +148,7 @@ func FromType(rt *types.Recipe) *Recipe {
 			img = &Image{URL: step.Image.URL}
 		}
 		r.Steps = append(r.Steps, &Step{
-			Heading: step.Heading,
+			Heading: strings.TrimSpace(step.Heading),
 			Body:    step.Body,
 			Image:   img,
 		})
@@ -153,7 +157,7 @@ func FromType(rt *types.Recipe) *Recipe {
 	tags := strings.Split(rt.Tags, ", ")
 
 	for _, tag := range tags {
-		r.Tags = append(r.Tags, &Tag{TagName: strings.ToLower(tag)})
+		r.Tags = append(r.Tags, &Tag{TagName: strings.ToLower(strings.TrimSpace(tag))})
 	}
 
 	return &r
