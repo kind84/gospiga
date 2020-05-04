@@ -57,9 +57,7 @@ func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 				recipes: ~tags (first: 1){
 					uid
 					xid
-					mainImage {
-						url
-					}
+					mainImage
 				}
 			}
 		}

@@ -134,6 +134,7 @@ func (r *Recipe) ToDomain() *domain.Recipe {
 	if r.MainImage != "" {
 		mi.URL = r.MainImage
 	}
+	dr.MainImage = &mi
 
 	return dr
 }
