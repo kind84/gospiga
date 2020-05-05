@@ -6,9 +6,9 @@ import (
 	"sync"
 
 	"github.com/kind84/gospiga/server/domain"
-	log "github.com/sirupsen/logrus"
 
 	errs "github.com/kind84/gospiga/pkg/errors"
+	"github.com/kind84/gospiga/pkg/log"
 	"github.com/kind84/gospiga/pkg/streamer"
 )
 

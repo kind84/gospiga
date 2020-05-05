@@ -11,7 +11,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
 	"google.golang.org/grpc"
@@ -21,6 +20,7 @@ import (
 	"github.com/kind84/gospiga/finder/fulltext"
 	gogrpc "github.com/kind84/gospiga/finder/grpc"
 	"github.com/kind84/gospiga/finder/usecase"
+	"github.com/kind84/gospiga/pkg/log"
 	"github.com/kind84/gospiga/pkg/redis"
 	"github.com/kind84/gospiga/pkg/streamer"
 	pb "github.com/kind84/gospiga/proto"
@@ -29,9 +29,7 @@ import (
 const defaultPort = "50051"
 
 func init() {
-	log.SetLevel(log.DebugLevel)
-
-	log.Info("Setting up configuration...")
+	log.Infof("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("gospiga")
@@ -39,7 +37,6 @@ func init() {
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 	viper.ReadInConfig()
-
 }
 
 func main() {

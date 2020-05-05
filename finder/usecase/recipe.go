@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/kind84/gospiga/finder/domain"
 	"github.com/kind84/gospiga/finder/fulltext"
+	"github.com/kind84/gospiga/pkg/log"
 	"github.com/kind84/gospiga/pkg/streamer"
 	"github.com/kind84/gospiga/pkg/types"
 )

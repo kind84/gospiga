@@ -9,8 +9,9 @@ import (
 	"sync"
 	"time"
 
-	redis "github.com/go-redis/redis/v7"
-	log "github.com/sirupsen/logrus"
+	"github.com/go-redis/redis/v7"
+
+	"github.com/kind84/gospiga/pkg/log"
 )
 
 var ackAndAddLua = ""

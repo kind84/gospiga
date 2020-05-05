@@ -35,6 +35,11 @@ func Warnf(s string, args ...interface{}) {
 	log.Warnf(s, args...)
 }
 
+// Error logs at error level.
+func Error(args ...interface{}) {
+	log.Error(args...)
+}
+
 // Errorf logs at error level.
 func Errorf(s string, args ...interface{}) {
 	log.Errorf(s, args...)

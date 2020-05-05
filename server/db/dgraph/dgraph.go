@@ -12,8 +12,10 @@ import (
 
 	"github.com/dgraph-io/dgo/v2"
 	"github.com/dgraph-io/dgo/v2/protos/api"
-	log "github.com/sirupsen/logrus"
+
 	"google.golang.org/grpc"
+
+	"github.com/kind84/gospiga/pkg/log"
 )
 
 type DB struct {
@@ -29,7 +31,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 		if err == nil {
 			break
 		}
-		log.Warn("failed to connect to dgraph, retrying..")
+		log.Warnf("failed to connect to dgraph, retrying..")
 		time.Sleep(5 * 100 * time.Millisecond)
 	}
 	if err != nil {
@@ -46,7 +48,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 		err = nil
 		res, err = http.Get("http://alpha:8080/health")
 		if err == nil && res.StatusCode == http.StatusOK {
-			log.Debug("dgraph server ready")
+			log.Debugf("dgraph server ready")
 			io.Copy(ioutil.Discard, res.Body)
 			res.Body.Close()
 			break
@@ -59,7 +61,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 
 	time.Sleep(5 * time.Second)
 	// load graphql schema
-	log.Debug("loading graphql schema..")
+	log.Debugf("loading graphql schema..")
 	file, err := os.Open("/gql/schema.graphql")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open graphql.schema file: %w", err)
@@ -75,7 +77,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 
 	time.Sleep(5 * time.Second)
 	// load dgraph schema
-	log.Debug("loading dgraph schema..")
+	log.Debugf("loading dgraph schema..")
 	op := loadRecipeSchema()
 	err = dgraph.Alter(ctx, op)
 	if err != nil {

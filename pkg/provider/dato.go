@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/jaylane/graphql"
-	log "github.com/sirupsen/logrus"
 
+	"github.com/kind84/gospiga/pkg/log"
 	"github.com/kind84/gospiga/pkg/types"
 )
 
@@ -78,7 +78,7 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recip
 }
 
 func (p *provider) GetAllRecipeIDs(ctx context.Context) ([]string, error) {
-	log.Info("Asking dato for all recipe IDs")
+	log.Infof("Asking dato for all recipe IDs")
 	req := graphql.NewRequest(`
 		query MyQuery {
 			recipes: allRecipes {
