@@ -15,7 +15,8 @@ type Logger struct {
 }
 
 func init() {
-	logger, _ := zap.NewProduction()
+	// logger, _ := zap.NewProduction()
+	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
 	log = &Logger{logger.Sugar()}
 }
