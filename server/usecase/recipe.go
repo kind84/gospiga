@@ -122,7 +122,6 @@ func (a *app) readRecipes() {
 				log.Debugf("Got message for deleted recipe ID %q", recipeID)
 
 				a.deleteRecipe(ctx, recipeID, msg.ID, &wg)
-
 			}
 
 		case <-a.shutdown:
@@ -134,12 +133,14 @@ func (a *app) readRecipes() {
 }
 
 func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
+	// unleash the streamer
+	wg.Done()
+
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack?? new stream??
-		wg.Done()
 		return
 	}
 	r := domain.FromType(rt)
@@ -153,13 +154,11 @@ func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID st
 		if err != nil {
 			log.Errorf("error on Ack for msg ID %q", messageID)
 		}
-		wg.Done()
 		return
 	}
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??
-		wg.Done()
 		return
 	}
 
@@ -171,19 +170,18 @@ func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID st
 	if err != nil {
 		log.Errorf("error on AckAndAdd for msg ID %q", messageID)
 	}
-
-	// unleash the streamer
-	wg.Done()
 }
 
 func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
+	// unleash the streamer
+	wg.Done()
+
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
 	r := domain.FromType(rt)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack?? new stream??
-		wg.Done()
 		return
 	}
 
@@ -192,7 +190,6 @@ func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??
-		wg.Done()
 		return
 	}
 
@@ -204,18 +201,17 @@ func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	if err != nil {
 		log.Errorf("error on AckAndAdd for msg ID %q", messageID)
 	}
-
-	// unleash the streamer
-	wg.Done()
 }
 
 func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *sync.WaitGroup) {
+	// unleash the streamer
+	wg.Done()
+
 	// delete recipe
 	err := a.service.DeleteRecipe(ctx, recipeID)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??
-		wg.Done()
 		return
 	}
 
@@ -224,15 +220,12 @@ func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *
 	if err != nil {
 		log.Errorf("error on Ack for msg ID %q", messageID)
 	}
-
-	// unleash the streamer
-	wg.Done()
 }
 
 func (a *app) discardMessage(m *streamer.Message, wg *sync.WaitGroup) {
+	defer wg.Done()
 	err := a.streamer.Ack(m.Stream, group, m.ID)
 	if err != nil {
 		log.Warnf("error acknowledging message: %s", err)
 	}
-	wg.Done()
 }
