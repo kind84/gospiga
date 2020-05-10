@@ -20,11 +20,15 @@ type redisFT struct {
 
 // NewRedisFT returns a new instance of the Full Text Redis client.
 func NewRedisFT(addr string) (*redisFT, error) {
-	// Create a client. By default a client is schemaless
-	// unless a schema is provided when creating the index
 	ft := redisearch.NewClient(addr, "recipes")
 	if ft == nil {
 		return nil, errors.New("cannot initialize redis client")
+	}
+
+	// check if index already exists
+	_, err := ft.Info()
+	if err == nil {
+		return &redisFT{ft}, nil
 	}
 
 	sw, err := getStopWords()
@@ -34,7 +38,6 @@ func NewRedisFT(addr string) (*redisFT, error) {
 	opts := redisearch.DefaultOptions
 	opts.Stopwords = sw
 
-	// Create a schema
 	sc := redisearch.NewSchema(opts).
 		AddField(redisearch.NewTextFieldOptions("id", redisearch.TextFieldOptions{NoIndex: true})).
 		AddField(redisearch.NewTextFieldOptions("xid", redisearch.TextFieldOptions{NoIndex: true})).
@@ -51,12 +54,6 @@ func NewRedisFT(addr string) (*redisFT, error) {
 		AddField(redisearch.NewTagField("tags")).
 		AddField(redisearch.NewTextFieldOptions("slug", redisearch.TextFieldOptions{NoIndex: true}))
 
-	sc.Options = opts // needed until issue is fixed (https://github.com/RediSearch/redisearch-go/issues/56)
-
-	// Drop an existing index. If the index does not exist an error is returned
-	ft.Drop()
-
-	// Create the index with the given schema
 	if err := ft.CreateIndex(sc); err != nil {
 		return nil, err
 	}
@@ -84,7 +81,7 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 		Set("tags", recipe.Tags).
 		Set("slug", recipe.Slug)
 
-	// Index the document. The API accepts multiple documents at a time,
+	// Index the document. The API accepts multiple documents at a time
 	opts := redisearch.DefaultIndexingOptions
 	opts.Language = "italian"
 	opts.Replace = true // upsert
