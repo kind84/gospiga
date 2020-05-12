@@ -1,0 +1,81 @@
+upsert {
+  query {
+    recipeUID (func: eq(xid, "externalID")) {
+      r as uid
+    }
+    
+    food1UID (func: eq(stem, "melanz")) {
+      f1 as uid
+    }
+    food2UID (func: eq(stem, "zucc")) {
+      f2 as uid
+    }
+    
+    tag1UID (func: eq(tagStem, "second")) {
+      t1 as uid
+    }
+  }
+  
+  mutation @if(eq(len(r), 0) AND eq(len(f1), 0)) {
+    set {
+      <_:recipe> <ingredients> <_:i1> .
+      <_:i1> <name> "melanzane" .
+      <_:i1> <quantity> "2" .
+      <_:i1> <food> <_:f1> .
+      <_:i1> <dgraph.type> "Ingredient" .
+      <_:f1> <dgraph.type> "Food" .
+      <_:f1> <term> "melanzane" .
+      <_:f1> <stem> "melanz" .
+    }
+  }
+  mutation @if(eq(len(r), 0) AND eq(len(f1), 1)) {
+    set {
+      <_:recipe> <ingredients> <_:i1> .
+      <_:i1> <name> "melanzane" .
+      <_:i1> <quantity> "2" .
+      <_:i1> <food> uid(f1) .
+      <_:i1> <dgraph.type> "Ingredient" .
+    }
+  }
+  mutation @if(eq(len(r), 0) AND eq(len(f2), 0)) {
+    set {
+      <_:recipe> <ingredients> <_:i2> .
+      <_:i2> <name> "zucchine" .
+      <_:i2> <quantity> "4" .
+      <_:i2> <food> <_:f2> .
+      <_:i2> <dgraph.type> "Ingredient" .
+      <_:f2> <dgraph.type> "Food" .
+      <_:f2> <term> "zucchine" .
+      <_:f2> <stem> "zucc" .
+    }
+  }
+  mutation @if(eq(len(r), 0) AND eq(len(f2), 1)) {
+    set {
+      <_:recipe> <ingredients> <_:i2> .
+      <_:i2> <name> "zucchine" .
+      <_:i2> <quantity> "4" .
+      <_:i2> <food> uid(f2) .
+      <_:i2> <dgraph.type> "Ingredient" .
+    }
+  }
+  mutation @if(eq(len(r), 0) AND eq(len(t1), 0)) {
+    set {
+      <_:recipe> <tags> <_:tag1> .
+      <_:tag1> <tagName> "secondi" .
+      <_:tag1> <tagStem> "second" .
+    }
+  }
+  mutation @if(eq(len(r), 0) AND eq(len(t1), 1)) {
+    set {
+      <_:recipe> <tags> uid(t1) .
+    }
+  }
+  mutation @if(eq(len(r), 0)) {
+    set {
+      <_:recipe> <dgraph.type> "Recipe" .
+      <_:recipe> <title> "new recipe" .
+      <_:recipe> <subtitle> "fresh new recipe" .
+      <_:recipe> <xid> "externalID" .
+    }
+  }
+}
