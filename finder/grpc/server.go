@@ -1,4 +1,4 @@
-//go:generate protoc -I ../../proto --go-grpc_out=../../proto ../../proto/finder.proto
+//go:generate protoc -I ../../proto --go_out=plugins=grpc:../../proto ../../proto/finder.proto
 
 package grpc
 
