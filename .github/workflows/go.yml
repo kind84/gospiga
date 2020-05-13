@@ -35,5 +35,9 @@ jobs:
       run: make build -e VERBOSE=true
 
     - name: Test
-      run: make test -e VERBOSE=true
+      run: make test
 
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:

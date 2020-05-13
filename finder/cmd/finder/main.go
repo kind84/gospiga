@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"syscall"
 
@@ -15,6 +16,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/kind84/gospiga"
 	"github.com/kind84/gospiga/finder/api"
 	"github.com/kind84/gospiga/finder/db"
 	"github.com/kind84/gospiga/finder/fulltext"
@@ -40,6 +42,16 @@ func init() {
 }
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("panic trapped in main goroutine : %+v", err)
+			log.Errorf("stacktrace from panic: %s", string(debug.Stack()))
+		}
+		os.Exit(1)
+	}()
+
+	gospiga.PrintVersion(os.Stdout)
+
 	shutdownCh := make(chan os.Signal, 1)
 
 	// Wire shutdownCh to get events depending on the OS we are running in

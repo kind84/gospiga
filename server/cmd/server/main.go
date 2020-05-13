@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"syscall"
 
@@ -16,6 +17,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/kind84/gospiga"
 	"github.com/kind84/gospiga/pkg/log"
 	"github.com/kind84/gospiga/pkg/provider"
 	"github.com/kind84/gospiga/pkg/redis"
@@ -42,6 +44,16 @@ func init() {
 }
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("panic trapped in main goroutine : %+v", err)
+			log.Errorf("stacktrace from panic: %s", string(debug.Stack()))
+		}
+		os.Exit(1)
+	}()
+
+	gospiga.PrintVersion(os.Stdout)
+
 	ctx := context.Background()
 
 	shutdownCh := make(chan os.Signal, 1)

@@ -1,4 +1,7 @@
+include version.mk
 GO_TEST_FLAGS ?= -race
+SERVICES = server finder
+REGISTRY =
 
 # set pkgs to all packages
 PKGS = ./...
@@ -20,7 +23,13 @@ build: go-generate
 test: go-generate
 	go test $(GO_TEST_FLAGS) -ldflags "all=$(GO_LDFLAGS)" $(PKGS)
 
-docker: docker-build docker-run
+docker: docker-server docker-finder
+
+docker-server: build-dependencies
+	docker build -t gospiga/server server
+
+docker-finder: build-dependencies
+	docker build -t gospiga/finder finder
 
 build-dependencies:
 	docker build -t dependencies -f ./dependencies.Dockerfile .
@@ -28,5 +37,11 @@ build-dependencies:
 docker-build: build-dependencies
 	docker-compose build
 
-docker-run:
+docker-run: docker-build
 	docker-compose up
+
+release: docker
+	for service in $(SERVICES); do \
+		docker tag gospiga/$$service $(REGISTRY)/$$service:$(DOCKER_TAG); \
+		docker push $(REGISTRY)/$$service:$(DOCKER_TAG); \
+	done
