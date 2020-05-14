@@ -1,7 +1,7 @@
 include version.mk
 GO_TEST_FLAGS ?= -race
 SERVICES = server finder
-REGISTRY = docker.pkg.github.com
+REGISTRY = docker.pkg.github.com/kind84/gospiga
 
 # set pkgs to all packages
 PKGS = ./...
