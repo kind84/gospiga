@@ -1,7 +1,7 @@
 include version.mk
 GO_TEST_FLAGS ?= -race
 SERVICES = server finder
-REGISTRY =
+REGISTRY = docker.pkg.github.com
 
 # set pkgs to all packages
 PKGS = ./...
