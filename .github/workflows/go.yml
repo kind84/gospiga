@@ -44,5 +44,6 @@ jobs:
     steps:
 
     - name: Build and publish Docker Image to GitHub Packages Registry
-      run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
+      run: |
+        docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
         make release
