@@ -3,7 +3,7 @@ package domain
 import (
 	"strings"
 
-	"github.com/kind84/gospiga/pkg/types"
+	"gospiga/pkg/types"
 )
 
 type Recipe struct {

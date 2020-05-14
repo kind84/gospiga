@@ -16,16 +16,16 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/kind84/gospiga"
-	"github.com/kind84/gospiga/finder/api"
-	"github.com/kind84/gospiga/finder/db"
-	"github.com/kind84/gospiga/finder/fulltext"
-	gogrpc "github.com/kind84/gospiga/finder/grpc"
-	"github.com/kind84/gospiga/finder/usecase"
-	"github.com/kind84/gospiga/pkg/log"
-	"github.com/kind84/gospiga/pkg/redis"
-	"github.com/kind84/gospiga/pkg/streamer"
-	pb "github.com/kind84/gospiga/proto"
+	"gospiga"
+	"gospiga/finder/api"
+	"gospiga/finder/db"
+	"gospiga/finder/fulltext"
+	gogrpc "gospiga/finder/grpc"
+	"gospiga/finder/usecase"
+	"gospiga/pkg/log"
+	"gospiga/pkg/redis"
+	"gospiga/pkg/streamer"
+	pb "gospiga/proto"
 )
 
 const defaultPort = "50051"

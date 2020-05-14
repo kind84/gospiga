@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	pb "github.com/kind84/gospiga/proto"
+	pb "gospiga/proto"
 )
 
 type stub struct {

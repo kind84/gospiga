@@ -10,8 +10,8 @@ import (
 
 	"github.com/RedisLabs/redisearch-go/redisearch"
 
-	"github.com/kind84/gospiga/finder/domain"
-	"github.com/kind84/gospiga/pkg/log"
+	"gospiga/finder/domain"
+	"gospiga/pkg/log"
 )
 
 type redisFT struct {

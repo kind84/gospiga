@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kind84/gospiga/finder/domain"
-	"github.com/kind84/gospiga/finder/fulltext"
-	"github.com/kind84/gospiga/pkg/log"
-	"github.com/kind84/gospiga/pkg/streamer"
-	"github.com/kind84/gospiga/pkg/types"
+	"gospiga/finder/domain"
+	"gospiga/finder/fulltext"
+	"gospiga/pkg/log"
+	"gospiga/pkg/streamer"
+	"gospiga/pkg/types"
 )
 
 func (a *app) SearchRecipes(query string) ([]*fulltext.Recipe, error) {

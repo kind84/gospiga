@@ -6,8 +6,8 @@ import (
 
 	"github.com/jaylane/graphql"
 
-	"github.com/kind84/gospiga/pkg/log"
-	"github.com/kind84/gospiga/pkg/types"
+	"gospiga/pkg/log"
+	"gospiga/pkg/types"
 )
 
 type provider struct {

@@ -3,9 +3,9 @@ package usecase
 import (
 	"context"
 
-	"github.com/kind84/gospiga/pkg/streamer"
-	"github.com/kind84/gospiga/pkg/types"
-	"github.com/kind84/gospiga/server/domain"
+	"gospiga/pkg/streamer"
+	"gospiga/pkg/types"
+	"gospiga/server/domain"
 )
 
 type DB interface {

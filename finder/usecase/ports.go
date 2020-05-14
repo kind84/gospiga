@@ -1,9 +1,9 @@
 package usecase
 
 import (
-	"github.com/kind84/gospiga/finder/domain"
-	"github.com/kind84/gospiga/finder/fulltext"
-	"github.com/kind84/gospiga/pkg/streamer"
+	"gospiga/finder/domain"
+	"gospiga/finder/fulltext"
+	"gospiga/pkg/streamer"
 )
 
 type DB interface {

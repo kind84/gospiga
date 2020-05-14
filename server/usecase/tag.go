@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/kind84/gospiga/pkg/types"
+	"gospiga/pkg/types"
 )
 
 func (a *app) AllTagsImages(ctx context.Context) ([]*types.Tag, error) {

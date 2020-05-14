@@ -3,8 +3,8 @@ package dgraph
 import (
 	"encoding/json"
 
-	"github.com/kind84/gospiga/pkg/stemmer"
-	"github.com/kind84/gospiga/server/domain"
+	"gospiga/pkg/stemmer"
+	"gospiga/server/domain"
 )
 
 // Ingredient represents repository verison of the domain ingredient.

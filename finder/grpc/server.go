@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/kind84/gospiga/proto"
+	pb "gospiga/proto"
 )
 
 type finderServer struct {

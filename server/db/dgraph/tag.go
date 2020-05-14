@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kind84/gospiga/pkg/stemmer"
-	"github.com/kind84/gospiga/server/domain"
+	"gospiga/pkg/stemmer"
+	"gospiga/server/domain"
 )
 
 // tag represents repository version of the domain tag.

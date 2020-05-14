@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/kind84/gospiga/pkg/types"
+	"gospiga/pkg/types"
 )
 
 // App interface defines methods to be exposed by the api service.

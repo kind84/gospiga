@@ -1,7 +1,7 @@
 package fulltext
 
 import (
-	"github.com/kind84/gospiga/finder/domain"
+	"gospiga/finder/domain"
 )
 
 type FT interface {

@@ -17,17 +17,17 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/kind84/gospiga"
-	"github.com/kind84/gospiga/pkg/log"
-	"github.com/kind84/gospiga/pkg/provider"
-	"github.com/kind84/gospiga/pkg/redis"
-	"github.com/kind84/gospiga/pkg/streamer"
-	pb "github.com/kind84/gospiga/proto"
-	"github.com/kind84/gospiga/server/api"
-	"github.com/kind84/gospiga/server/db/dgraph"
-	"github.com/kind84/gospiga/server/domain"
-	gogrpc "github.com/kind84/gospiga/server/grpc"
-	"github.com/kind84/gospiga/server/usecase"
+	"gospiga"
+	"gospiga/pkg/log"
+	"gospiga/pkg/provider"
+	"gospiga/pkg/redis"
+	"gospiga/pkg/streamer"
+	pb "gospiga/proto"
+	"gospiga/server/api"
+	"gospiga/server/db/dgraph"
+	"gospiga/server/domain"
+	gogrpc "gospiga/server/grpc"
+	"gospiga/server/usecase"
 )
 
 const defaultFinderPort = "50051"

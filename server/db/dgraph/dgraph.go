@@ -15,7 +15,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/kind84/gospiga/pkg/log"
+	"gospiga/pkg/log"
 )
 
 type DB struct {

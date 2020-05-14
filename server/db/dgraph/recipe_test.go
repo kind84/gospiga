@@ -15,8 +15,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/kind84/gospiga/pkg/errors"
-	"github.com/kind84/gospiga/server/domain"
+	"gospiga/pkg/errors"
+	"gospiga/server/domain"
 )
 
 var db *DB

@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-redis/redis/v7"
 
-	"github.com/kind84/gospiga/pkg/log"
+	"gospiga/pkg/log"
 )
 
 var ackAndAddLua = ""

@@ -10,9 +10,9 @@ import (
 
 	"github.com/dgraph-io/dgo/v2/protos/api"
 
-	"github.com/kind84/gospiga/pkg/errors"
-	"github.com/kind84/gospiga/pkg/stemmer"
-	"github.com/kind84/gospiga/server/domain"
+	"gospiga/pkg/errors"
+	"gospiga/pkg/stemmer"
+	"gospiga/server/domain"
 )
 
 var fm = template.FuncMap{

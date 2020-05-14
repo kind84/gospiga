@@ -5,11 +5,10 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/kind84/gospiga/server/domain"
-
-	errs "github.com/kind84/gospiga/pkg/errors"
-	"github.com/kind84/gospiga/pkg/log"
-	"github.com/kind84/gospiga/pkg/streamer"
+	errs "gospiga/pkg/errors"
+	"gospiga/pkg/log"
+	"gospiga/pkg/streamer"
+	"gospiga/server/domain"
 )
 
 const (

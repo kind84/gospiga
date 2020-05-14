@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/kind84/gospiga/finder/fulltext"
+	"gospiga/finder/fulltext"
 )
 
 type App interface {
