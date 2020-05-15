@@ -49,4 +49,4 @@ jobs:
     - name: Build and publish Docker Image to GitHub Packages Registry
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u publisher --password-stdin docker.pkg.github.com
-        make release
+        make release && make release-dev

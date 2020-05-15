@@ -1,23 +1,18 @@
 version: "3.7"
 services:
     server:
-        build:
-            context: ./server
-            dockerfile: Dockerfile
+        image: docker.pkg.github.com/kind84/gospiga/server:master-dev
         depends_on:
             - alpha
             - zero
             - redis
         ports:
             - "8080:8080"
-        env_file: ./server/.env
         environment:
             PORT: 8080
             REDIS_HOST: redis:6379
     finder:
-        build:
-            context: ./finder
-            dockerfile: Dockerfile
+        image: docker.pkg.github.com/kind84/gospiga/finder:master-dev
         depends_on:
             - redis
             - server
@@ -93,4 +88,14 @@ services:
 
 volumes:
     dgraph:
+        driver: local
+        driver_opts:
+            type: none
+            device: /mnt/ext/dgraph
+            o: bind
     redis:
+        driver: local
+        driver_opts:
+            type: none
+            device: /mnt/ext/redis
+            o: bind

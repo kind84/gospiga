@@ -1,4 +1,4 @@
-FROM golang:1.14.2-alpine AS dep
+FROM golang:1.14.2 AS dep
 
 ENV GOPROXY=https://proxy.golang.org
 
@@ -7,7 +7,8 @@ WORKDIR /gospiga
 COPY go.mod .
 COPY go.sum .
 
-RUN apk update && apk add git gcc libc-dev
+RUN apt update && apt full-upgrade -y
+RUN apt install libc-dev gcc-aarch64-linux-gnu -y
 RUN go mod download
 
 # Add here shared packages

@@ -1,4 +1,5 @@
 include version.mk
+GOARCH ?= amd64
 GO_TEST_FLAGS ?= -race
 SERVICES = server finder
 REGISTRY = docker.pkg.github.com/kind84/gospiga
@@ -31,6 +32,14 @@ docker-server: build-dependencies
 docker-finder: build-dependencies
 	docker build -t gospiga/finder finder
 
+docker-dev: docker-server-dev docker-finder-dev
+
+docker-server-dev: build-dependencies
+	docker build -t gospiga/server:latest-dev -f ./server/Dockerfile.dev server
+
+docker-finder-dev: build-dependencies
+	docker build -t gospiga/finder:latest-dev -f ./finder/Dockerfile.dev finder
+
 build-dependencies:
 	docker build -t dependencies -f ./dependencies.Dockerfile .
 
@@ -44,4 +53,10 @@ release: docker
 	for service in $(SERVICES); do \
 		docker tag gospiga/$$service $(REGISTRY)/$$service:$(DOCKER_TAG); \
 		docker push $(REGISTRY)/$$service:$(DOCKER_TAG); \
+	done
+
+release-dev: docker-dev
+	for service in $(SERVICES); do \
+		docker tag gospiga/$$service-dev $(REGISTRY)/$$service:$(DOCKER_TAG)-dev; \
+		docker push $(REGISTRY)/$$service:$(DOCKER_TAG)-dev; \
 	done
