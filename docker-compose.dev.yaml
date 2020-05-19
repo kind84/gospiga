@@ -1,7 +1,7 @@
 version: "3.7"
 services:
     server:
-        image: docker.pkg.github.com/kind84/gospiga/server:master-dev
+        image: docker.pkg.github.com/kind84/gospiga/server-dev:master
         depends_on:
             - alpha
             - zero
@@ -12,7 +12,7 @@ services:
             PORT: 8080
             REDIS_HOST: redis:6379
     finder:
-        image: docker.pkg.github.com/kind84/gospiga/finder:master-dev
+        image: docker.pkg.github.com/kind84/gospiga/finder-dev:master
         depends_on:
             - redis
             - server
@@ -36,7 +36,7 @@ services:
     #    volumes:
     #        - ./translator/gcloud-key.json:/gcloud-key.json
     redis:
-        image: redislabs/redisearch:1.6.10
+        image: docker.pkg.github.com/kind84/gospiga/redisearch-dev
         ports:
             - "6379:6379"
         volumes:
@@ -47,7 +47,7 @@ services:
                   nocopy: true
         command: ["redis-server", "--loadmodule", "/usr/lib/redis/modules/redisearch.so", "--appendonly", "yes", "--aof-use-rdb-preamble", "yes"]
     zero:
-        image: dgraph/dgraph:v20.03.1
+        image: docker.pkg.github.com/kind84/gospiga/dgraph-dev:v20.03.2
         volumes:
             - type: volume
               source: dgraph
@@ -62,7 +62,7 @@ services:
         restart: on-failure
         command: dgraph zero --my=zero:5080
     alpha:
-        image: dgraph/dgraph:v20.03.1
+        image: docker.pkg.github.com/kind84/gospiga/dgraph-dev:v20.03.2
         volumes:
             - type: volume
               source: dgraph
@@ -75,7 +75,7 @@ services:
         restart: on-failure
         command: dgraph alpha --my=alpha:7080 --lru_mb=2048 --zero=zero:5080
     ratel:
-        image: dgraph/dgraph:v20.03.1
+        image: docker.pkg.github.com/kind84/gospiga/dgraph-dev:v20.03.2
         volumes:
             - type: volume
               source: dgraph

@@ -12,3 +12,5 @@ DOCKER_TAG = latest
 ifdef GITHUB_REF
 DOCKER_TAG = $(notdir $(GITHUB_REF))
 endif
+
+DGRAPH_TAG = v20.03.2
