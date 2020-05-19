@@ -49,4 +49,18 @@ jobs:
     - name: Build and publish Docker Image to GitHub Packages Registry
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u publisher --password-stdin docker.pkg.github.com
-        make release && make release-dev
+        make release
+
+  release-dev:
+    name: Release Dev
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Build and publish Docker Image to GitHub Packages Registry
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u publisher --password-stdin docker.pkg.github.com
+        make release-dev
