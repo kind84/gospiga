@@ -14,8 +14,46 @@ ARG ARCH=arm64v8
 ARG GIT_DESCRIBE_VERSION
 
 #----------------------------------------------------------------------------------------------
-FROM --platform=linux/arm64 ${OS} AS builder
-FROM ${ARCH}/redis:${REDIS_VER}-${OSNICK} AS redis
+FROM redisfab/redis-${ARCH}-${OSNICK}-xbuild AS redis
+
+RUN [ "cross-build-start" ]
+
+WORKDIR /
+RUN apt update && apt install git -y
+RUN git clone https://github.com/RediSearch/RediSearch.git
+
+RUN [ "cross-build-end" ]
+
+FROM redisfab/redis-${ARCH}-${OSNICK}-xbuild AS builder
+RUN [ "cross-build-start" ]
+
+ARG OSNICK
+ARG OS
+ARG ARCH
+ARG REDIS_VER
+ARG GIT_DESCRIBE_VERSION
+
+RUN echo "Building for ${OSNICK} (${OS}) for ${ARCH}"
+RUN apt update && apt install git make wget cmake build-essential -y
+
+WORKDIR /build
+COPY --from=redis /usr/local/ /usr/local/
+COPY --from=redis /RediSearch/ .
+
+RUN /usr/local/bin/redis-server --version
+RUN make fetch SHOW=1
+RUN make build SHOW=1 CMAKE_ARGS="-DGIT_DESCRIBE_VERSION=${GIT_DESCRIBE_VERSION}"
+
+# ARG PACK=0
+ARG TEST=0
+
+# RUN if [ "$PACK" = "1" ]; then make pack; fi
+RUN if [ "$TEST" = "1" ]; then TEST= make test; fi
+
+RUN [ "cross-build-end" ]
+#----------------------------------------------------------------------------------------------
+FROM redisfab/redis-${ARCH}-${OSNICK}-xbuild
+RUN [ "cross-build-start" ]
 
 ARG OSNICK
 ARG OS
@@ -30,4 +68,5 @@ RUN mkdir -p "$LIBDIR";
 
 COPY --from=builder /build/build/redisearch.so  "$LIBDIR"
 
-CMD ["redis-server", "--loadmodule", "/usr/lib/redis/modules/redisearch.so"]
+CMD ["redis-server", "--loadmodule", "/usr/lib/redis/modules/redisearch.so"
+RUN [ "cross-build-end" ]
