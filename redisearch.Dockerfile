@@ -14,7 +14,7 @@ ARG ARCH=arm64v8
 ARG GIT_DESCRIBE_VERSION
 
 #----------------------------------------------------------------------------------------------
-FROM redisfab/redis:${REDIS_VER}-${ARCH}-${OSNICK} AS redis
+FROM ${ARCH}/redis:${REDIS_VER}-${OSNICK} AS redis
 FROM ${OS} AS builder
 
 ARG OSNICK
