@@ -20,10 +20,12 @@ RUN [ "cross-build-start" ]
 
 WORKDIR /
 RUN apt update && apt install git -y
+RUN git clone https://github.com/RedisLabsModules/readies.git
 RUN git clone https://github.com/RediSearch/RediSearch.git
 
 RUN [ "cross-build-end" ]
 
+#FROM balenalib/aarch64-debian AS builder
 FROM redisfab/redis-${ARCH}-${OSNICK}-xbuild AS builder
 RUN [ "cross-build-start" ]
 
@@ -39,7 +41,10 @@ RUN apt update && apt install git make wget cmake build-essential -y
 WORKDIR /build
 COPY --from=redis /usr/local/ /usr/local/
 COPY --from=redis /RediSearch/ .
+COPY --from=redis /readies/ ./deps/readies/
 
+RUN ./deps/readies/bin/getpy2
+# RUN ./deps/readies/bin/system-setup.py
 RUN /usr/local/bin/redis-server --version
 RUN make fetch SHOW=1
 RUN make build SHOW=1 CMAKE_ARGS="-DGIT_DESCRIBE_VERSION=${GIT_DESCRIBE_VERSION}"
