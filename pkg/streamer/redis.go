@@ -165,11 +165,7 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 
 				args.WG.Add(msgs)
 
-				plural := ""
-				if msgs > 1 {
-					plural = "s"
-				}
-				log.Debugf("Consumer %q recived %d message%s", args.Consumer, msgs, plural)
+				log.Debugf("Consumer %q recived %d message(s)", args.Consumer, msgs)
 
 				for _, rawMsg := range stream.Messages {
 					log.Debugf("Consumer %q reading message %q", args.Consumer, rawMsg.ID)
