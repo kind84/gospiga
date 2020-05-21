@@ -32,7 +32,7 @@ docker-server: build-dependencies
 docker-finder: build-dependencies
 	docker build -t gospiga/finder finder
 
-docker-dev: docker-server-dev docker-finder-dev docker-redis-dev
+docker-dev: docker-server-dev docker-finder-dev
 
 docker-server-dev: build-dependencies
 	docker build -t gospiga/server-dev -f ./server/dev.Dockerfile server
@@ -44,7 +44,7 @@ build-dependencies:
 	docker build -t dependencies -f ./dependencies.Dockerfile .
 
 docker-redis-dev:
-	docker build -t redisearch-dev -f ./redisearch.Dockerfile .
+	docker build -t gospiga/redis-dev -f ./redis.dev.Dockerfile .
 
 docker-build: build-dependencies
 	docker-compose build
@@ -63,9 +63,12 @@ release-dev: docker-dev
 		docker tag gospiga/$$service-dev $(REGISTRY)/$$service-dev:$(DOCKER_TAG); \
 		docker push $(REGISTRY)/$$service-dev:$(DOCKER_TAG); \
 	done; \
-	docker tag gospiga/redisearch-dev $(REGISTRY)/redisearch-dev; \
-	docker push $(REGISTRY)/redisearch-dev; \
-	dgraph $(DGRAPH_TAG); \
+
+release-redis-dev: docker-redis-dev
+	docker tag gospiga/redis-dev $(REGISTRY)/redis-dev; \
+	docker push $(REGISTRY)/redis-dev; \
+
+release-dgraph-dev:
+	./dgraph-dev.sh $(DGRAPH_TAG); \
 	docker tag gospiga/dgraph-dev:$(DGRAPH_TAG) $(REGISTRY)/dgraph-dev:$(DGRAPH_TAG); \
 	docker push $(REGISTRY)/dgraph-dev:$(DGRAPH_TAG)
-

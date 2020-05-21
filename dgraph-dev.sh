@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Script to do Dgraph release. This script would output the built binaries in
 # $TMP.  This script should NOT be responsible for doing any testing, or
@@ -23,7 +23,7 @@ mkdir $GOPATH
 PATH="$GOPATH/bin:$PATH"
 
 # The Go version used for release builds must match this version.
-GOVERSION="1.14.1"
+GOVERSION="1.14.3"
 
 # Turn off go modules by default. Only enable go modules when needed.
 export GO111MODULE=off
@@ -49,7 +49,7 @@ set -e
 set -o xtrace
 
 # Check for existence of strip tool.
-type strip
+type aarch64-linux-gnu-strip
 type shasum
 
 ratel_release="github.com/dgraph-io/ratel/server.ratelVersion"
@@ -96,13 +96,14 @@ pushd $basedir/dgraph
 popd
 
 # Regenerate protos. Should not be different from what's checked in.
-pushd $basedir/dgraph/protos
-  make regenerate
-  if [[ "$(git status --porcelain)" ]]; then
-      echo >&2 "Generated protos different in release."
-      exit 1
-  fi
-popd
+# export GO111MODULE=on
+# pushd $basedir/dgraph/protos
+#   make regenerate
+#   if [[ "$(git status --porcelain)" ]]; then
+#       echo >&2 "Generated protos different in release."
+#       exit 1
+#   fi
+# popd
 
 # Clone ratel repo.
 pushd $basedir
@@ -121,20 +122,20 @@ popd
 pushd $basedir/dgraph/dgraph
   xgo -go="go-$GOVERSION" --targets=linux/arm64 -ldflags \
       "-X $release=$release_version -X $branch=$gitBranch -X $commitSHA1=$lastCommitSHA1 -X '$commitTime=$lastCommitTime'" .
-  strip -x dgraph-linux-arm64
+  aarch64-linux-gnu-strip -x dgraph-linux-arm64
   mkdir $TMP/linux
   mv dgraph-linux-arm64 $TMP/linux/dgraph
 popd
 
 pushd $basedir/badger/badger
   xgo -go="go-$GOVERSION" --targets=linux/arm64 .
-  strip -x badger-linux-arm64
+  aarch64-linux-gnu-strip -x badger-linux-arm64
   mv badger-linux-arm64 $TMP/linux/badger
 popd
 
 pushd $basedir/ratel
   xgo -go="go-$GOVERSION" --targets=linux/arm64 -ldflags "-X $ratel_release=$release_version" .
-  strip -x ratel-linux-arm64
+  aarch64-linux-gnu-strip -x ratel-linux-arm64
   mv ratel-linux-arm64 $TMP/linux/dgraph-ratel
 popd
 

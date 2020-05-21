@@ -1,4 +1,4 @@
-FROM golang:1.14.2 AS dep
+FROM golang:1.14.3 AS dep
 
 ENV GOPROXY=https://proxy.golang.org
 
