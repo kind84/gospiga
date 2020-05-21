@@ -9,12 +9,14 @@ RUN cp -r /gospiga/ /home/go/src/
 
 RUN xgo -go="go-$GOVERSION" -v -x --targets=linux/arm64 -out server gospiga
 
-FROM alpine:latest
+FROM balenalib/aarch64-alpine
+RUN [ "cross-build-start" ]
 
-EXPOSE 8080
-
+COPY --from=builder /build/server-linux-arm64 /bin/
 COPY --from=builder /gospiga/scripts /scripts
 COPY --from=builder /gospiga/templates /templates
 COPY /gql/schema.graphql /gql/
+RUN chmod 766 /bin/server-linux-arm64
 
-ENTRYPOINT ["/build/server-linux-arm64"]
+ENTRYPOINT ["/bin/server-linux-arm64"]
+RUN [ "cross-build-end" ]
