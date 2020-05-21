@@ -2,6 +2,7 @@ VERSION = $(shell git describe --tags)
 GITREV = $(shell git rev-parse --verify --short HEAD)
 GITBRANCH = $(shell git rev-parse --abbrev-ref HEAD)
 DATE = $(shell LANG=US date +"%a, %d %b %Y %X %z")
+GOVERSION = 1.14.3
 
 GO_LDFLAGS += -X 'gospiga.Version=$(VERSION)'
 GO_LDFLAGS += -X 'gospiga.GitRev=$(GITREV)'

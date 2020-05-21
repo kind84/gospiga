@@ -34,14 +34,17 @@ docker-finder: build-dependencies
 
 docker-dev: docker-server-dev docker-finder-dev
 
-docker-server-dev: build-dependencies
-	docker build -t gospiga/server-dev -f ./server/dev.Dockerfile server
+docker-server-dev: build-dependencies-dev
+	docker build -t gospiga/server-dev -f ./server/dev.Dockerfile --build-arg GOVERSION=$(GOVERSION) server
 
-docker-finder-dev: build-dependencies
+docker-finder-dev: build-dependencies-dev
 	docker build -t gospiga/finder-dev -f ./finder/dev.Dockerfile finder
 
 build-dependencies:
-	docker build -t dependencies -f ./dependencies.Dockerfile .
+	docker build -t dependencies --build-arg GOVERSION=$(GOVERSION) -f ./dependencies.Dockerfile .
+
+build-dependencies-dev:
+	docker build -t dependencies-dev --build-arg GOVERSION=$(GOVERSION) -f ./dependencies.dev.Dockerfile .
 
 docker-redis-dev:
 	docker build -t gospiga/redis-dev -f ./redis.dev.Dockerfile .

@@ -1,19 +1,22 @@
-FROM dependencies AS builder
+ARG GOVERSION=1.14.3
+FROM dependencies-dev AS builder
 
-WORKDIR /gospiga/server
+# RUN CGO_ENABLED=1 CC=/usr/bin/aarch64-linux-gnu-gcc-8 GOOS=linux GOARCH=arm64 \
+# go build -o /go/bin/server /gospiga/server/cmd/server
+RUN mkdir -p /home/go/src && mkdir /home/go/bin && mkdir /home/go/pkg
+ENV GOPATH=/home/go
+RUN cp -r /gospiga/ /home/go/src/
 
-COPY . .
-
-RUN CGO_ENABLED=1 CC=/usr/bin/aarch64-linux-gnu-gcc-8 GOOS=linux GOARCH=arm64 \
-go build -o /go/bin/server /gospiga/server/cmd/server
-
+RUN xgo -go="go-$GOVERSION" -v -x --targets=linux/arm64 -out server gospiga
 
 FROM alpine:latest
 
-ENV GOSPIGA_SERVER_PORT=8080
-COPY --from=builder /go/bin/server /bin/server
+EXPOSE 8080
+
+COPY --from=builder /build/server-linux-arm64 /bin/server
 COPY --from=builder /gospiga/scripts /scripts
 COPY --from=builder /gospiga/templates /templates
 COPY /gql/schema.graphql /gql/
+RUN chmod 766 /bin/server
 
 ENTRYPOINT ["/bin/server"]

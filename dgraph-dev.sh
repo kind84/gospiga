@@ -115,7 +115,7 @@ pushd $basedir/ratel
   source ~/.nvm/nvm.sh
   nvm install --lts
   ./scripts/build.prod.sh
-  ./scripts/test.sh
+  # ./scripts/test.sh
 popd
 
 # Build Linux.
@@ -148,11 +148,11 @@ popd
 # popd
 
 # Create Docker image.
-cp $basedir/dgraph/contrib/Dockerfile $TMP
+cp ./dgraph.dev.Dockerfile $TMP
 pushd $TMP
-  docker build -t gospiga/dgraph-dev:$DTAG .
+  docker build -t gospiga/dgraph-dev:$DTAG -f dgraph.dev.Dockerfile .
 popd
-rm $TMP/Dockerfile
+rm $TMP/dgraph.dev.Dockerfile
 
 # Create the tar and delete the binaries.
 # echo "Creating tar"
