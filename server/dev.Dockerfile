@@ -1,22 +1,21 @@
-ARG GOVERSION=1.14.3
-FROM dependencies-dev AS builder
-
-# RUN CGO_ENABLED=1 CC=/usr/bin/aarch64-linux-gnu-gcc-8 GOOS=linux GOARCH=arm64 \
-# go build -o /go/bin/server /gospiga/server/cmd/server
-RUN mkdir -p /home/go/src && mkdir /home/go/bin && mkdir /home/go/pkg
-ENV GOPATH=/home/go
-RUN cp -r /gospiga/ /home/go/src/
-
-RUN xgo -go="go-$GOVERSION" -v -x --targets=linux/arm64 -out server gospiga
-
-FROM balenalib/aarch64-alpine
+FROM dependencies AS builder
+FROM balenalib/aarch64-debian
 RUN [ "cross-build-start" ]
 
-COPY --from=builder /build/server-linux-arm64 /bin/
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends ca-certificates curl iputils-ping && \
+  rm -rf /var/lib/apt/lists/*
+
+ADD linux /usr/local/bin
+
+EXPOSE 8080
+
+RUN mkdir /server
+WORKDIR /server
+
 COPY --from=builder /gospiga/scripts /scripts
 COPY --from=builder /gospiga/templates /templates
-COPY /gql/schema.graphql /gql/
-RUN chmod 766 /bin/server-linux-arm64
+COPY --from=builder /gospiga/gql /gql
 
-ENTRYPOINT ["/bin/server-linux-arm64"]
+CMD ["server"]
 RUN [ "cross-build-end" ]

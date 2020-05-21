@@ -1,4 +1,4 @@
-FROM dependencies-dev AS builder
+FROM dependencies AS builder
 
 WORKDIR /gospiga/finder
 

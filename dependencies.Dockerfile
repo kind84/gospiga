@@ -8,7 +8,6 @@ WORKDIR /gospiga
 COPY go.mod .
 COPY go.sum .
 
-RUN apt update && apt full-upgrade -y
 RUN go mod download
 
 # Add here shared packages
@@ -18,4 +17,5 @@ COPY ./proto ./proto
 COPY ./scripts ./scripts
 COPY ./templates ./templates
 COPY ./include ./include
+COPY ./server/gql ./gql
 
