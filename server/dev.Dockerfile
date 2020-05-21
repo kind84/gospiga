@@ -13,10 +13,8 @@ FROM alpine:latest
 
 EXPOSE 8080
 
-COPY --from=builder /build/server-linux-arm64 /bin/server
 COPY --from=builder /gospiga/scripts /scripts
 COPY --from=builder /gospiga/templates /templates
 COPY /gql/schema.graphql /gql/
-RUN chmod 766 /bin/server
 
-ENTRYPOINT ["/bin/server"]
+ENTRYPOINT ["/build/server-linux-arm64"]
