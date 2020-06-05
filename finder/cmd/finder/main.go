@@ -31,7 +31,6 @@ import (
 const defaultPort = "50051"
 
 func init() {
-	log.Infof("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("gospiga")
@@ -103,9 +102,12 @@ func main() {
 
 	r := gin.Default()
 	r.Use(c)
-	r.POST("/search-recipes", service.SearchRecipes)
-	r.POST("/search-by-tag", service.SearchByTag)
-	r.POST("/all-recipe-tags", service.AllRecipeTags)
+	g := r.Group("/finder")
+	{
+		g.POST("/search-recipes", service.SearchRecipes)
+		g.POST("/search-by-tag", service.SearchByTag)
+		g.POST("/all-recipe-tags", service.AllRecipeTags)
+	}
 	go r.Run()
 
 	// wait for shutdown

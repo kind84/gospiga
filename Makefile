@@ -35,7 +35,7 @@ docker-finder: build-dependencies
 docker-dev: docker-server-dev docker-finder-dev
 
 docker-server-dev: build-dependencies
-	./server-dev.sh $(DOCKER_TAG); \
+	./server-dev.sh $(DOCKER_TAG) $(GOVERSION)
 
 docker-finder-dev: build-dependencies
 	docker build -t gospiga/finder-dev -f ./finder/dev.Dockerfile finder
@@ -69,6 +69,6 @@ release-redis-dev: docker-redis-dev
 	docker push $(REGISTRY)/redis-dev; \
 
 release-dgraph-dev:
-	./dgraph-dev.sh $(DGRAPH_TAG); \
+	./dgraph-dev.sh $(DGRAPH_TAG) $(GOVERSION); \
 	docker tag gospiga/dgraph-dev:$(DGRAPH_TAG) $(REGISTRY)/dgraph-dev:$(DGRAPH_TAG); \
 	docker push $(REGISTRY)/dgraph-dev:$(DGRAPH_TAG)

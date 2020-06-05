@@ -1,5 +1,5 @@
 ARG GOVERSION=1.14.3
-FROM golang:${GOVERSION} AS dep
+FROM golang:${GOVERSION}-alpine AS dep
 
 ENV GOPROXY=https://proxy.golang.org
 
@@ -8,6 +8,7 @@ WORKDIR /gospiga
 COPY go.mod .
 COPY go.sum .
 
+RUN apk add build-base
 RUN go mod download
 
 # Add here shared packages

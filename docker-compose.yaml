@@ -5,29 +5,39 @@ services:
             context: ./server
             dockerfile: Dockerfile
         depends_on:
+            - traefik
             - alpha
             - zero
             - redis
         ports:
-            - "8080:8080"
+            - "8080:80"
         env_file: ./server/.env
         environment:
-            PORT: 8080
+            PORT: 80
             REDIS_HOST: redis:6379
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.server.rule=PathPrefix(`/server`)"
+            - "traefik.http.routers.server.entrypoints=web"
     finder:
         build:
             context: ./finder
             dockerfile: Dockerfile
         depends_on:
+            - traefik
             - redis
             - server
         ports:
-            - "8070:8070"
+            - "8070:80"
             - "50051:50051"
         environment:
-            PORT: 8070
+            PORT: 80
             TCP_PORT: 50051
             REDIS_HOST: redis:6379
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.finder.rule=PathPrefix(`/finder`)"
+            - "traefik.http.routers.finder.entrypoints=web"
     # translator:
     #    build:
     #        context: ./translator
@@ -40,8 +50,27 @@ services:
     #        GOSPIGA_REDIS_HOST: redis:6379
     #    volumes:
     #        - ./translator/gcloud-key.json:/gcloud-key.json
+    traefik:
+        image: traefik:v2.2
+        # Enables the web UI and tells Traefik to listen to docker
+        command:
+            - "--log.level=DEBUG"
+            - "--api.insecure=true"
+            - "--providers.docker=true"
+            - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+        ports:
+            # The HTTP port
+            - "8081:80"
+            # The Web UI (enabled by --api.insecure=true)
+            - "8088:8080"
+        volumes:
+            # So that Traefik can listen to the Docker events
+            - /var/run/docker.sock:/var/run/docker.sock
     redis:
         image: redislabs/redisearch:1.6.10
+        depends_on:
+            - traefik
         ports:
             - "6379:6379"
         volumes:
@@ -51,8 +80,12 @@ services:
               volume:
                   nocopy: true
         command: ["redis-server", "--loadmodule", "/usr/lib/redis/modules/redisearch.so", "--appendonly", "yes", "--aof-use-rdb-preamble", "yes"]
+        labels:
+            - "traefik.enable=false"
     zero:
-        image: dgraph/dgraph:v20.03.1
+        image: dgraph/dgraph:v20.03.3
+        depends_on:
+            - traefik
         volumes:
             - type: volume
               source: dgraph
@@ -66,8 +99,12 @@ services:
             - 9060:9080
         restart: on-failure
         command: dgraph zero --my=zero:5080
+        labels:
+            - "traefik.enable=false"
     alpha:
-        image: dgraph/dgraph:v20.03.1
+        image: dgraph/dgraph:v20.03.3
+        depends_on:
+            - traefik
         volumes:
             - type: volume
               source: dgraph
@@ -79,8 +116,12 @@ services:
             - 9080:9080
         restart: on-failure
         command: dgraph alpha --my=alpha:7080 --lru_mb=2048 --zero=zero:5080
+        labels:
+            - "traefik.enable=false"
     ratel:
-        image: dgraph/dgraph:v20.03.1
+        image: dgraph/dgraph:v20.03.3
+        depends_on:
+            - traefik
         volumes:
             - type: volume
               source: dgraph
@@ -88,8 +129,15 @@ services:
               volume:
                   nocopy: true
         ports:
-            - 8000:8000
-        command: dgraph-ratel
+            - 8000:80
+        command: dgraph-ratel -port 80
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.ratel.rule=PathPrefix(`/ratel`)"
+            - "traefik.http.routers.ratel.entrypoints=web"
+            - "traefik.http.routers.ratel.middlewares=stripprefix-ratel"
+            - "traefik.http.middlewares.stripprefix-ratel.stripprefix.prefixes=/ratel/,/ratel"
+            - "traefik.http.services.ratel-gospiga.loadbalancer.server.port=80"
 
 volumes:
     dgraph:

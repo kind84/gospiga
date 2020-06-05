@@ -23,7 +23,10 @@ mkdir $GOPATH
 PATH="$GOPATH/bin:$PATH"
 
 # The Go version used for release builds must match this version.
-GOVERSION="1.14.3"
+GOVERSION=$2
+if [ -z "$GOVERSION" ]; then
+	GOVERSION="1.14.4"
+fi
 
 # Turn off go modules by default. Only enable go modules when needed.
 export GO111MODULE=off

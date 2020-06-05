@@ -33,7 +33,6 @@ import (
 const defaultFinderPort = "50051"
 
 func init() {
-	log.Infof("Setting up configuration...")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	// viper.SetEnvPrefix("gospiga")
@@ -117,17 +116,21 @@ func main() {
 	r := gin.Default()
 	r.Use(c)
 	r.LoadHTMLFiles("/templates/graphql-playground.html")
-	r.GET("/ping", service.Ping)
-	r.GET("/x/gql/play", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "graphql-playground.html", gin.H{
-			"title": "GraphQL Playground",
+	g := r.Group("/server")
+	{
+		g.Group("/server")
+		g.GET("/ping", service.Ping)
+		g.GET("/x/gql/play", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "graphql-playground.html", gin.H{
+				"title": "GraphQL Playground",
+			})
 		})
-	})
-	r.POST("/new-recipe", service.NewRecipe)
-	r.POST("/updated-recipe", service.UpdatedRecipe)
-	r.POST("/deleted-recipe", service.DeletedRecipe)
-	r.POST("/all-tags-images", service.AllTagsImages)
-	r.POST("/load-recipes", service.LoadRecipes)
+		g.POST("/new-recipe", service.NewRecipe)
+		g.POST("/updated-recipe", service.UpdatedRecipe)
+		g.POST("/deleted-recipe", service.DeletedRecipe)
+		g.POST("/all-tags-images", service.AllTagsImages)
+		g.POST("/load-recipes", service.LoadRecipes)
+	}
 	go r.Run()
 
 	// wait for shutdown

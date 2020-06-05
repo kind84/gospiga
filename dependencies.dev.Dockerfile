@@ -1,5 +1,5 @@
 ARG GOVERSION=1.14.3
-FROM golang:${GOVERSION} AS dep
+FROM golang:${GOVERSION} AS dep-dev
 
 ENV GOPROXY=https://proxy.golang.org
 
