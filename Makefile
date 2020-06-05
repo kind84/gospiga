@@ -35,8 +35,7 @@ docker-finder: build-dependencies
 docker-dev: docker-server-dev docker-finder-dev
 
 docker-server-dev: build-dependencies
-	chmod 755 ./server-dev.sh \
-	./server-dev.sh $(DOCKER_TAG) $(GOVERSION)
+	chmod 755 ./server-dev.sh && ./server-dev.sh $(DOCKER_TAG) $(GOVERSION)
 
 docker-finder-dev: build-dependencies
 	docker build -t gospiga/finder-dev -f ./finder/dev.Dockerfile finder
