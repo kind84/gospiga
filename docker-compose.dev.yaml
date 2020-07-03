@@ -1,39 +1,43 @@
 version: "3.7"
 services:
     server:
-        image: docker.pkg.github.com/kind84/gospiga/server-dev:master
+        image: docker.pkg.github.com/kind84/gospiga/server-dev
         depends_on:
             - traefik
             - alpha
             - zero
             - redis
         ports:
-            - "8080:80"
+            - "8080:443"
         environment:
             - DATO_TOKEN
-            - PORT=80
+            - PORT=443
             - REDIS_HOST=redis:6379
         labels:
             - "traefik.enable=true"
-            - "traefik.http.routers.server.rule=PathPrefix(`/server`)"
-            - "traefik.http.routers.server.entrypoints=web"
+            - "traefik.http.routers.server.entrypoints=websecure"
+            - "traefik.http.routers.server.rule=Host(`kind84.duckdns.org`) && PathPrefix(`/server`)"
+            - "traefik.http.routers.server.tls=true"
+            - "traefik.http.routers.server.tls.certresolver=myresolver"
     finder:
-        image: docker.pkg.github.com/kind84/gospiga/finder-dev:master
+        image: docker.pkg.github.com/kind84/gospiga/finder-dev
         depends_on:
             - traefik
             - redis
             - server
         ports:
-            - "8070:80"
+            - "8070:443"
             - "50051:50051"
         environment:
-            PORT: 80
+            PORT: 443
             TCP_PORT: 50051
             REDIS_HOST: redis:6379
         labels:
             - "traefik.enable=true"
-            - "traefik.http.routers.finder.rule=PathPrefix(`/finder`)"
-            - "traefik.http.routers.finder.entrypoints=web"
+            - "traefik.http.routers.finder.entrypoints=websecure"
+            - "traefik.http.routers.finder.rule=Host(`kind84.duckdns.org`) && PathPrefix(`/finder`)"
+            - "traefik.http.routers.finder.tls=true"
+            - "traefik.http.routers.finder.tls.certresolver=myresolver"
     # translator:
     #    build:
     #        context: ./translator
@@ -50,19 +54,34 @@ services:
         image: traefik:v2.2
         # Enables the web UI and tells Traefik to listen to docker
         command:
-          #- "--log.level=DEBUG"
+            - "--log.level=DEBUG" # (Default: ERROR) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
             - "--api.insecure=true"
             - "--providers.docker=true"
             - "--providers.docker.exposedbydefault=false"
             - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+            - "--certificatesresolvers.myresolver.acme.storage=acme.json"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.delaybeforecheck=0"
+            - "--certificatesresolvers.myresolver.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory" # LetsEncrypt Staging Server - uncomment when testing
+        environment:
+            - DUCKDNS_TOKEN=$DUCKDNS_TOKEN
         ports:
-            # The HTTP port
             - "80:80"
+            - "443:443"
             # The Web UI (enabled by --api.insecure=true)
             - "8088:8080"
+        labels:
+            # HTTP-to-HTTPS Redirect
+            - "traefik.http.routers.http-catchall.entrypoints=http"
+            - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+            - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+            - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
         volumes:
             # So that Traefik can listen to the Docker events
             - /var/run/docker.sock:/var/run/docker.sock
+            - /home/ubuntu/.traefik/acme/acme.json:/acme.json
     redis:
         image: docker.pkg.github.com/kind84/gospiga/redis-dev
         depends_on:
@@ -128,12 +147,15 @@ services:
             - 8000:80
         command: dgraph-ratel -port 80
         labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.ratel.rule=PathPrefix(`/ratel`)"
-            - "traefik.http.routers.ratel.entrypoints=web"
-            - "traefik.http.routers.ratel.middlewares=stripprefix-ratel"
-            - "traefik.http.middlewares.stripprefix-ratel.stripprefix.prefixes=/ratel/,/ratel"
-            - "traefik.http.services.ratel-gospiga.loadbalancer.server.port=80"
+            - "traefik.enable=false"
+            #- "traefik.enable=true"
+            #- "traefik.http.routers.ratel.rule=Host(`kind84.duckdns.org`) && PathPrefix(`/ratel`)"
+            #- "traefik.http.routers.ratel.entrypoints=websecure"
+            #- "traefik.http.routers.ratel.tls=true"
+            #- "traefik.http.routers.ratel.tls.certresolver=myresolver"
+            #- "traefik.http.routers.ratel.middlewares=stripprefix-ratel"
+            #- "traefik.http.middlewares.stripprefix-ratel.stripprefix.prefixes=/ratel/,/ratel"
+            #- "traefik.http.services.ratel-gospiga.loadbalancer.server.port=80"
 
 volumes:
     dgraph:

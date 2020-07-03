@@ -129,15 +129,15 @@ services:
               volume:
                   nocopy: true
         ports:
-            - 8000:80
-        command: dgraph-ratel -port 80
+            - 8000:8000
+        command: dgraph-ratel
         labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.ratel.rule=PathPrefix(`/ratel`)"
-            - "traefik.http.routers.ratel.entrypoints=web"
-            - "traefik.http.routers.ratel.middlewares=stripprefix-ratel"
-            - "traefik.http.middlewares.stripprefix-ratel.stripprefix.prefixes=/ratel/,/ratel"
-            - "traefik.http.services.ratel-gospiga.loadbalancer.server.port=80"
+            - "traefik.enable=false"
+              # - "traefik.http.routers.ratel.rule=PathPrefix(`/ratel`)"
+              # - "traefik.http.routers.ratel.entrypoints=web"
+              # - "traefik.http.routers.ratel.middlewares=stripprefix-ratel"
+              # - "traefik.http.middlewares.stripprefix-ratel.stripprefix.prefixes=/ratel/,/ratel"
+              # - "traefik.http.services.ratel-gospiga.loadbalancer.server.port=80"
 
 volumes:
     dgraph:
