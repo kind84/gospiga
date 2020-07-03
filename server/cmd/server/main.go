@@ -47,8 +47,8 @@ func main() {
 		if err := recover(); err != nil {
 			log.Errorf("panic trapped in main goroutine : %+v", err)
 			log.Errorf("stacktrace from panic: %s", string(debug.Stack()))
+			os.Exit(1)
 		}
-		os.Exit(1)
 	}()
 
 	gospiga.PrintVersion(os.Stdout)
