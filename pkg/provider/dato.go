@@ -79,14 +79,36 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recip
 
 func (p *provider) GetAllRecipeIDs(ctx context.Context) ([]string, error) {
 	log.Infof("Asking dato for all recipe IDs")
+
 	req := graphql.NewRequest(`
 		query MyQuery {
-			recipes: allRecipes {
+			recipesCount: _allRecipesMeta {
+				count
+			}
+		}
+	`)
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.token))
+
+	var c struct {
+		RecipesCount struct {
+			Count int
+		}
+	}
+	err := p.client.Run(ctx, req, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	req = graphql.NewRequest(`
+		query MyQuery($first: IntType!){
+			recipes: allRecipes(first: $first) {
 				id
 			}
 		}
 	`)
 
+	req.Var("first", c.RecipesCount.Count)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.token))
 
 	var r struct {
@@ -94,7 +116,7 @@ func (p *provider) GetAllRecipeIDs(ctx context.Context) ([]string, error) {
 			ID string
 		}
 	}
-	err := p.client.Run(ctx, req, &r)
+	err = p.client.Run(ctx, req, &r)
 	if err != nil {
 		return nil, err
 	}

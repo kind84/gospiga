@@ -71,4 +71,5 @@ func (s *GospigaService) LoadRecipes(c *gin.Context) {
 	if err != nil {
 		c.Error(err)
 	}
+	c.Status(200)
 }
