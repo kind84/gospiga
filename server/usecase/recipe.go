@@ -185,11 +185,14 @@ func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	}
 
 	// save recipe
-	err = a.service.UpdateRecipe(ctx, r)
+	rID, err := a.service.UpdateRecipe(ctx, r)
 	if err != nil {
 		log.Error(err)
 		// TODO: ack ??
 		return
+	}
+	if rID != "" {
+		r.ID = rID
 	}
 
 	// ack message and relay

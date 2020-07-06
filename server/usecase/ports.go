@@ -14,7 +14,7 @@ type DB interface {
 
 type Service interface {
 	SaveRecipe(context.Context, *domain.Recipe) error
-	UpdateRecipe(context.Context, *domain.Recipe) error
+	UpdateRecipe(context.Context, *domain.Recipe) (string, error)
 	DeleteRecipe(context.Context, string) error
 	GetRecipeByID(context.Context, string) (*domain.Recipe, error)
 	GetRecipesByIDs(context.Context, []string) ([]*domain.Recipe, error)

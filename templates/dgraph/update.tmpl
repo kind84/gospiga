@@ -19,7 +19,7 @@ query RecipeUID($xid: string){
 	{{ end }}
 
 	{{ range $i, $tag := .Tags }}
-	tag{{ $i }}UID (func: eq(tagStem, "{{ StemWord $tag.TagName }}")) {
+	tag{{ $i }}UID (func: eq(tagName, "{{ $tag.TagName }}")) {
 		t{{ $i }} as uid
 	}
 	{{ end }}

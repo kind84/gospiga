@@ -340,11 +340,11 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 }
 
 // UpdateRecipe if already stored on db.
-func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
+func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, error) {
 	var r Recipe
 	err := r.FromDomain(dr)
 	if err != nil {
-		return err
+		return "", err
 	}
 	now := time.Now()
 	r.ModifiedAt = &now
@@ -354,7 +354,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	t := template.Must(template.New("update.tmpl").Funcs(fm).ParseFiles("/templates/dgraph/update.tmpl"))
 	err = t.Execute(&sb, dr)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	req := &api.Request{CommitNow: true}
@@ -372,7 +372,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	}
 	jdel, err := json.Marshal(rdel)
 	if err != nil {
-		return err
+		return "", err
 	}
 	mdel := &api.Mutation{
 		DeleteJson: jdel,
@@ -385,11 +385,11 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		var i0, i1 Ingredient
 		err := i0.FromDomain(di)
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = i1.FromDomain(di)
 		if err != nil {
-			return err
+			return "", err
 		}
 		id := fmt.Sprintf("_:i%d", i)
 		i0.ID, i1.ID = id, id
@@ -399,7 +399,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		i0.Food.ID = fmt.Sprintf("uid(f%d)", i)
 		ji0, err := json.Marshal(i0)
 		if err != nil {
-			return err
+			return "", err
 		}
 		mu0 := &api.Mutation{
 			SetJson: ji0,
@@ -410,7 +410,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		i1.Food.ID = fmt.Sprintf("_:f%d", i)
 		ji1, err := json.Marshal(i1)
 		if err != nil {
-			return err
+			return "", err
 		}
 		mu1 := &api.Mutation{
 			SetJson: ji1,
@@ -438,7 +438,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 		var t Tag
 		err := t.FromDomain(dr.Tags[i])
 		if err != nil {
-			return err
+			return "", err
 		}
 		tag := fmt.Sprintf("_:tag%d)", i)
 		nq0 := &api.NQuad{
@@ -469,7 +469,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 	r.Tags = nil // don't overwrite tags
 	jr, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return "", err
 	}
 	mu := &api.Mutation{
 		SetJson: jr,
@@ -479,12 +479,28 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 	req.Mutations = mutations
 
-	_, err = db.Dgraph.NewTxn().Do(ctx, req)
+	res, err := db.Dgraph.NewTxn().Do(ctx, req)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	// catch updated recipe ID (it's stored in the response Json field)
+	var resj struct {
+		RecipeUID []struct {
+			UID string `json:"uid"`
+		} `json:"recipeUID"`
+	}
+
+	err = json.Unmarshal(res.Json, &resj)
+	if err != nil {
+		return "", err
+	}
+
+	if len(resj.RecipeUID) == 0 {
+		return "", nil
+	}
+
+	return resj.RecipeUID[0].UID, nil
 }
 
 // DeleteRecipe matching the given external ID.

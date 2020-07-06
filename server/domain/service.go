@@ -18,7 +18,7 @@ func (s *service) SaveRecipe(ctx context.Context, recipe *Recipe) error {
 	return s.db.SaveRecipe(ctx, recipe)
 }
 
-func (s *service) UpdateRecipe(ctx context.Context, recipe *Recipe) error {
+func (s *service) UpdateRecipe(ctx context.Context, recipe *Recipe) (string, error) {
 	return s.db.UpdateRecipe(ctx, recipe)
 }
 
