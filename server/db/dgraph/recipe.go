@@ -302,9 +302,14 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 			Predicate:   "tagStem",
 			ObjectValue: &api.Value{Val: &api.Value_StrVal{StrVal: t.TagStem}},
 		}
+		nq3 := &api.NQuad{
+			Subject:     tag,
+			Predicate:   "dgraph.type",
+			ObjectValue: &api.Value{Val: &api.Value_StrVal{StrVal: t.DType[0]}},
+		}
 
 		mu1 := &api.Mutation{
-			Set:  []*api.NQuad{nq0, nq1, nq2},
+			Set:  []*api.NQuad{nq0, nq1, nq2, nq3},
 			Cond: fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(t%d), 0))", i),
 		}
 
@@ -456,9 +461,14 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 			Predicate:   "tagStem",
 			ObjectValue: &api.Value{Val: &api.Value_StrVal{StrVal: t.TagStem}},
 		}
+		nq3 := &api.NQuad{
+			Subject:     tag,
+			Predicate:   "dgraph.type",
+			ObjectValue: &api.Value{Val: &api.Value_StrVal{StrVal: t.DType[0]}},
+		}
 
 		mu1 := &api.Mutation{
-			Set:  []*api.NQuad{nq0, nq1, nq2},
+			Set:  []*api.NQuad{nq0, nq1, nq2, nq3},
 			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(t%d), 0))", i),
 		}
 

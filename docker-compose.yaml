@@ -54,7 +54,7 @@ services:
         image: traefik:v2.2
         # Enables the web UI and tells Traefik to listen to docker
         command:
-            - "--log.level=DEBUG"
+           #- "--log.level=DEBUG" # (Default: ERROR) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
             - "--api.insecure=true"
             - "--providers.docker=true"
             - "--providers.docker.exposedbydefault=false"

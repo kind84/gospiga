@@ -133,7 +133,7 @@ func (a *app) readRecipes() {
 
 func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
 	// unleash the streamer
-	wg.Done()
+	defer wg.Done()
 
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
@@ -173,7 +173,7 @@ func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID st
 
 func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID string, wg *sync.WaitGroup) {
 	// unleash the streamer
-	wg.Done()
+	defer wg.Done()
 
 	// call provider to get the full recipe
 	rt, err := a.provider.GetRecipe(ctx, recipeID)
@@ -207,7 +207,7 @@ func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID 
 
 func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *sync.WaitGroup) {
 	// unleash the streamer
-	wg.Done()
+	defer wg.Done()
 
 	// delete recipe
 	err := a.service.DeleteRecipe(ctx, recipeID)
