@@ -24,7 +24,7 @@ type Ingredient @dgraph(type: "Ingredient") {
     quantity: String @dgraph(pred: "quantity")
     unitOfMeasure: String @dgraph(pred: "unitOfMeasure")
     food: Food! @dgraph(pred: "food")
-    recipes: [Recipe]! @dgraph(pred: "recipes")
+    recipes: [Recipe]!
 }
 
 type Food @dgraph(type: "Food") {
@@ -42,6 +42,6 @@ type Step @dgraph(type: "Step") {
 type Tag @dgraph(type: "Tag") {
     tagName: String! @search(by: [fulltext]) @dgraph(pred: "tagName")
     tagStem: String! @search(by: [hash]) @dgraph(pred: "tagStem")
-    recipes: [Recipe]! @dgraph(pred: "recipes")
+    recipes: [Recipe]!
 }
 

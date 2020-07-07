@@ -11,7 +11,7 @@ upsert {
       f2 as uid
     }
     
-    tag1UID (func: eq(tagStem, "second")) {
+    tag1UID (func: eq(tagName, "secondi")) {
       t1 as uid
     }
   }

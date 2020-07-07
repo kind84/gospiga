@@ -268,7 +268,7 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 	// using nquads to be able to directly link tag to recipe
 	for i := range dr.Tags {
-		// tag stem found
+		// tag name found
 		nq := &api.NQuad{
 			Subject:   "_:recipe",
 			Predicate: "tags",
@@ -280,7 +280,7 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 			Cond: fmt.Sprintf("@if(eq(len(r), 0) AND eq(len(t%d), 1))", i),
 		}
 
-		// tag stem not found
+		// tag name not found
 		var t Tag
 		err := t.FromDomain(dr.Tags[i])
 		if err != nil {
@@ -427,7 +427,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 
 	// using nquads to be able to directly link tag to recipe
 	for i := range dr.Tags {
-		// tag stem found
+		// tag name found
 		nq := &api.NQuad{
 			Subject:   "uid(r)",
 			Predicate: "tags",
@@ -439,7 +439,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 			Cond: fmt.Sprintf("@if(eq(len(r), 1) AND eq(len(t%d), 1))", i),
 		}
 
-		// tag stem not found
+		// tag name not found
 		var t Tag
 		err := t.FromDomain(dr.Tags[i])
 		if err != nil {
@@ -505,7 +505,6 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 	if err != nil {
 		return "", err
 	}
-
 	if len(resj.RecipeUID) == 0 {
 		return "", nil
 	}

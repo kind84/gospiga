@@ -81,10 +81,13 @@ func (db *DB) AllTagsImages(ctx context.Context) ([]*domain.Tag, error) {
 
 	tags := make([]*domain.Tag, 0, len(root.Tags))
 	for _, t := range root.Tags {
-		tags = append(tags, &domain.Tag{
+		dt := &domain.Tag{
 			TagName: t.TagName,
-			Recipes: []*domain.Recipe{t.Recipes[0].ToDomain()},
-		})
+		}
+		if len(t.Recipes) > 0 {
+			dt.Recipes = []*domain.Recipe{t.Recipes[0].ToDomain()}
+		}
+		tags = append(tags, dt)
 	}
 	return tags, nil
 }
