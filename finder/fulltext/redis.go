@@ -52,6 +52,7 @@ func NewRedisFT(addr string) (*redisFT, error) {
 		AddField(redisearch.NewTextField("steps")).
 		AddField(redisearch.NewTextField("conclusion")).
 		AddField(redisearch.NewTagField("tags")).
+		AddField(redisearch.NewTextFieldOptions("tagNames", redisearch.TextFieldOptions{Weight: 4.0})).
 		AddField(redisearch.NewTextFieldOptions("slug", redisearch.TextFieldOptions{NoIndex: true}))
 
 	if err := ft.CreateIndex(sc); err != nil {
@@ -79,6 +80,7 @@ func (r *redisFT) IndexRecipe(recipe *domain.Recipe) error {
 		Set("steps", recipe.Steps).
 		Set("conclusion", recipe.Conclusion).
 		Set("tags", recipe.Tags).
+		Set("tagNames", recipe.Tags).
 		Set("slug", recipe.Slug)
 
 	// Index the document. The API accepts multiple documents at a time
