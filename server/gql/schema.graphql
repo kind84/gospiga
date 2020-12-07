@@ -1,47 +1,63 @@
+directive @id on FIELD_DEFINITION
+directive @search(by: [String]) on FIELD_DEFINITION
+directive @dgraph(pred: String) on FIELD_DEFINITION
+directive @hasInverse(field: String) on FIELD_DEFINITION
+
+scalar DateTime
+
+type Query {
+  recipes(
+    first: Int,
+    after: String,
+    tags: [String],
+    ingredients: [String]
+    query: String
+  ): [Recipe]    
+}
+
 type Recipe @dgraph(type: "Recipe") {
-    xid: String! @id @dgraph(pred: "xid")
-    title: String! @search(by: [fulltext]) @dgraph(pred: "title")
-    subtitle: String! @search(by: [fulltext]) @dgraph(pred: "subtitle")
-    mainImage : String! @dgraph(pred: "mainImage")
-    likes: Int! @search @dgraph(pred: "likes")
-    difficulty: String! @dgraph(pred: "difficulty")
-    cost: String! @dgraph(pred: "cost")
-    prepTime: Int! @search @dgraph(pred: "prepTime")
-    cookTime: Int @search @dgraph(pred: "cookTime")
-    servings: Int! @dgraph(pred: "servings")
-    extraNotes: String @dgraph(pred: "extraNotes")
-    description: String! @search(by: [fulltext]) @dgraph(pred: "description")
-    ingredients: [Ingredient!]! @hasInverse(field: recipes) @dgraph(pred: "ingredients")
-    steps: [Step!]! @dgraph(pred: "steps")
-    conclusion: String @dgraph(pred: "conclusion")
-    tags: [Tag!]! @hasInverse(field: recipes) @dgraph(pred: "tags")
-    createdAt: DateTime! @search @dgraph(pred: "createdAt")
-    modifiedAt: DateTime! @search @dgraph(pred: "modifiedAt")
+  xid: String! @id @dgraph(pred: "xid")
+  title: String! @search(by: [fulltext]) @dgraph(pred: "title")
+  subtitle: String! @search(by: [fulltext]) @dgraph(pred: "subtitle")
+  mainImage : String! @dgraph(pred: "mainImage")
+  likes: Int! @search @dgraph(pred: "likes")
+  difficulty: String! @dgraph(pred: "difficulty")
+  cost: String! @dgraph(pred: "cost")
+  prepTime: Int! @search @dgraph(pred: "prepTime")
+  cookTime: Int @search @dgraph(pred: "cookTime")
+  servings: Int! @dgraph(pred: "servings")
+  extraNotes: String @dgraph(pred: "extraNotes")
+  description: String! @search(by: [fulltext]) @dgraph(pred: "description")
+  ingredients: [Ingredient!]! @hasInverse(field: recipes) @dgraph(pred: "ingredients")
+  steps: [Step!]! @dgraph(pred: "steps")
+  conclusion: String @dgraph(pred: "conclusion")
+  tags: [Tag!]! @hasInverse(field: recipes) @dgraph(pred: "tags")
+  createdAt: DateTime! @search @dgraph(pred: "createdAt")
+  modifiedAt: DateTime! @search @dgraph(pred: "modifiedAt")
 }
 
 type Ingredient @dgraph(type: "Ingredient") {
-    name: String! @search(by: [fulltext]) @dgraph(pred: "name")
-    quantity: String @dgraph(pred: "quantity")
-    unitOfMeasure: String @dgraph(pred: "unitOfMeasure")
-    food: Food! @dgraph(pred: "food")
-    recipes: [Recipe]!
+  name: String! @search(by: [fulltext]) @dgraph(pred: "name")
+  quantity: String @dgraph(pred: "quantity")
+  unitOfMeasure: String @dgraph(pred: "unitOfMeasure")
+  food: Food! @dgraph(pred: "food")
+  recipes: [Recipe]!
 }
 
 type Food @dgraph(type: "Food") {
-    term: String! @search(by: [fulltext]) @dgraph(pred: "term")
-    stem: String! @search(by: [hash]) @dgraph(pred: "stem")
+  term: String! @search(by: [fulltext]) @dgraph(pred: "term")
+  stem: String! @search(by: [hash]) @dgraph(pred: "stem")
 }
 
 type Step @dgraph(type: "Step") {
-    index: Int! @search @dgraph(pred: "index")
-    title: String! @search(by: [fulltext]) @dgraph(pred: "title")
-    description: String! @search(by: [fulltext]) @dgraph(pred: "description")
-    image: String @dgraph(pred: "image")
+  index: Int! @search @dgraph(pred: "index")
+  title: String! @search(by: [fulltext]) @dgraph(pred: "title")
+  description: String! @search(by: [fulltext]) @dgraph(pred: "description")
+  image: String @dgraph(pred: "image")
 }
 
 type Tag @dgraph(type: "Tag") {
-    tagName: String! @search(by: [fulltext]) @dgraph(pred: "tagName")
-    tagStem: String! @search(by: [hash]) @dgraph(pred: "tagStem")
-    recipes: [Recipe]!
+  tagName: String! @search(by: [fulltext]) @dgraph(pred: "tagName")
+  tagStem: String! @search(by: [hash]) @dgraph(pred: "tagStem")
+  recipes: [Recipe]!
 }
-

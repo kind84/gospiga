@@ -12,6 +12,7 @@ import (
 
 	"gospiga/finder/domain"
 	"gospiga/pkg/log"
+	"gospiga/pkg/types"
 )
 
 type redisFT struct {
@@ -121,6 +122,10 @@ func (r *redisFT) SearchByTag(tags []string) ([]*Recipe, error) {
 	}
 
 	return mapRecipes(docs, tot)
+}
+
+func (r *redisFT) SearchIDs(args types.SearchIDsArgs) ([]uint64, error) {
+	return nil, nil
 }
 
 func mapRecipes(docs []redisearch.Document, tot int) ([]*Recipe, error) {

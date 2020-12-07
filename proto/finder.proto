@@ -4,6 +4,7 @@ option go_package = "proto";
 
 service Finder {
 	rpc AllRecipeTags(AllRecipeTagsRequest) returns (AllRecipeTagsResponse) {}
+	rpc RecipesFT(RecipesFTRequest) returns (RecipesFTResponse) {}
 }
 
 message AllRecipeTagsRequest {
@@ -11,4 +12,16 @@ message AllRecipeTagsRequest {
 
 message AllRecipeTagsResponse {
 	repeated string tags = 1;
+}
+
+message RecipesFTRequest {
+	int32 first = 1;
+	string after = 2;
+	repeated string tags = 3;
+	repeated string ingredients = 4;
+	string query = 5;
+}
+
+message RecipesFTResponse {
+	repeated string id = 1;	
 }

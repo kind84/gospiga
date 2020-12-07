@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"gospiga/pkg/types"
 	pb "gospiga/proto"
 )
 
@@ -24,4 +25,9 @@ func (s *finderServer) AllRecipeTags(ctx context.Context, req *pb.AllRecipeTagsR
 	}
 
 	return &pb.AllRecipeTagsResponse{Tags: tags}, nil
+}
+
+func (s *finderServer) RecipesFT(ctx context.Context, req *pb.RecipesFTRequest) (*pb.RecipesFTResponse, error) {
+	_, err := s.app.SearchIDs(types.SearchIDsArgs{})
+	return nil, err
 }
