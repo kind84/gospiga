@@ -1,4 +1,9 @@
 package types
 
-type SearchIDsArgs struct {
+type SearchRecipesArgs struct {
+	First       *int
+	After       *string
+	Tags        []string
+	Ingredients []string
+	Query       *string
 }

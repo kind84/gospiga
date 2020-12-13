@@ -10,7 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/golang/mock v1.3.1
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/jaylane/graphql v0.2.2
 	github.com/kr/pretty v0.2.0 // indirect

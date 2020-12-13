@@ -17,7 +17,7 @@ type FT interface {
 	DeleteRecipe(string) error
 	SearchRecipes(string) ([]*fulltext.Recipe, error)
 	SearchByTag([]string) ([]*fulltext.Recipe, error)
-	SearchIDs(types.SearchIDsArgs) ([]uint64, error)
+	SearchIDs(*types.SearchRecipesArgs) ([]string, error)
 }
 
 type Streamer interface {

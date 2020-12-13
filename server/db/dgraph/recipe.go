@@ -12,6 +12,7 @@ import (
 
 	"gospiga/pkg/errors"
 	"gospiga/pkg/stemmer"
+	"gospiga/pkg/types"
 	"gospiga/server/domain"
 )
 
@@ -200,6 +201,10 @@ func (r *Recipe) FromDomain(dr *domain.Recipe) error {
 // CountRecipes total number.
 func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 	return db.count(ctx, "Recipe")
+}
+
+func (db *DB) SearchRecipes(context.Context, *types.SearchRecipesArgs) ([]*domain.Recipe, error) {
+	return nil, nil
 }
 
 // SaveRecipe if a recipe with the same external ID has not been saved yet.

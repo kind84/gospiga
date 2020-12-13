@@ -15,13 +15,19 @@ message AllRecipeTagsResponse {
 }
 
 message RecipesFTRequest {
-	int32 first = 1;
-	string after = 2;
+	oneof optional_first {
+		int32 first = 1;
+	}
+	oneof optional_after {
+		string after = 2;
+	}
 	repeated string tags = 3;
 	repeated string ingredients = 4;
-	string query = 5;
+	oneof optional_query {
+		string query = 5;
+	}
 }
 
 message RecipesFTResponse {
-	repeated string id = 1;	
+	repeated string ids = 1;	
 }

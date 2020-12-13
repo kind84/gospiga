@@ -124,7 +124,7 @@ func (r *redisFT) SearchByTag(tags []string) ([]*Recipe, error) {
 	return mapRecipes(docs, tot)
 }
 
-func (r *redisFT) SearchIDs(args types.SearchIDsArgs) ([]uint64, error) {
+func (r *redisFT) SearchIDs(args *types.SearchRecipesArgs) ([]string, error) {
 	return nil, nil
 }
 

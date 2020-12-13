@@ -10,6 +10,7 @@ import (
 
 type DB interface {
 	AllTagsImages(context.Context) ([]*domain.Tag, error)
+	SearchRecipes(context.Context, *types.SearchRecipesArgs) ([]*domain.Recipe, error)
 }
 
 type Service interface {
@@ -35,4 +36,5 @@ type Provider interface {
 
 type Stub interface {
 	AllRecipeTags(context.Context) ([]string, error)
+	RecipesFT(context.Context, *types.SearchRecipesArgs) ([]string, error)
 }
