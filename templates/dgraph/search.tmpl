@@ -1,0 +1,48 @@
+query Recipes($uids: string){
+	recipes(func: uid($uids){{ if .First }}, {{ .First }}{{ end }}{{ if .After }}, {{ .After}}{{ end }}) {
+		uid
+		xid
+		title
+		subtitle
+		mainImage {
+			uid
+			url
+		}
+		likes
+		difficulty
+		cost
+		prepTime
+		cookTime
+		servings
+		extraNotes
+		description
+		ingredients @filter(anyofterms(name, $ingredients)) {
+			uid
+			name
+			quantity
+			unitOfMeasure
+			food {
+				uid
+				term
+				stem
+			}
+		}
+		steps {
+			uid
+			heading
+			body
+			image {
+				uid
+				url
+			}
+		}
+		tags @filter(anyofterms(tagName, $tags)){
+			uid
+			tagName
+		}
+		conclusion
+		slug
+		createdAt
+		modifiedAt
+	}
+}

@@ -56,8 +56,9 @@ func (a *app) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) 
 		}
 	}
 
-	_ = ids
-	return a.db.SearchRecipes(ctx, args)
+	args.IDs = ids
+
+	return a.service.SearchRecipes(ctx, args)
 }
 
 // LoadRecipes in the platform by injecting all the recipe IDs retrieved from

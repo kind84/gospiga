@@ -2,6 +2,8 @@ package domain
 
 import (
 	"context"
+
+	"gospiga/pkg/types"
 )
 
 // service implements the domain service interface.
@@ -36,4 +38,8 @@ func (s *service) GetRecipesByIDs(ctx context.Context, ids []string) ([]*Recipe,
 
 func (s *service) IDSaved(ctx context.Context, id string) (bool, error) {
 	return s.db.IDSaved(ctx, id)
+}
+
+func (s *service) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) ([]*Recipe, error) {
+	return s.db.SearchRecipes(ctx, args)
 }

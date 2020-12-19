@@ -203,12 +203,66 @@ func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 	return db.count(ctx, "Recipe")
 }
 
-func (db *DB) SearchRecipes(context.Context, *types.SearchRecipesArgs) ([]*domain.Recipe, error) {
-	return nil, nil
+// SearchRecipes filtered by the given args.
+func (db *DB) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) ([]*domain.Recipe, error) {
+	var (
+		uu          string
+		tags        string
+		ingredients string
+		vars        map[string]string
+		sb          strings.Builder
+
+		t = template.Must(template.New("search.tmpl").ParseFiles("/templates/dgraph/search.tmpl"))
+	)
+
+	err := t.Execute(&sb, args)
+	if err != nil {
+		return nil, err
+	}
+
+	if args.IDs != nil {
+		uu = strings.Join(args.IDs, ", ")
+	}
+	if len(args.Tags) > 0 {
+		tags = strings.Join(args.Tags, " ")
+	}
+	if len(ingredients) > 0 {
+		ingredients = strings.Join(args.Ingredients, " ")
+	}
+
+	vars["$uids"] = uu
+	vars["$tags"] = tags
+	vars["$ingredients"] = ingredients
+
+	resp, err := db.Dgraph.NewTxn().QueryWithVars(ctx, sb.String(), vars)
+	if err != nil {
+		return nil, err
+	}
+
+	var root struct {
+		Recipes []Recipe `json:"recipes"`
+	}
+	err = json.Unmarshal(resp.Json, &root)
+	if err != nil {
+		return nil, err
+	}
+	if len(root.Recipes) == 0 {
+		return nil, nil
+	}
+
+	recipes := make([]*domain.Recipe, 0, len(root.Recipes))
+	for _, r := range root.Recipes {
+		recipes = append(recipes, r.ToDomain())
+	}
+	return recipes, nil
 }
 
 // SaveRecipe if a recipe with the same external ID has not been saved yet.
 func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
+	// start the transaction
+	txn := db.Dgraph.NewTxn()
+	defer txn.Discard(ctx)
+
 	var r Recipe
 	err := r.FromDomain(dr)
 	if err != nil {
@@ -335,7 +389,7 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 	req.Mutations = mutations
 
-	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	res, err := txn.Do(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -351,6 +405,10 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 // UpdateRecipe if already stored on db.
 func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, error) {
+	// start the transaction
+	txn := db.Dgraph.NewTxn()
+	defer txn.Discard(ctx)
+
 	var r Recipe
 	err := r.FromDomain(dr)
 	if err != nil {
@@ -494,7 +552,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 
 	req.Mutations = mutations
 
-	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	res, err := txn.Do(ctx, req)
 	if err != nil {
 		return "", err
 	}
@@ -519,6 +577,10 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 
 // DeleteRecipe matching the given external ID.
 func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
+	//start the transaction
+	txn := db.Dgraph.NewTxn()
+	defer txn.Discard(ctx)
+
 	r, err := db.getRecipeByID(ctx, recipeID)
 	if err != nil {
 		return err
@@ -548,7 +610,7 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	req := &api.Request{CommitNow: true}
 	req.Mutations = []*api.Mutation{mu}
 
-	_, err = db.Dgraph.NewTxn().Do(ctx, req)
+	_, err = txn.Do(ctx, req)
 
 	return err
 }

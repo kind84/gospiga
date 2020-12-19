@@ -6,4 +6,5 @@ type SearchRecipesArgs struct {
 	Tags        []string
 	Ingredients []string
 	Query       *string
+	IDs         []string
 }

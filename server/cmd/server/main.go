@@ -61,7 +61,6 @@ func main() {
 	if runtime.GOOS == "windows" {
 		fmt.Println("Listening to Windows OS interrupt signal for graceful shutdown.")
 		signal.Notify(shutdownCh, os.Interrupt)
-
 	} else {
 		fmt.Println("Listening to SIGINT or SIGTERM for graceful shutdown.")
 		signal.Notify(shutdownCh, syscall.SIGINT, syscall.SIGTERM)

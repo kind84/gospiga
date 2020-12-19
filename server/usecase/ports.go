@@ -10,7 +10,6 @@ import (
 
 type DB interface {
 	AllTagsImages(context.Context) ([]*domain.Tag, error)
-	SearchRecipes(context.Context, *types.SearchRecipesArgs) ([]*domain.Recipe, error)
 }
 
 type Service interface {
@@ -20,6 +19,7 @@ type Service interface {
 	GetRecipeByID(context.Context, string) (*domain.Recipe, error)
 	GetRecipesByIDs(context.Context, []string) ([]*domain.Recipe, error)
 	IDSaved(context.Context, string) (bool, error)
+	SearchRecipes(context.Context, *types.SearchRecipesArgs) ([]*domain.Recipe, error)
 }
 
 type Streamer interface {
