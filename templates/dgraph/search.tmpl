@@ -1,5 +1,8 @@
-query Recipes($uids: string){
-	recipes(func: uid($uids){{ if .First }}, {{ .First }}{{ end }}{{ if .After }}, {{ .After}}{{ end }}) {
+query Recipes($uids: string, $ingredients: string, $tags: string){
+	recipes(
+		func: type("Recipe"){{ if .First }}, {{ .First }}{{ end }}{{ if .After }}, {{ .After}}{{ end }}
+		{{ if .IDs }}, @filter(uid($uids)){{ end }}
+	) {
 		uid
 		xid
 		title

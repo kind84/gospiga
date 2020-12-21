@@ -209,10 +209,10 @@ func (db *DB) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) 
 		uu          string
 		tags        string
 		ingredients string
-		vars        map[string]string
 		sb          strings.Builder
 
-		t = template.Must(template.New("search.tmpl").ParseFiles("/templates/dgraph/search.tmpl"))
+		vars = make(map[string]string, 3)
+		t    = template.Must(template.New("search.tmpl").ParseFiles("/templates/dgraph/search.tmpl"))
 	)
 
 	err := t.Execute(&sb, args)
@@ -222,20 +222,20 @@ func (db *DB) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) 
 
 	if args.IDs != nil {
 		uu = strings.Join(args.IDs, ", ")
+		vars["$uids"] = uu
 	}
 	if len(args.Tags) > 0 {
 		tags = strings.Join(args.Tags, " ")
+		vars["$tags"] = tags
 	}
-	if len(ingredients) > 0 {
+	if len(args.Ingredients) > 0 {
 		ingredients = strings.Join(args.Ingredients, " ")
+		vars["$ingredients"] = ingredients
 	}
-
-	vars["$uids"] = uu
-	vars["$tags"] = tags
-	vars["$ingredients"] = ingredients
 
 	resp, err := db.Dgraph.NewTxn().QueryWithVars(ctx, sb.String(), vars)
 	if err != nil {
+		fmt.Println("BOOM!")
 		return nil, err
 	}
 
@@ -875,17 +875,17 @@ func loadRecipeSchema() *api.Operation {
 		conclusion: string .
 		finalImage: uid .
 		tags: [uid] @reverse .
-		name: string @lang @index(fulltext) .
+		name: string @lang @index(term) .
 		quantity: string .
 		unitOfMeasure: string .
 		food: uid @reverse .
-		term: string @index(fulltext) .
+		term: string @index(term) .
 		stem: string @index(hash) .
 		index: int @index(int) .
 		image: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
-		tagName: string @index(fulltext) .
+		tagName: string @index(term) .
 		tagStem: string @index(hash) .
 		slug: string .
 	`

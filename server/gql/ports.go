@@ -5,8 +5,8 @@ package gql
 import (
 	"context"
 
-	"gospiga/finder/domain"
 	"gospiga/pkg/types"
+	"gospiga/server/domain"
 )
 
 type App interface {
