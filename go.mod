@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/RedisLabs/redisearch-go v1.0.0
 	github.com/dgraph-io/dgo/v2 v2.2.0
+	github.com/dgraph-io/dgo/v200 v200.0.0-20201023081658-a9ad93fe6ebd
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-redis/redis/v7 v7.2.0
@@ -23,8 +24,9 @@ require (
 	github.com/tebeka/snowball v0.4.2
 	github.com/vektah/gqlparser/v2 v2.1.0
 	go.uber.org/zap v1.15.0
-	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7 // indirect
-	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
-	google.golang.org/genproto v0.0.0-20200519141106-08726f379972 // indirect
-	google.golang.org/grpc v1.29.1
+	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
+	golang.org/x/sys v0.0.0-20201231184435-2d18734c6014 // indirect
+	golang.org/x/text v0.3.4 // indirect
+	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
+	google.golang.org/grpc v1.34.0
 )

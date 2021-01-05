@@ -441,7 +441,7 @@ type Recipe @dgraph(type: "Recipe") {
 }
 
 type Ingredient @dgraph(type: "Ingredient") {
-  name: String! @search(by: [fulltext]) @dgraph(pred: "name")
+  name: String! @search(by: [term]) @dgraph(pred: "name")
   quantity: String @dgraph(pred: "quantity")
   unitOfMeasure: String @dgraph(pred: "unitOfMeasure")
   food: Food! @dgraph(pred: "food")
@@ -449,7 +449,7 @@ type Ingredient @dgraph(type: "Ingredient") {
 }
 
 type Food @dgraph(type: "Food") {
-  term: String! @search(by: [fulltext]) @dgraph(pred: "term")
+  term: String! @search(by: [term]) @dgraph(pred: "term")
   stem: String! @search(by: [hash]) @dgraph(pred: "stem")
 }
 
@@ -461,7 +461,7 @@ type Step @dgraph(type: "Step") {
 }
 
 type Tag @dgraph(type: "Tag") {
-  tagName: String! @search(by: [fulltext]) @dgraph(pred: "tagName")
+  tagName: String! @search(by: [term]) @dgraph(pred: "tagName")
   tagStem: String! @search(by: [hash]) @dgraph(pred: "tagStem")
   recipes: [Recipe]!
 }
@@ -644,7 +644,7 @@ func (ec *executionContext) _Food_term(ctx context.Context, field graphql.Collec
 			return obj.Term, nil
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			by, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"fulltext"})
+			by, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"term"})
 			if err != nil {
 				return nil, err
 			}
@@ -782,7 +782,7 @@ func (ec *executionContext) _Ingredient_name(ctx context.Context, field graphql.
 			return obj.Name, nil
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			by, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"fulltext"})
+			by, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"term"})
 			if err != nil {
 				return nil, err
 			}
@@ -2629,7 +2629,7 @@ func (ec *executionContext) _Tag_tagName(ctx context.Context, field graphql.Coll
 			return obj.TagName, nil
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			by, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"fulltext"})
+			by, err := ec.unmarshalOString2ᚕᚖstring(ctx, []interface{}{"term"})
 			if err != nil {
 				return nil, err
 			}
