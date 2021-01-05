@@ -8,6 +8,7 @@ import (
 	errs "gospiga/pkg/errors"
 	"gospiga/pkg/log"
 	"gospiga/pkg/streamer"
+	"gospiga/pkg/types"
 	"gospiga/server/domain"
 )
 
@@ -35,12 +36,29 @@ func (a *app) DeletedRecipe(ctx context.Context, recipeID string) error {
 
 // RecipeTags returns the set of used tags.
 func (a *app) RecipeTags(ctx context.Context) ([]string, error) {
-	tags, err := a.stub.AllRecipeTags(ctx)
-	if err != nil {
-		return nil, err
+	return a.stub.AllRecipeTags(ctx)
+}
+
+// SearchRecipes based on the given args.
+func (a *app) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) ([]*domain.Recipe, error) {
+	var (
+		ids []string
+		err error
+	)
+
+	// if full-text query args is passed, we ask to Finder the ids of the
+	// matching recipes
+	if args.Query != nil {
+		// ask finder
+		ids, err = a.stub.RecipesFT(ctx, args)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return tags, nil
+	args.IDs = ids
+
+	return a.service.SearchRecipes(ctx, args)
 }
 
 // LoadRecipes in the platform by injecting all the recipe IDs retrieved from

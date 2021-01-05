@@ -19,6 +19,7 @@ type Service interface {
 	GetRecipeByID(context.Context, string) (*domain.Recipe, error)
 	GetRecipesByIDs(context.Context, []string) ([]*domain.Recipe, error)
 	IDSaved(context.Context, string) (bool, error)
+	SearchRecipes(context.Context, *types.SearchRecipesArgs) ([]*domain.Recipe, error)
 }
 
 type Streamer interface {
@@ -35,4 +36,5 @@ type Provider interface {
 
 type Stub interface {
 	AllRecipeTags(context.Context) ([]string, error)
+	RecipesFT(context.Context, *types.SearchRecipesArgs) ([]string, error)
 }

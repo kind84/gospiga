@@ -8,10 +8,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/dgraph-io/dgo/v2/protos/api"
+	"github.com/dgraph-io/dgo/v200/protos/api"
 
 	"gospiga/pkg/errors"
 	"gospiga/pkg/stemmer"
+	"gospiga/pkg/types"
 	"gospiga/server/domain"
 )
 
@@ -202,8 +203,66 @@ func (db *DB) CountRecipes(ctx context.Context) (int, error) {
 	return db.count(ctx, "Recipe")
 }
 
+// SearchRecipes filtered by the given args.
+func (db *DB) SearchRecipes(ctx context.Context, args *types.SearchRecipesArgs) ([]*domain.Recipe, error) {
+	var (
+		uu          string
+		tags        string
+		ingredients string
+		sb          strings.Builder
+
+		vars = make(map[string]string, 3)
+		t    = template.Must(template.New("search.tmpl").ParseFiles("/templates/dgraph/search.tmpl"))
+	)
+
+	err := t.Execute(&sb, args)
+	if err != nil {
+		return nil, err
+	}
+
+	if args.IDs != nil {
+		uu = strings.Join(args.IDs, ", ")
+		vars["$uids"] = uu
+	}
+	if len(args.Tags) > 0 {
+		tags = strings.Join(args.Tags, " ")
+		vars["$tags"] = tags
+	}
+	if len(args.Ingredients) > 0 {
+		ingredients = strings.Join(args.Ingredients, " ")
+		vars["$ingredients"] = ingredients
+	}
+
+	resp, err := db.Dgraph.NewTxn().QueryWithVars(ctx, sb.String(), vars)
+	if err != nil {
+		fmt.Println("BOOM!")
+		return nil, err
+	}
+
+	var root struct {
+		Recipes []Recipe `json:"recipes"`
+	}
+	err = json.Unmarshal(resp.Json, &root)
+	if err != nil {
+		return nil, err
+	}
+	if len(root.Recipes) == 0 {
+		return nil, nil
+	}
+
+	recipes := make([]*domain.Recipe, 0, len(root.Recipes))
+	for _, r := range root.Recipes {
+		recipes = append(recipes, r.ToDomain())
+	}
+	return recipes, nil
+}
+
 // SaveRecipe if a recipe with the same external ID has not been saved yet.
 func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
+	// start the transaction
+	txn := db.Dgraph.NewTxn()
+	defer txn.Discard(ctx)
+
 	var r Recipe
 	err := r.FromDomain(dr)
 	if err != nil {
@@ -330,7 +389,7 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 	req.Mutations = mutations
 
-	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	res, err := txn.Do(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -346,6 +405,10 @@ func (db *DB) SaveRecipe(ctx context.Context, dr *domain.Recipe) error {
 
 // UpdateRecipe if already stored on db.
 func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, error) {
+	// start the transaction
+	txn := db.Dgraph.NewTxn()
+	defer txn.Discard(ctx)
+
 	var r Recipe
 	err := r.FromDomain(dr)
 	if err != nil {
@@ -489,7 +552,7 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 
 	req.Mutations = mutations
 
-	res, err := db.Dgraph.NewTxn().Do(ctx, req)
+	res, err := txn.Do(ctx, req)
 	if err != nil {
 		return "", err
 	}
@@ -514,6 +577,10 @@ func (db *DB) UpdateRecipe(ctx context.Context, dr *domain.Recipe) (string, erro
 
 // DeleteRecipe matching the given external ID.
 func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
+	//start the transaction
+	txn := db.Dgraph.NewTxn()
+	defer txn.Discard(ctx)
+
 	r, err := db.getRecipeByID(ctx, recipeID)
 	if err != nil {
 		return err
@@ -543,7 +610,7 @@ func (db *DB) DeleteRecipe(ctx context.Context, recipeID string) error {
 	req := &api.Request{CommitNow: true}
 	req.Mutations = []*api.Mutation{mu}
 
-	_, err = db.Dgraph.NewTxn().Do(ctx, req)
+	_, err = txn.Do(ctx, req)
 
 	return err
 }
@@ -808,17 +875,17 @@ func loadRecipeSchema() *api.Operation {
 		conclusion: string .
 		finalImage: uid .
 		tags: [uid] @reverse .
-		name: string @lang @index(fulltext) .
+		name: string @lang @index(term) .
 		quantity: string .
 		unitOfMeasure: string .
 		food: uid @reverse .
-		term: string @index(fulltext) .
+		term: string @index(term) .
 		stem: string @index(hash) .
 		index: int @index(int) .
 		image: string .
 		createdAt: dateTime @index(hour) @upsert .
 		modifiedAt: dateTime @index(hour) @upsert .
-		tagName: string @index(fulltext) .
+		tagName: string @index(term) .
 		tagStem: string @index(hash) .
 		slug: string .
 	`

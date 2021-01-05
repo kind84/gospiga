@@ -10,8 +10,7 @@ type SearchRequest struct {
 
 func (s *GospigaService) SearchRecipes(c *gin.Context) {
 	var req SearchRequest
-	err := c.BindJSON(&req)
-	if err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.Error(err)
 	}
 
@@ -28,8 +27,7 @@ type TagRequest struct {
 
 func (s *GospigaService) SearchByTag(c *gin.Context) {
 	var req TagRequest
-	err := c.BindJSON(&req)
-	if err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.Error(err)
 	}
 

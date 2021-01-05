@@ -94,9 +94,187 @@ func (m *AllRecipeTagsResponse) GetTags() []string {
 	return nil
 }
 
+type RecipesFTRequest struct {
+	// Types that are valid to be assigned to OptionalFirst:
+	//	*RecipesFTRequest_First
+	OptionalFirst isRecipesFTRequest_OptionalFirst `protobuf_oneof:"optional_first"`
+	// Types that are valid to be assigned to OptionalAfter:
+	//	*RecipesFTRequest_After
+	OptionalAfter isRecipesFTRequest_OptionalAfter `protobuf_oneof:"optional_after"`
+	Tags          []string                         `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
+	Ingredients   []string                         `protobuf:"bytes,4,rep,name=ingredients,proto3" json:"ingredients,omitempty"`
+	// Types that are valid to be assigned to OptionalQuery:
+	//	*RecipesFTRequest_Query
+	OptionalQuery        isRecipesFTRequest_OptionalQuery `protobuf_oneof:"optional_query"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
+}
+
+func (m *RecipesFTRequest) Reset()         { *m = RecipesFTRequest{} }
+func (m *RecipesFTRequest) String() string { return proto.CompactTextString(m) }
+func (*RecipesFTRequest) ProtoMessage()    {}
+func (*RecipesFTRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02dfec63316bfb34, []int{2}
+}
+
+func (m *RecipesFTRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RecipesFTRequest.Unmarshal(m, b)
+}
+func (m *RecipesFTRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RecipesFTRequest.Marshal(b, m, deterministic)
+}
+func (m *RecipesFTRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RecipesFTRequest.Merge(m, src)
+}
+func (m *RecipesFTRequest) XXX_Size() int {
+	return xxx_messageInfo_RecipesFTRequest.Size(m)
+}
+func (m *RecipesFTRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RecipesFTRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RecipesFTRequest proto.InternalMessageInfo
+
+type isRecipesFTRequest_OptionalFirst interface {
+	isRecipesFTRequest_OptionalFirst()
+}
+
+type RecipesFTRequest_First struct {
+	First int32 `protobuf:"varint,1,opt,name=first,proto3,oneof"`
+}
+
+func (*RecipesFTRequest_First) isRecipesFTRequest_OptionalFirst() {}
+
+func (m *RecipesFTRequest) GetOptionalFirst() isRecipesFTRequest_OptionalFirst {
+	if m != nil {
+		return m.OptionalFirst
+	}
+	return nil
+}
+
+func (m *RecipesFTRequest) GetFirst() int32 {
+	if x, ok := m.GetOptionalFirst().(*RecipesFTRequest_First); ok {
+		return x.First
+	}
+	return 0
+}
+
+type isRecipesFTRequest_OptionalAfter interface {
+	isRecipesFTRequest_OptionalAfter()
+}
+
+type RecipesFTRequest_After struct {
+	After string `protobuf:"bytes,2,opt,name=after,proto3,oneof"`
+}
+
+func (*RecipesFTRequest_After) isRecipesFTRequest_OptionalAfter() {}
+
+func (m *RecipesFTRequest) GetOptionalAfter() isRecipesFTRequest_OptionalAfter {
+	if m != nil {
+		return m.OptionalAfter
+	}
+	return nil
+}
+
+func (m *RecipesFTRequest) GetAfter() string {
+	if x, ok := m.GetOptionalAfter().(*RecipesFTRequest_After); ok {
+		return x.After
+	}
+	return ""
+}
+
+func (m *RecipesFTRequest) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
+func (m *RecipesFTRequest) GetIngredients() []string {
+	if m != nil {
+		return m.Ingredients
+	}
+	return nil
+}
+
+type isRecipesFTRequest_OptionalQuery interface {
+	isRecipesFTRequest_OptionalQuery()
+}
+
+type RecipesFTRequest_Query struct {
+	Query string `protobuf:"bytes,5,opt,name=query,proto3,oneof"`
+}
+
+func (*RecipesFTRequest_Query) isRecipesFTRequest_OptionalQuery() {}
+
+func (m *RecipesFTRequest) GetOptionalQuery() isRecipesFTRequest_OptionalQuery {
+	if m != nil {
+		return m.OptionalQuery
+	}
+	return nil
+}
+
+func (m *RecipesFTRequest) GetQuery() string {
+	if x, ok := m.GetOptionalQuery().(*RecipesFTRequest_Query); ok {
+		return x.Query
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*RecipesFTRequest) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*RecipesFTRequest_First)(nil),
+		(*RecipesFTRequest_After)(nil),
+		(*RecipesFTRequest_Query)(nil),
+	}
+}
+
+type RecipesFTResponse struct {
+	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RecipesFTResponse) Reset()         { *m = RecipesFTResponse{} }
+func (m *RecipesFTResponse) String() string { return proto.CompactTextString(m) }
+func (*RecipesFTResponse) ProtoMessage()    {}
+func (*RecipesFTResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_02dfec63316bfb34, []int{3}
+}
+
+func (m *RecipesFTResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RecipesFTResponse.Unmarshal(m, b)
+}
+func (m *RecipesFTResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RecipesFTResponse.Marshal(b, m, deterministic)
+}
+func (m *RecipesFTResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RecipesFTResponse.Merge(m, src)
+}
+func (m *RecipesFTResponse) XXX_Size() int {
+	return xxx_messageInfo_RecipesFTResponse.Size(m)
+}
+func (m *RecipesFTResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RecipesFTResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RecipesFTResponse proto.InternalMessageInfo
+
+func (m *RecipesFTResponse) GetIds() []string {
+	if m != nil {
+		return m.Ids
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*AllRecipeTagsRequest)(nil), "AllRecipeTagsRequest")
 	proto.RegisterType((*AllRecipeTagsResponse)(nil), "AllRecipeTagsResponse")
+	proto.RegisterType((*RecipesFTRequest)(nil), "RecipesFTRequest")
+	proto.RegisterType((*RecipesFTResponse)(nil), "RecipesFTResponse")
 }
 
 func init() {
@@ -104,15 +282,25 @@ func init() {
 }
 
 var fileDescriptor_02dfec63316bfb34 = []byte{
-	// 128 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x49, 0xcb, 0xcc, 0x4b,
-	0x49, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0x12, 0xe3, 0x12, 0x71, 0xcc, 0xc9, 0x09,
-	0x4a, 0x4d, 0xce, 0x2c, 0x48, 0x0d, 0x49, 0x4c, 0x2f, 0x0e, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e,
-	0x51, 0xd2, 0xe6, 0x12, 0x45, 0x13, 0x2f, 0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0x12, 0xe2, 0x62,
-	0x29, 0x49, 0x4c, 0x2f, 0x96, 0x60, 0x54, 0x60, 0xd6, 0xe0, 0x0c, 0x02, 0xb3, 0x8d, 0xbc, 0xb8,
-	0xd8, 0xdc, 0xc0, 0x86, 0x0a, 0x39, 0x70, 0xf1, 0xa2, 0x68, 0x13, 0x12, 0xd5, 0xc3, 0x66, 0xbc,
-	0x94, 0x98, 0x1e, 0x56, 0xd3, 0x95, 0x18, 0x9c, 0xd8, 0xa3, 0x58, 0xc1, 0x2e, 0x4b, 0x62, 0x03,
-	0x53, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x9d, 0x11, 0xad, 0x0f, 0xb0, 0x00, 0x00, 0x00,
+	// 275 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x51, 0xbd, 0x6a, 0xc3, 0x30,
+	0x18, 0x8c, 0xe2, 0x38, 0xc5, 0x5f, 0x7f, 0x70, 0x44, 0x63, 0x4c, 0x26, 0x23, 0x28, 0x18, 0x0a,
+	0x1a, 0xda, 0x3e, 0x40, 0x9b, 0x21, 0x64, 0x16, 0x99, 0xba, 0x14, 0xb7, 0xfe, 0x6c, 0x04, 0x46,
+	0x72, 0x24, 0x65, 0xe8, 0xd6, 0xa7, 0xeb, 0x73, 0x15, 0xcb, 0x69, 0x1a, 0xa7, 0x99, 0xf4, 0xdd,
+	0x49, 0xba, 0xd3, 0x9d, 0xe0, 0xaa, 0x92, 0xaa, 0x44, 0xc3, 0x5b, 0xa3, 0x9d, 0x66, 0x09, 0xdc,
+	0xbe, 0x34, 0x8d, 0xc0, 0x0f, 0xd9, 0xe2, 0xa6, 0xa8, 0xad, 0xc0, 0xed, 0x0e, 0xad, 0x63, 0xf7,
+	0x30, 0x3f, 0xe1, 0x6d, 0xab, 0x95, 0x45, 0x4a, 0x61, 0xe2, 0x8a, 0xda, 0xa6, 0x24, 0x0b, 0xf2,
+	0x48, 0xf8, 0x99, 0x7d, 0x13, 0x88, 0xfb, 0xa3, 0x76, 0xb5, 0xd9, 0x2b, 0xd0, 0x04, 0xc2, 0x4a,
+	0x1a, 0xeb, 0x52, 0x92, 0x91, 0x3c, 0x5c, 0x8f, 0x44, 0x0f, 0x3b, 0xbe, 0xa8, 0x1c, 0x9a, 0x74,
+	0x9c, 0x91, 0x3c, 0x5a, 0x13, 0xd1, 0xc3, 0x83, 0x70, 0xf0, 0x27, 0x4c, 0x33, 0xb8, 0x94, 0xaa,
+	0x36, 0x58, 0x4a, 0x54, 0xce, 0xa6, 0x13, 0xbf, 0x75, 0x4c, 0x75, 0x6a, 0xdb, 0x1d, 0x9a, 0xcf,
+	0x34, 0xf4, 0x6a, 0x63, 0xd1, 0xc3, 0x65, 0x0c, 0x37, 0xba, 0x75, 0x52, 0xab, 0xa2, 0x79, 0xf3,
+	0xbe, 0x03, 0xc6, 0x3b, 0x0e, 0x18, 0x7f, 0x8b, 0xdd, 0xc1, 0xec, 0x28, 0xc7, 0x3e, 0x71, 0x0c,
+	0x81, 0x2c, 0x7f, 0x03, 0x77, 0xe3, 0xc3, 0x17, 0x81, 0xe9, 0xca, 0xb7, 0x48, 0x9f, 0xe1, 0x7a,
+	0xd0, 0x13, 0x9d, 0xf3, 0x73, 0x7d, 0x2e, 0x12, 0x7e, 0xb6, 0x4e, 0x36, 0xa2, 0x4f, 0x10, 0x1d,
+	0x3c, 0xe9, 0x8c, 0x9f, 0xf6, 0xb8, 0xa0, 0xfc, 0xdf, 0x93, 0xd8, 0x68, 0x79, 0xf1, 0x1a, 0xfa,
+	0x0f, 0x7c, 0x9f, 0xfa, 0xe5, 0xf1, 0x27, 0x00, 0x00, 0xff, 0xff, 0x39, 0x3c, 0x20, 0x82, 0xd7,
+	0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -128,6 +316,7 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type FinderClient interface {
 	AllRecipeTags(ctx context.Context, in *AllRecipeTagsRequest, opts ...grpc.CallOption) (*AllRecipeTagsResponse, error)
+	RecipesFT(ctx context.Context, in *RecipesFTRequest, opts ...grpc.CallOption) (*RecipesFTResponse, error)
 }
 
 type finderClient struct {
@@ -147,9 +336,19 @@ func (c *finderClient) AllRecipeTags(ctx context.Context, in *AllRecipeTagsReque
 	return out, nil
 }
 
+func (c *finderClient) RecipesFT(ctx context.Context, in *RecipesFTRequest, opts ...grpc.CallOption) (*RecipesFTResponse, error) {
+	out := new(RecipesFTResponse)
+	err := c.cc.Invoke(ctx, "/Finder/RecipesFT", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FinderServer is the server API for Finder service.
 type FinderServer interface {
 	AllRecipeTags(context.Context, *AllRecipeTagsRequest) (*AllRecipeTagsResponse, error)
+	RecipesFT(context.Context, *RecipesFTRequest) (*RecipesFTResponse, error)
 }
 
 // UnimplementedFinderServer can be embedded to have forward compatible implementations.
@@ -158,6 +357,9 @@ type UnimplementedFinderServer struct {
 
 func (*UnimplementedFinderServer) AllRecipeTags(ctx context.Context, req *AllRecipeTagsRequest) (*AllRecipeTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AllRecipeTags not implemented")
+}
+func (*UnimplementedFinderServer) RecipesFT(ctx context.Context, req *RecipesFTRequest) (*RecipesFTResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecipesFT not implemented")
 }
 
 func RegisterFinderServer(s *grpc.Server, srv FinderServer) {
@@ -182,6 +384,24 @@ func _Finder_AllRecipeTags_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Finder_RecipesFT_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecipesFTRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FinderServer).RecipesFT(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Finder/RecipesFT",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FinderServer).RecipesFT(ctx, req.(*RecipesFTRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Finder_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "Finder",
 	HandlerType: (*FinderServer)(nil),
@@ -189,6 +409,10 @@ var _Finder_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AllRecipeTags",
 			Handler:    _Finder_AllRecipeTags_Handler,
+		},
+		{
+			MethodName: "RecipesFT",
+			Handler:    _Finder_RecipesFT_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

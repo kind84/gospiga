@@ -26,6 +26,7 @@ import (
 	"gospiga/server/api"
 	"gospiga/server/db/dgraph"
 	"gospiga/server/domain"
+	"gospiga/server/gql"
 	gogrpc "gospiga/server/grpc"
 	"gospiga/server/usecase"
 )
@@ -61,7 +62,6 @@ func main() {
 	if runtime.GOOS == "windows" {
 		fmt.Println("Listening to Windows OS interrupt signal for graceful shutdown.")
 		signal.Notify(shutdownCh, os.Interrupt)
-
 	} else {
 		fmt.Println("Listening to SIGINT or SIGTERM for graceful shutdown.")
 		signal.Notify(shutdownCh, syscall.SIGINT, syscall.SIGTERM)
@@ -125,6 +125,7 @@ func main() {
 				"title": "GraphQL Playground",
 			})
 		})
+		r.POST("/graphql", gql.GraphqlHandler(app))
 		g.POST("/new-recipe", service.NewRecipe)
 		g.POST("/updated-recipe", service.UpdatedRecipe)
 		g.POST("/deleted-recipe", service.DeletedRecipe)

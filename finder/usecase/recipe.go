@@ -20,6 +20,10 @@ func (a *app) SearchByTag(tags []string) ([]*fulltext.Recipe, error) {
 	return a.ft.SearchByTag(tags)
 }
 
+func (a *app) SearchIDs(args *types.SearchRecipesArgs) ([]string, error) {
+	return a.ft.SearchIDs(args)
+}
+
 func (a *app) AllRecipeTags() ([]string, error) {
 	return a.db.Tags("recipes", "tags")
 }

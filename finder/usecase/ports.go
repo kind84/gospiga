@@ -4,6 +4,7 @@ import (
 	"gospiga/finder/domain"
 	"gospiga/finder/fulltext"
 	"gospiga/pkg/streamer"
+	"gospiga/pkg/types"
 )
 
 type DB interface {
@@ -16,6 +17,7 @@ type FT interface {
 	DeleteRecipe(string) error
 	SearchRecipes(string) ([]*fulltext.Recipe, error)
 	SearchByTag([]string) ([]*fulltext.Recipe, error)
+	SearchIDs(*types.SearchRecipesArgs) ([]string, error)
 }
 
 type Streamer interface {
