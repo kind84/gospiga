@@ -1,3 +1,13 @@
+type Query {
+  recipes(
+    first: Int,
+    after: String,
+    tags: [String],
+    ingredients: [String]
+    query: String
+  ): [Recipe] @lambda
+}
+
 type Recipe @dgraph(type: "Recipe") {
     xid: String! @id @dgraph(pred: "xid")
     title: String! @search(by: [fulltext]) @dgraph(pred: "title")

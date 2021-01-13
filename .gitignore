@@ -16,3 +16,6 @@
 *.toml
 *.rdb
 *.env
+
+node_modules
+dist
