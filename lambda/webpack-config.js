@@ -10,7 +10,7 @@ module.exports = {
   target: 'webworker',
   plugins: [
     new webpack.IgnorePlugin(/^hiredis$/),
-    new webpack.IgnorePlugin(/^net$/),
-    new webpack.IgnorePlugin(/^tls$/)
+    // new webpack.IgnorePlugin(/^net$/),
+    // new webpack.IgnorePlugin(/^tls$/)
   ],
 };

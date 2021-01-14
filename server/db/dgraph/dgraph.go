@@ -27,7 +27,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 	var err error
 	for i := 0; i < 10; i++ {
 		err = nil
-		d, err = grpc.Dial("alpha:9080", grpc.WithInsecure())
+		d, err = grpc.Dial("alpha:9180", grpc.WithInsecure())
 		if err == nil {
 			break
 		}
@@ -46,7 +46,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 	var res *http.Response
 	for i := 0; i < 20; i++ {
 		err = nil
-		res, err = http.Get("http://alpha:8080/health")
+		res, err = http.Get("http://alpha:8180/health")
 		if err == nil && res.StatusCode == http.StatusOK {
 			log.Debugf("dgraph server ready")
 			io.Copy(ioutil.Discard, res.Body)
@@ -68,7 +68,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 	}
 	defer file.Close()
 
-	res, err = http.Post("http://alpha:8080/admin/schema", "x-www-form-urlencoded", file)
+	res, err = http.Post("http://alpha:8180/admin/schema", "x-www-form-urlencoded", file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load graphql schema into dgraph: %w", err)
 	}

@@ -83,70 +83,54 @@ services:
         labels:
             - "traefik.enable=false"
     zero:
-        image: dgraph/dgraph:v20.03.3
-        depends_on:
-            - traefik
-        volumes:
-            - type: volume
-              source: dgraph
-              target: /dgraph
-              volume:
-                  nocopy: true
+        image: dgraph/dgraph:v20.11.0
+        container_name: zero1
+        working_dir: /data/zero1
         ports:
-            - 5080:5080
-            - 6080:6080
-            - 8060:8080
-            - 9060:9080
-        restart: on-failure
-        command: dgraph zero --my=zero:5080
+          - 5180:5180
+          - 6180:6180
         labels:
-            - "traefik.enable=false"
+          cluster: test
+          service: zero1
+          traefik.enable: "false"
+        volumes:
+          - type: bind
+            source: $GOPATH/bin
+            target: /gobin
+            read_only: true
+        command: /gobin/dgraph zero -o 100 --logtostderr -v=2 --bindall --expose_trace --profile_mode block --block_rate 10 --my=zero1:5180
     alpha:
-        image: dgraph/dgraph:v20.03.3
-        depends_on:
-            - traefik
+        image: dgraph/dgraph:latest
+        container_name: alpha1
+        working_dir: /data/alpha1
         volumes:
-            - type: volume
-              source: dgraph
-              target: /dgraph
-              volume:
-                nocopy: true
+          - type: bind
+            source: $GOPATH/bin
+            target: /gobin
+            read_only: true
         ports:
-            - 8090:8080
-            - 9080:9080
-        restart: on-failure
-        command: dgraph alpha --my=alpha:7080 --lru_mb=2048 --zero=zero:5080
+          - 8180:8180
+          - 9180:9180
         labels:
-            - "traefik.enable=false"
-    ratel:
-        image: dgraph/dgraph:v20.03.3
-        depends_on:
-            - traefik
-        volumes:
-            - type: volume
-              source: dgraph
-              target: /dgraph
-              volume:
-                  nocopy: true
-        ports:
-            - 8000:8000
-        command: dgraph-ratel
-        labels:
-            - "traefik.enable=false"
-              # - "traefik.http.routers.ratel.rule=PathPrefix(`/ratel`)"
-              # - "traefik.http.routers.ratel.entrypoints=web"
-              # - "traefik.http.routers.ratel.middlewares=stripprefix-ratel"
-              # - "traefik.http.middlewares.stripprefix-ratel.stripprefix.prefixes=/ratel/,/ratel"
-              # - "traefik.http.services.ratel-gospiga.loadbalancer.server.port=80"
+          cluster: test
+          service: alpha1
+          traefik.enable: "false"
+        command: /gobin/dgraph alpha --zero=zero1:5180 -o 100 --expose_trace --trace 1.0
+          --profile_mode block --block_rate 10 --logtostderr -v=2
+          --whitelist 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16 --my=alpha1:7180
+          --graphql_lambda_url=http://lambda:8686/graphql-worker
     lambda:
         image: dgraph/dgraph-lambda:latest
         container_name: lambda
+        labels:
+          cluster: test
+          traefik.enable: "false"
         ports:
           - 8686:8686
         depends_on:
           - alpha
         environment:
-          DGRAPH_URL: http://alpha:8090
+          DGRAPH_URL: http://alpha:8180
         volumes:
           - type: bind
             source: ./lambda/dist/recipes.js

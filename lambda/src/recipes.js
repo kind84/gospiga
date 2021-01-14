@@ -3,11 +3,12 @@ import redis from 'redis'
 
 async function recipes({args, dql}) {
     let uids = []
-    let query = ""
-    let vars = undefined
+    let first = args.first ? `, ${args.first}` : ""
+    let after = args.after ? `, ${args.after}` : ""
+
     if (args.query) {
         // ask redisearch
-        const client = redis.createClient()
+        const client = redis.createClient({ host: "redis" })
         redisearch.setClient(client)
 
         redisearch.createSearch('recipes', {}, function(err, search) {
@@ -20,19 +21,65 @@ async function recipes({args, dql}) {
                 })
         })
     }
-    if (ids) {
-        query = `query recipes($uid: [uid]) {
-            recipes(func: type(Recipe)) @filter(uid) {
+
+    let filterIDs = uids ? ", @filter(uid($uids))" : ""
+    let query = `
+        query Recipes($uids: string, $ingredients: string, $tags: string){
+            recipes(
+                func: type("Recipe")${first}${after}${filterIDs}
+            ) {
+                uid
+                xid
+                title
+                subtitle
+                mainImage {
+                    uid
+                    url
+                }
+                likes
+                difficulty
+                cost
+                prepTime
+                cookTime
+                servings
+                extraNotes
+                description
+                ingredients @filter(anyofterms(name, $ingredients)) {
+                    uid
+                    name
+                    quantity
+                    unitOfMeasure
+                    food {
+                        uid
+                        term
+                        stem
+                    }
+                }
+                steps {
+                    uid
+                    heading
+                    body
+                    image {
+                        uid
+                        url
+                    }
+                }
+                tags @filter(anyofterms(tagName, $tags)){
+                    uid
+                    tagName
+                }
+                conclusion
+                slug
+                createdAt
+                modifiedAt
             }
-        }`
-        vars = {"$uids": ids}
-    } else {
-        query = `query recipes {
-            recipes(func: type(Recipe)) @filter(eq(Author.name, $name)) {
-            }
-        }`
-    }
+        }
+    `
+
+    const vars = {"$uids": uids, "$ingredients": args.ingredients, "$tags": args.tags}
+
     const results = await dql.query(query, vars)
+
     return results.data.recipes
 }
 

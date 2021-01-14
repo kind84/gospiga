@@ -1,4 +1,4 @@
-ARG GOVERSION=1.14.3
+ARG GOVERSION=1.15.6
 FROM golang:${GOVERSION}-alpine AS dep
 
 ENV GOPROXY=https://proxy.golang.org
