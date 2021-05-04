@@ -17,19 +17,18 @@ jobs:
       uses: arduino/setup-protoc@master
 
     - name: Set up Go 1.x
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v2.1.3
       with:
         go-version: ^1.14
-      id: go
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
 
     - name: Get dependencies
       run: go get -v -t -d ./...
 
     - name: Install Go protoc plugin
-      run: go install github.com/golang/protobuf/protoc-gen-go
+      run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && go get google.golang.org/grpc/cmd/protoc-gen-go-grpc && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
     - name: Build
       run: make build -e VERBOSE=true
@@ -44,7 +43,7 @@ jobs:
     steps:
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
 
     - name: Build and publish Docker Image to GitHub Packages Registry
       run: |
@@ -58,7 +57,7 @@ jobs:
     steps:
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
 
     - name: Build and publish Docker Image to GitHub Packages Registry
       run: |
