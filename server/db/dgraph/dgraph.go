@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -49,7 +48,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 		res, err = http.Get("http://alpha:8080/health")
 		if err == nil && res.StatusCode == http.StatusOK {
 			log.Debugf("dgraph server ready")
-			io.Copy(ioutil.Discard, res.Body)
+			io.Copy(io.Discard, res.Body)
 			res.Body.Close()
 			break
 		}
@@ -72,7 +71,7 @@ func NewDB(ctx context.Context) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load graphql schema into dgraph: %w", err)
 	}
-	io.Copy(ioutil.Discard, res.Body)
+	io.Copy(io.Discard, res.Body)
 	res.Body.Close()
 
 	time.Sleep(5 * time.Second)

@@ -3,7 +3,7 @@ package streamer
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -38,7 +38,7 @@ func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
 	}
 	defer file.Close()
 
-	script, err := ioutil.ReadAll(file)
+	script, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
