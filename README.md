@@ -23,12 +23,17 @@ the results.
 Graph database used to store data represented as nodes and edges. This allows
 to quickly retrieve all recipes including a given ingredient or recipes under
 the same category.
+
 - **[Redis](redis.io)**
 Used as: 
     - **Message bus** to communicate events between services using
 [Streams](https://redis.io/docs/data-types/streams/).
     - **Full text** indexer using the
-      [Redisearch](https://github.com/RediSearch/RediSearch).
+      [Redisearch](https://github.com/RediSearch/RediSearch) module.
+
+- **[Traefik](https://traefik.io/traefik/)** Reverse proxy used as API gateway
+and certificate manager.
+
 
 ### Build the project
 
