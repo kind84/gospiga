@@ -18,6 +18,7 @@ func init() {
 	// logger, _ := zap.NewProduction()
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync() // flushes buffer, if any
+	logger = logger.WithOptions(zap.AddCallerSkip(1))
 	log = &Logger{logger.Sugar()}
 }
 
