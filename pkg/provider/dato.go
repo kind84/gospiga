@@ -24,7 +24,7 @@ func NewDatoProvider(token string) (*provider, error) {
 }
 
 func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recipe, error) {
-	log.Infof("Asking dato for recipe ID %s\n", recipeID)
+	log.Debugf("Asking dato for recipe ID %s\n", recipeID)
 	req := graphql.NewRequest(`
 		query MyQuery($key: ItemId!) {
 			recipe (filter: {id: {eq: $key}}) {
@@ -78,7 +78,7 @@ func (p *provider) GetRecipe(ctx context.Context, recipeID string) (*types.Recip
 }
 
 func (p *provider) GetAllRecipeIDs(ctx context.Context) ([]string, error) {
-	log.Infof("Asking dato for all recipe IDs")
+	log.Debugf("Asking dato for all recipe IDs")
 
 	req := graphql.NewRequest(`
 		query MyQuery {

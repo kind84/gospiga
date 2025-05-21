@@ -27,7 +27,6 @@ type StreamArgs struct {
 	Group    string
 	Consumer string
 	Messages chan Message
-	Exit     chan struct{}
 }
 
 // NewRedisStreamer returns an instance of redisStreamer.
@@ -130,17 +129,19 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, wg *sync.WaitGroup, args 
 				// NoAck   bool
 			}
 
-			// TODO: use WithContext ?
+			// pre-emptive check
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			res, err := s.rdb.XReadGroup(ctx, xargs).Result()
 			if err != nil {
 				if err != redis.Nil {
 					log.Errorf("error reading streams %s: %s", args.Streams, err)
 				}
-				// Timeout, check if it's time to exit
-				if s.shouldExit(args.Exit) {
-					log.Debugf("stop reading streams %s", args.Streams)
-					return
-				}
+				// timeout reached
 				continue
 			}
 
@@ -161,7 +162,7 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, wg *sync.WaitGroup, args 
 				}
 				gotMessage = true
 				if checkHistory {
-					log.Debugf("found pending messages on stream %q, resuming..", stream.Stream)
+					log.Debugf("Found %d pending messages on stream %q, resuming..", msgs, stream.Stream)
 				}
 
 				wg.Add(msgs)
@@ -179,7 +180,11 @@ func (s *redisStreamer) ReadGroup(ctx context.Context, wg *sync.WaitGroup, args 
 						continue
 					}
 
-					args.Messages <- *msg
+					select {
+					case <-ctx.Done():
+						return
+					case args.Messages <- *msg:
+					}
 				}
 
 				// avoid back-pressure
