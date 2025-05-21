@@ -20,17 +20,17 @@ const (
 
 // NewRecipe informs of a new recipe ID sending it over the stream.
 func (a *app) NewRecipe(ctx context.Context, recipeID string) error {
-	return a.streamer.Add(newRecipeStream, &streamer.Message{Payload: recipeID})
+	return a.streamer.Add(ctx, newRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
 // UpdatedRecipe informs of an updated recipe ID sending it over the stream.
 func (a *app) UpdatedRecipe(ctx context.Context, recipeID string) error {
-	return a.streamer.Add(updatedRecipeStream, &streamer.Message{Payload: recipeID})
+	return a.streamer.Add(ctx, updatedRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
 // DeletedRecipe informs of an deleted recipe ID sending it over the stream.
 func (a *app) DeletedRecipe(ctx context.Context, recipeID string) error {
-	return a.streamer.Add(deletedRecipeStream, &streamer.Message{Payload: recipeID})
+	return a.streamer.Add(ctx, deletedRecipeStream, &streamer.Message{Payload: recipeID})
 }
 
 // RecipeTags returns the set of used tags.
@@ -52,7 +52,7 @@ func (a *app) LoadRecipes(ctx context.Context) error {
 	}
 
 	for _, id := range rids {
-		err := a.streamer.Add(newRecipeStream, &streamer.Message{Payload: id})
+		err := a.streamer.Add(ctx, newRecipeStream, &streamer.Message{Payload: id})
 		if err != nil {
 			return err
 		}
@@ -61,8 +61,7 @@ func (a *app) LoadRecipes(ctx context.Context) error {
 	return nil
 }
 
-func (a *app) readRecipes() {
-	ctx, exit := context.WithCancel(context.Background())
+func (a *app) readRecipes(ctx context.Context) {
 	msgChan := make(chan streamer.Message)
 	var wg sync.WaitGroup
 
@@ -71,16 +70,14 @@ func (a *app) readRecipes() {
 		updatedRecipeStream,
 		deletedRecipeStream,
 	}
-	args := &streamer.StreamArgs{
+	args := streamer.StreamArgs{
 		Streams:  streams,
 		Group:    group,
 		Consumer: "usecase",
 		Messages: msgChan,
-		Exit:     a.shutdown,
-		WG:       &wg,
 	}
 
-	err := a.streamer.ReadGroup(args)
+	err := a.streamer.ReadGroup(ctx, &wg, &args)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +90,7 @@ func (a *app) readRecipes() {
 				recipeID, ok := msg.Payload.(string)
 				if !ok {
 					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
-					a.discardMessage(&msg, &wg)
+					a.discardMessage(ctx, &msg, &wg)
 					continue
 				}
 				log.Debugf("Got message for a new recipe ID %q", recipeID)
@@ -104,7 +101,7 @@ func (a *app) readRecipes() {
 				recipeID, ok := msg.Payload.(string)
 				if !ok {
 					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
-					a.discardMessage(&msg, &wg)
+					a.discardMessage(ctx, &msg, &wg)
 					continue
 				}
 				log.Debugf("Got message for updated recipe ID %q", recipeID)
@@ -115,7 +112,7 @@ func (a *app) readRecipes() {
 				recipeID, ok := msg.Payload.(string)
 				if !ok {
 					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
-					a.discardMessage(&msg, &wg)
+					a.discardMessage(ctx, &msg, &wg)
 					continue
 				}
 				log.Debugf("Got message for deleted recipe ID %q", recipeID)
@@ -123,9 +120,8 @@ func (a *app) readRecipes() {
 				a.deleteRecipe(ctx, recipeID, msg.ID, &wg)
 			}
 
-		case <-a.shutdown:
+		case <-ctx.Done():
 			// time to exit
-			exit()
 			return
 		}
 	}
@@ -149,7 +145,7 @@ func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID st
 	var errdup errs.ErrDuplicateID
 	if errors.As(err, &errdup) {
 		log.Infof("recipe ID %q already saved", r.ExternalID)
-		err = a.streamer.Ack(fromStream, group, messageID)
+		err = a.streamer.Ack(ctx, fromStream, group, messageID)
 		if err != nil {
 			log.Errorf("error on Ack for msg ID %q", messageID)
 		}
@@ -165,7 +161,7 @@ func (a *app) saveRecipe(ctx context.Context, recipeID, fromStream, messageID st
 	rMsg := &streamer.Message{
 		Payload: r.ToType(),
 	}
-	err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
+	err = a.streamer.AckAndAdd(ctx, fromStream, "saved-recipes", group, messageID, rMsg)
 	if err != nil {
 		log.Errorf("error on AckAndAdd for msg ID %q", messageID)
 	}
@@ -199,7 +195,7 @@ func (a *app) updateRecipe(ctx context.Context, recipeID, fromStream, messageID 
 	rMsg := &streamer.Message{
 		Payload: r.ToType(),
 	}
-	err = a.streamer.AckAndAdd(fromStream, "saved-recipes", group, messageID, rMsg)
+	err = a.streamer.AckAndAdd(ctx, fromStream, "saved-recipes", group, messageID, rMsg)
 	if err != nil {
 		log.Errorf("error on AckAndAdd for msg ID %q", messageID)
 	}
@@ -218,15 +214,15 @@ func (a *app) deleteRecipe(ctx context.Context, recipeID, messageID string, wg *
 	}
 
 	// TODO: relay on deleted-stream??
-	err = a.streamer.Ack(deletedRecipeStream, group, messageID)
+	err = a.streamer.Ack(ctx, deletedRecipeStream, group, messageID)
 	if err != nil {
 		log.Errorf("error on Ack for msg ID %q", messageID)
 	}
 }
 
-func (a *app) discardMessage(m *streamer.Message, wg *sync.WaitGroup) {
+func (a *app) discardMessage(ctx context.Context, m *streamer.Message, wg *sync.WaitGroup) {
 	defer wg.Done()
-	err := a.streamer.Ack(m.Stream, group, m.ID)
+	err := a.streamer.Ack(ctx, m.Stream, group, m.ID)
 	if err != nil {
 		log.Warnf("error acknowledging message: %s", err)
 	}

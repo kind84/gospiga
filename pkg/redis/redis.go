@@ -1,7 +1,9 @@
 package redis
 
 import (
-	redis "github.com/go-redis/redis/v7"
+	"context"
+
+	redis "github.com/redis/go-redis/v9"
 )
 
 func NewClient(host string) (*redis.Client, error) {
@@ -10,5 +12,5 @@ func NewClient(host string) (*redis.Client, error) {
 	}
 	client := redis.NewClient(opts)
 
-	return client, client.Ping().Err()
+	return client, client.Ping(context.Background()).Err()
 }

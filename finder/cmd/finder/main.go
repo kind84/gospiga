@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -51,17 +53,18 @@ func main() {
 
 	gospiga.PrintVersion(os.Stdout)
 
-	shutdownCh := make(chan os.Signal, 1)
-
+	ctx := context.Background()
+	var stop context.CancelFunc
 	// Wire shutdownCh to get events depending on the OS we are running in
 	if runtime.GOOS == "windows" {
 		fmt.Println("Listening to Windows OS interrupt signal for graceful shutdown.")
-		signal.Notify(shutdownCh, os.Interrupt)
+		ctx, stop = signal.NotifyContext(ctx, os.Interrupt)
 
 	} else {
 		fmt.Println("Listening to SIGINT or SIGTERM for graceful shutdown.")
-		signal.Notify(shutdownCh, syscall.SIGINT, syscall.SIGTERM)
+		ctx, stop = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	}
+	defer stop()
 
 	rdb, err := redis.NewClient("redis:6379")
 	if err != nil {
@@ -79,7 +82,7 @@ func main() {
 		log.Fatalf("error initializing redis streamer: %s", err)
 	}
 
-	app := usecase.NewApp(db, ft, streamer)
+	app := usecase.NewApp(ctx, db, ft, streamer)
 	if err != nil {
 		log.Fatalf("cannot initalize application: %s", err)
 	}
@@ -111,9 +114,9 @@ func main() {
 	go r.Run()
 
 	// wait for shutdown
-	if <-shutdownCh != nil {
-		fmt.Println("\nShutdown signal detected, gracefully shutting down...")
-		app.CloseGracefully()
-	}
+	<-ctx.Done()
+	stop()
+	fmt.Println("\nShutdown signal detected, gracefully shutting down...")
+	time.Sleep(time.Second)
 	fmt.Println("bye")
 }

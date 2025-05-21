@@ -41,7 +41,7 @@ func (s *GospigaService) SearchByTag(c *gin.Context) {
 }
 
 func (s *GospigaService) AllRecipeTags(c *gin.Context) {
-	tags, err := s.app.AllRecipeTags()
+	tags, err := s.app.AllRecipeTags(c.Request.Context())
 	if err != nil {
 		c.Error(err)
 	}

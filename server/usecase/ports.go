@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"sync"
 
 	"gospiga/pkg/streamer"
 	"gospiga/pkg/types"
@@ -22,10 +23,10 @@ type Service interface {
 }
 
 type Streamer interface {
-	Ack(stream, group string, ids ...string) error
-	Add(string, *streamer.Message) error
-	AckAndAdd(fromStream, toStream, group, id string, msg *streamer.Message) error
-	ReadGroup(*streamer.StreamArgs) error
+	Ack(ctx context.Context, stream, group string, ids ...string) error
+	Add(context.Context, string, *streamer.Message) error
+	AckAndAdd(ctx context.Context, fromStream, toStream, group, id string, msg *streamer.Message) error
+	ReadGroup(context.Context, *sync.WaitGroup, *streamer.StreamArgs) error
 }
 
 type Provider interface {

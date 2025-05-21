@@ -1,9 +1,10 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/redis/go-redis/v9"
 )
 
 type redisDB struct {
@@ -18,9 +19,9 @@ func (r *redisDB) IDExists(id string) (bool, error) {
 	return false, nil
 }
 
-func (r *redisDB) Tags(index, field string) ([]string, error) {
-	cmd := redis.NewStringSliceCmd("ft.tagvals", index, field)
-	err := r.rdb.Process(cmd)
+func (r *redisDB) Tags(ctx context.Context, index, field string) ([]string, error) {
+	cmd := redis.NewStringSliceCmd(ctx, "ft.tagvals", index, field)
+	err := r.rdb.Process(ctx, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("error collecting tags: %w", err)
 	}

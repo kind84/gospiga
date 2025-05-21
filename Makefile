@@ -47,10 +47,10 @@ docker-redis-dev:
 	docker build -t gospiga/redis-dev -f ./redis.dev.Dockerfile .
 
 docker-build: build-dependencies
-	docker-compose build
+	docker compose build
 
 docker-run: docker-build
-	docker-compose up
+	docker compose up
 
 release: docker
 	for service in $(SERVICES); do \

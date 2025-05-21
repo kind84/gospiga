@@ -22,7 +22,7 @@ func NewFinderServer(app App) *finderServer {
 }
 
 func (s *finderServer) AllRecipeTags(ctx context.Context, req *pb.AllRecipeTagsRequest) (*pb.AllRecipeTagsResponse, error) {
-	tags, err := s.app.AllRecipeTags()
+	tags, err := s.app.AllRecipeTags(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving recipe tags: %w", err)
 	}

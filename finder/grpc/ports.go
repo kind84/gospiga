@@ -1,5 +1,7 @@
 package grpc
 
+import "context"
+
 type App interface {
-	AllRecipeTags() ([]string, error)
+	AllRecipeTags(context.Context) ([]string, error)
 }

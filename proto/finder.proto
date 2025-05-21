@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "gospiga/proto";
+option go_package = ".";
 
 service Finder {
 	rpc AllRecipeTags(AllRecipeTagsRequest) returns (AllRecipeTagsResponse) {}

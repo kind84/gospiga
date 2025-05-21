@@ -1,14 +1,16 @@
 package usecase
 
 import (
+	"context"
 	"gospiga/finder/domain"
 	"gospiga/finder/fulltext"
 	"gospiga/pkg/streamer"
+	"sync"
 )
 
 type DB interface {
 	IDExists(id string) (bool, error)
-	Tags(index, field string) ([]string, error)
+	Tags(ctx context.Context, index, field string) ([]string, error)
 }
 
 type FT interface {
@@ -19,7 +21,7 @@ type FT interface {
 }
 
 type Streamer interface {
-	Ack(stream, group string, ids ...string) error
-	Add(string, *streamer.Message) error
-	ReadGroup(*streamer.StreamArgs) error
+	Ack(ctx context.Context, stream, group string, ids ...string) error
+	Add(context.Context, string, *streamer.Message) error
+	ReadGroup(context.Context, *sync.WaitGroup, *streamer.StreamArgs) error
 }

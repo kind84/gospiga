@@ -1,6 +1,7 @@
 package streamer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/redis/go-redis/v9"
 
 	"gospiga/pkg/log"
 )
@@ -27,7 +28,6 @@ type StreamArgs struct {
 	Consumer string
 	Messages chan Message
 	Exit     chan struct{}
-	WG       *sync.WaitGroup
 }
 
 // NewRedisStreamer returns an instance of redisStreamer.
@@ -42,19 +42,19 @@ func NewRedisStreamer(client *redis.Client) (*redisStreamer, error) {
 	if err != nil {
 		return nil, err
 	}
-	ackAndAddLua, err = client.ScriptLoad(string(script)).Result()
+	ackAndAddLua, err = client.ScriptLoad(context.Background(), string(script)).Result()
 	if err != nil {
 		return nil, err
 	}
 	return &redisStreamer{client}, nil
 }
 
-func (s *redisStreamer) Ack(stream, group string, ids ...string) error {
-	_, err := s.rdb.XAck(stream, group, ids...).Result()
+func (s *redisStreamer) Ack(ctx context.Context, stream, group string, ids ...string) error {
+	_, err := s.rdb.XAck(ctx, stream, group, ids...).Result()
 	return err
 }
 
-func (s *redisStreamer) Add(stream string, msg *Message) error {
+func (s *redisStreamer) Add(ctx context.Context, stream string, msg *Message) error {
 	jmsg, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -64,13 +64,13 @@ func (s *redisStreamer) Add(stream string, msg *Message) error {
 		Stream: stream,
 		Values: map[string]interface{}{"message": string(jmsg)},
 	}
-	_, err = s.rdb.XAdd(xargs).Result()
+	_, err = s.rdb.XAdd(ctx, xargs).Result()
 	return err
 }
 
 // AckAndAdd atomically acknowledges a given message ID from a stream and
 // sends the given message to another stream.
-func (s *redisStreamer) AckAndAdd(fromStream, toStream, group, id string, msg *Message) error {
+func (s *redisStreamer) AckAndAdd(ctx context.Context, fromStream, toStream, group, id string, msg *Message) error {
 	jmsg, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -78,8 +78,9 @@ func (s *redisStreamer) AckAndAdd(fromStream, toStream, group, id string, msg *M
 
 	// run pre-loaded script
 	_, err = s.rdb.EvalSha(
+		ctx,
 		ackAndAddLua,
-		[]string{fromStream, toStream},               // KEYS
+		[]string{fromStream, toStream}, // KEYS
 		[]string{group, id, "message", string(jmsg)}, // ARGV
 	).Result()
 
@@ -87,10 +88,10 @@ func (s *redisStreamer) AckAndAdd(fromStream, toStream, group, id string, msg *M
 }
 
 // ReadGroup reads messages on the given stream and sends them over a channel.
-func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
+func (s *redisStreamer) ReadGroup(ctx context.Context, wg *sync.WaitGroup, args *StreamArgs) error {
 	// create consumer group if not done yet
 	for _, stream := range args.Streams {
-		_, err := s.rdb.XGroupCreateMkStream(stream, args.Group, "0-0").Result()
+		_, err := s.rdb.XGroupCreateMkStream(ctx, stream, args.Group, "0-0").Result()
 		if err != nil && !strings.HasPrefix(err.Error(), "BUSYGROUP") {
 			return err
 		}
@@ -130,7 +131,7 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 			}
 
 			// TODO: use WithContext ?
-			res, err := s.rdb.XReadGroup(xargs).Result()
+			res, err := s.rdb.XReadGroup(ctx, xargs).Result()
 			if err != nil {
 				if err != redis.Nil {
 					log.Errorf("error reading streams %s: %s", args.Streams, err)
@@ -163,20 +164,18 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 					log.Debugf("found pending messages on stream %q, resuming..", stream.Stream)
 				}
 
-				args.WG.Add(msgs)
+				wg.Add(msgs)
 
 				log.Debugf("Consumer %q recived %d message(s)", args.Consumer, msgs)
 
 				for _, rawMsg := range stream.Messages {
-					log.Debugf("Consumer %q reading message %q", args.Consumer, rawMsg.ID)
-
 					lastIDs[stream.Stream] = rawMsg.ID
 
 					msg, err := parseMessage(rawMsg, stream.Stream)
 					if err != nil {
 						log.Errorf(err.Error())
 						// clear malformed message
-						s.Ack(stream.Stream, args.Group, rawMsg.ID)
+						s.Ack(ctx, stream.Stream, args.Group, rawMsg.ID)
 						continue
 					}
 
@@ -184,7 +183,7 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 				}
 
 				// avoid back-pressure
-				args.WG.Wait()
+				wg.Wait()
 			}
 
 			if !gotMessage && checkHistory {
@@ -196,13 +195,13 @@ func (s *redisStreamer) ReadGroup(args *StreamArgs) error {
 	return nil
 }
 
-func (s *redisStreamer) shouldExit(exitCh chan struct{}) bool {
+func (s *redisStreamer) shouldExit(exitCh <-chan struct{}) bool {
 	select {
-	case _, ok := <-exitCh:
-		return !ok
+	case <-exitCh:
+		return true
 	default:
+		return false
 	}
-	return false
 }
 
 func parseMessage(rawMsg redis.XMessage, stream string) (*Message, error) {
