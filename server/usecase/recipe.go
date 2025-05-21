@@ -85,36 +85,25 @@ func (a *app) readRecipes(ctx context.Context) {
 	for {
 		select {
 		case msg := <-msgChan:
+			recipeID, ok := msg.Payload.(string)
+			if !ok {
+				log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
+				a.discardMessage(ctx, &msg, &wg)
+				continue
+			}
+
 			switch msg.Stream {
 			case newRecipeStream:
-				recipeID, ok := msg.Payload.(string)
-				if !ok {
-					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
-					a.discardMessage(ctx, &msg, &wg)
-					continue
-				}
 				log.Debugf("Got message for a new recipe ID %q", recipeID)
 
 				a.saveRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
 
 			case updatedRecipeStream:
-				recipeID, ok := msg.Payload.(string)
-				if !ok {
-					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
-					a.discardMessage(ctx, &msg, &wg)
-					continue
-				}
 				log.Debugf("Got message for updated recipe ID %q", recipeID)
 
 				a.updateRecipe(ctx, recipeID, msg.Stream, msg.ID, &wg)
 
 			case deletedRecipeStream:
-				recipeID, ok := msg.Payload.(string)
-				if !ok {
-					log.Errorf("cannot read recipe ID from message ID %q", msg.ID)
-					a.discardMessage(ctx, &msg, &wg)
-					continue
-				}
 				log.Debugf("Got message for deleted recipe ID %q", recipeID)
 
 				a.deleteRecipe(ctx, recipeID, msg.ID, &wg)
